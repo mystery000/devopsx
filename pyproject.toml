@@ -1,0 +1,92 @@
+[tool.poetry]
+name = "gptme-python"
+version = "0.9.1.dev0"
+description = "A fancy CLI to interact with LLMs in a Chat-style interface, with additional capabilities like executing commands on the local machine."
+authors = ["Erik Bjäreholt <erik@bjareho.lt>"]
+readme = "README.md"
+license = "MIT"
+packages = [
+    { include = "gptme" },
+]
+
+[tool.poetry.scripts]
+gptme = "gptme.cli:main"
+gptme-server = "gptme.cli_server:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openai = "^0.27"
+click = "^8.0"
+python-dotenv = "^1.0.0"
+rich = "^13.5.2"
+pick = "^2.2.0"
+tiktoken = "^0.5.1"
+tomlkit = "^0.12.1"
+typing-extensions = "^4.8.0"
+platformdirs = "^3.11.0"
+ipython = "^8.17.2"
+bashlex = "^0.18"
+
+# optionals
+llama-cpp-python = {version = "^0.1.57", optional=true}
+playwright = {version = "^1.37.0", optional=true}
+jedi = {version = "^0.19.0", optional=true}
+
+# datascience essentials
+matplotlib = {version = "*", optional=true}
+pandas = {version = "*", optional=true}
+numpy = {version = "*", optional=true}
+pillow = {version = "*", optional=true}
+
+# training
+torch = {version = "*", optional=true}
+transformers = {version = "*", optional=true}
+
+# server
+flask = {version = "^2.3", optional=true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2"
+pytest-cov = "*"
+pytest-xdist = "^3.5.0"
+pytest-profiling = "^1.7.0"
+pytest-dotenv = "^0.5.2"
+pytest-timeout = "^2.2.0"
+mypy = "*"
+ruff = "*"
+black = "*"
+sphinx = "^6.0"
+sphinx-click = "^5.0.1"
+sphinx-book-theme = "^1.0.1"
+myst-parser = "^2.0.0"
+pyupgrade = "^3.15.0"
+
+[tool.poetry.extras]
+server = ["llama-cpp-python", "flask"]
+browser = ["playwright"]
+datascience = ["matplotlib", "pandas", "numpy", "pillow"]
+training = ["torch", "transformers"]
+all = [
+    # server
+    "llama-cpp-python", "flask",
+    # browser
+    "playwright",
+    # datascience
+    "matplotlib", "pandas", "numpy", "pillow",
+    # training
+    "torch", "transformers",
+]
+
+
+[tool.ruff]
+ignore = ["E402", "E501"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
