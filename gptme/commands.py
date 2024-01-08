@@ -20,6 +20,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute, len_tokens
+from .ssh import interactive_ssh_session
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,14 @@ def execute_cmd(msg: Message, log: LogManager) -> bool:
         for resp in handle_cmd(msg.content, log, no_confirm=True):
             log.append(resp)
         return True
+    elif msg.startwith("ssh "):
+        parts = msg.split()
+        if len(parts) >= 4:
+            hostname = parts[1]
+            username = parts[2]
+            port = int(parts[3])
+            interactive_ssh_session(hostname, port, username)
+        print("SSH session ended. Returning to gptme.")
     return False
 
 
