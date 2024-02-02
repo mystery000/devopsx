@@ -87,33 +87,74 @@ def handle_cmd(
     logger.debug(f"Executing command: {cmd}")
     name, *args = re.split(r"[\n\s]", cmd)
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
-
-    command_handlers = {
-        "bash": execute_shell,
-        "sh": execute_shell,
-        "shell": execute_shell,
-        "python": execute_python,
-        "py": execute_python,
-        "log": lambda: (log.undo(1, quiet=True), log.print(show_hidden="--hidden" in args)),
-        "rename": lambda: (log.undo(1, quiet=True), log.write(), rename(log, args[0] if args else input("New name: "), ask=not no_confirm)),
-        "fork": lambda: log.fork(args[0] if args else input("New name: ")),
-        "summarize": lambda: summarize_and_print(log),
-        "edit": lambda: (log.undo(1, quiet=True), edit(log)),
-        "context": lambda: yield gen_context_msg(),
-        "undo": lambda: (log.undo(1, quiet=True), log.undo(int(args[0]) if args and args[0].isdigit() else 1)),
-        "save": lambda: (log.undo(1, quiet=True), save(log, args[0] if args else input("Filename: "))),
-        "exit": sys.exit,
-        "replay": lambda: (log.undo(1, quiet=True), log.write(), replay(log)),
-        "impersonate": lambda: impersonate(log, full_args, no_confirm),
-        "tokens": lambda: (log.undo(1, quiet=True), print(f"Tokens used: {len_tokens(log.log)}")),
-        "_default": lambda: (log.undo(1, quiet=True), log.write(), help())
-    }
-
-    handler = command_handlers.get(name, command_handlers["_default"])
-    try:
-        yield from handler()
-    except Exception as e:
-        print(f"Error executing command '{name}': {e}")
+    match name:
+        case "bash" | "sh" | "shell":
+            yield from execute_shell(full_args, ask=not no_confirm)
+        case "python" | "py":
+            yield from execute_python(full_args, ask=not no_confirm)
+        case "log":
+            log.undo(1, quiet=True)
+            log.print(show_hidden="--hidden" in args)
+        case "rename":
+            log.undo(1, quiet=True)
+            log.write()
+            # rename the conversation
+            print("Renaming conversation (enter empty name to auto-generate)")
+            new_name = args[0] if args else input("New name: ")
+            rename(log, new_name, ask=not no_confirm)
+        case "fork":
+            # fork the conversation
+            new_name = args[0] if args else input("New name: ")
+            log.fork(new_name)
+        case "summarize":
+            msgs = log.prepare_messages()
+            msgs = [m for m in msgs if not m.hide]
+            summary = summarize(msgs)
+            print(f"Summary: {summary}")
+        case "edit":
+            # edit previous messages
+            # first undo the '/edit' command itself
+            log.undo(1, quiet=True)
+            yield from edit(log)
+        case "context":
+            # print context msg
+            yield gen_context_msg()
+        case "undo":
+            # undo the '/undo' command itself
+            log.undo(1, quiet=True)
+            # if int, undo n messages
+            n = int(args[0]) if args and args[0].isdigit() else 1
+            log.undo(n)
+        case "save":
+            # undo
+            log.undo(1, quiet=True)
+            filename = args[0] if args else input("Filename: ")
+            save(log, filename)
+        case "exit":
+            sys.exit(0)
+        case "replay":
+            log.undo(1, quiet=True)
+            log.write()
+            print("Replaying conversation...")
+            for msg in log.log:
+                if msg.role == "assistant":
+                    for msg in execute_msg(msg, ask=True):
+                        print_msg(msg, oneline=False)
+        case "impersonate":
+            content = full_args if full_args else input("[impersonate] Assistant: ")
+            msg = Message("assistant", content)
+            yield msg
+            yield from execute_msg(msg, ask=not no_confirm)
+        case "tokens":
+            log.undo(1, quiet=True)
+            print(f"Tokens used: {len_tokens(log.log)}")
+        case _:
+            if log.log[-1].content != f"{CMDFIX}help":
+                print("Unknown command")
+            # undo the '/help' command itself
+            log.undo(1, quiet=True)
+            log.write()
+            help()
 
 def edit(log: LogManager) -> Generator[Message, None, None]:  # pragma: no cover
     # generate editable toml of all messages
