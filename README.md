@@ -26,4 +26,10 @@ local user running devopsx requires sudo rights
 **Known limitations:**
 
 Force install via apt-get
-Pseudo-shell 
+
+Pseudo-shell issues
+
+Insist that the tool write scripts to disk vs. execute in local environment
+
+Insist to not truncate 
+
