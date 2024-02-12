@@ -16,8 +16,11 @@ pip install -e .
 **System requirements:**
 
 devopsx requires root access 
+
 local user running devopsx requires sudo rights
+  
   For example, append in sudoers file:
+  
   [USER]  ALL=(ALL:ALL) NOPASSWD:ALL
 
 **Known limitations:**
