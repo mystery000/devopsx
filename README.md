@@ -1,7 +1,7 @@
 devopsx
 =====
 
-Infractura.com brings you devopsx, which is an expansive generative AI-based tool to manage system / network infrastructure, develop / deploy code, and manage local environments with natural language.
+Infractura.com brings you devopsx, which is an expansive multi-agent generative AI-based tool to manage system / network infrastructure, develop / deploy code, and manage local environments with natural language.
 
 **Installation instructions:**
 
