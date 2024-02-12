@@ -6,8 +6,11 @@ Infractura.com brings you devopsx, which is an expansive generative AI-based too
 Installation instructions:
 
 pip install matplotlib pandas numpy pillow
+
 git clone git@github.com:infractura/devopsx.git
+
 cd devopsx
+
 pip install -e .
 
 devopsx requires root access 
