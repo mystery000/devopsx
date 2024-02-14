@@ -8,7 +8,7 @@
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
-project = "gptme"
+project = "devopsx"
 copyright = "2023, Erik Bjäreholt"
 author = "Erik Bjäreholt"
 
@@ -72,7 +72,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 extlinks = {
-    "issue": ("https://github.com/ErikBjare/gptme/issues/%s", "issue #"),
+    "issue": ("https://github.com/ErikBjare/devopsx/issues/%s", "issue #"),
 }
 
 
@@ -82,18 +82,18 @@ extlinks = {
 html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
-html_title = "gptme"
+html_title = "devopsx"
 html_logo = "../media/logo.png"
 html_favicon = "../media/logo.png"
 
 html_theme_options = {
-    "repository_url": "https://github.com/ErikBjare/gptme",
+    "repository_url": "https://github.com/ErikBjare/devopsx",
     "path_to_docs": "docs",
     "use_repository_button": True,
     "use_edit_page_button": True,
     "extra_navbar": """
     <p>
-        Back to <a href="https://github.com/ErikBjare/gptme">GitHub</a>
+        Back to <a href="https://github.com/ErikBjare/devopsx">GitHub</a>
     </p>""",
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: ./format_log.sh <~/.local/share/gptme/logs/*/conversation.jsonl>
+# Usage: ./format_log.sh <~/.local/share/devopsx/logs/*/conversation.jsonl>
 while IFS= read -r line; do
     role="
 $(echo "$line" | jq -r '.role'):"

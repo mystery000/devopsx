@@ -173,7 +173,7 @@ def summarize(content: str) -> str:
     Summarizes a long text using a LLM.
 
     To summarize messages or the conversation log,
-    use `gptme.tools.summarize` instead (which wraps this).
+    use `devopsx.tools.summarize` instead (which wraps this).
     """
     assert oai_client, "LLM not initialized"
     messages = [

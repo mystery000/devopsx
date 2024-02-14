@@ -4,7 +4,7 @@
 SHELL := $(shell which bash)
 
 # src dirs and files
-SRCDIRS = gptme tests scripts train eval
+SRCDIRS = devopsx tests scripts train eval
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
 
 # exclude files
@@ -20,7 +20,7 @@ build:
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
-		--cov=gptme --cov-report=xml --cov-report=term-missing --cov-report=html \
+		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
 		-n 8 \
 		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow") \
 		$(if $(PROFILE), --profile-svg) \
@@ -46,6 +46,6 @@ docs:
 	poetry run make -C docs html
 
 clean-test:
-	echo $$HOME/.local/share/gptme/logs/*test-*-test_*
-	rm -I $$HOME/.local/share/gptme/logs/*test-*-test_*/*.jsonl || true
-	rm --dir $$HOME/.local/share/gptme/logs/*test-*-test_*/ || true
+	echo $$HOME/.local/share/devopsx/logs/*test-*-test_*
+	rm -I $$HOME/.local/share/devopsx/logs/*test-*-test_*/*.jsonl || true
+	rm --dir $$HOME/.local/share/devopsx/logs/*test-*-test_*/ || true

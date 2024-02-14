@@ -1,4 +1,4 @@
-from gptme.tools.python import execute_python
+from devopsx.tools.python import execute_python
 
 
 def run(code):

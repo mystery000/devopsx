@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from gptme.tools import get_codeblocks, is_supported_codeblock
-from gptme.util import epoch_to_age, generate_name, is_generated_name
+from devopsx.tools import get_codeblocks, is_supported_codeblock
+from devopsx.util import epoch_to_age, generate_name, is_generated_name
 
 
 def test_generate_name():

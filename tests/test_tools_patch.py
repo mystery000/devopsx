@@ -1,4 +1,4 @@
-from gptme.tools.patch import apply
+from devopsx.tools.patch import apply
 
 example_patch = """
 ```patch filename.py

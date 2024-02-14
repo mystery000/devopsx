@@ -74,7 +74,7 @@ def execute_cmd(msg: Message, log: LogManager) -> bool:
                 hostname, username, port = parts[1:4]
                 port = int(port)
                 interactive_ssh_session(hostname, port, username)
-            print("SSH session ended. Returning to gptme.")
+            print("SSH session ended. Returning to devopsx.")
         except Exception as e:
             print(f"Error during SSH session: {e}")
     return False

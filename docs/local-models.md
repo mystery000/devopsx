@@ -1,7 +1,7 @@
 Local Models
 ============
 
-This is a guide to setting up a local model for use with gptme.
+This is a guide to setting up a local model for use with devopsx.
 
 ## Setup
 
@@ -35,7 +35,7 @@ export OPENAI_API_BASE="http://localhost:8000/v1"
 ## Usage
 
 ```sh
-gptme --llm local "say hello!"
+devopsx --llm local "say hello!"
 ```
 
 

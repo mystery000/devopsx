@@ -36,7 +36,7 @@ class Config:
 
 
 ABOUT_ACTIVITYWATCH = """ActivityWatch is a free and open-source automated time-tracker that helps you track how you spend your time on your devices."""
-ABOUT_GPTME = "gptme is a CLI to interact with large language models in a Chat-style interface, enabling the assistant to execute commands and code on the local machine, letting them assist in all kinds of development and terminal-based work."
+ABOUT_devopsx = "devopsx is a CLI to interact with large language models in a Chat-style interface, enabling the assistant to execute commands and code on the local machine, letting them assist in all kinds of development and terminal-based work."
 
 
 default_config = Config(
@@ -45,7 +45,7 @@ default_config = Config(
         "response_preference": "Basic concepts don't need to be explained.",
         "project": {
             "activitywatch": ABOUT_ACTIVITYWATCH,
-            "gptme": ABOUT_GPTME,
+            "devopsx": ABOUT_devopsx,
         },
     },
     env={
@@ -55,7 +55,7 @@ default_config = Config(
 )
 
 # Define the path to the config file
-config_path = os.path.expanduser("~/.config/gptme/config.toml")
+config_path = os.path.expanduser("~/.config/devopsx/config.toml")
 
 # Global variable to store the config
 _config: Config | None = None

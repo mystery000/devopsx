@@ -1,10 +1,10 @@
 CLI Reference
 =============
 
-.. click:: gptme.cli:main
-   :prog: gptme
+.. click:: devopsx.cli:main
+   :prog: devopsx
    :nested: full
 
-.. click:: gptme.cli_server:main
-   :prog: gptme-server
+.. click:: devopsx.cli_server:main
+   :prog: devopsx-server
    :nested: full

@@ -1,7 +1,7 @@
 import os
 import sys
 
-from gptme.tabcomplete import _matches
+from devopsx.tabcomplete import _matches
 
 
 def test_matches():
@@ -17,7 +17,7 @@ def test_matches():
     # files
     assert _matches("README") == ["README.md"]
     assert _matches("./README") == ["README.md"]
-    assert _matches("../gptme/README") == ["../gptme/README.md"]
+    assert _matches("../devopsx/README") == ["../devopsx/README.md"]
     if sys.platform != "win32":
         assert "/etc/passwd" in _matches("/etc/pass")
 

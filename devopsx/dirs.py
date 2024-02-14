@@ -5,7 +5,7 @@ from platformdirs import user_config_dir, user_data_dir
 
 
 def get_config_dir() -> Path:
-    return Path(user_config_dir("gptme"))
+    return Path(user_config_dir("devopsx"))
 
 
 def get_readline_history_file() -> Path:
@@ -16,14 +16,14 @@ def get_readline_history_file() -> Path:
 def get_data_dir() -> Path:
     # used in testing, so must take precedence
     if "XDG_DATA_HOME" in os.environ:
-        return Path(os.environ["XDG_DATA_HOME"]) / "gptme"
+        return Path(os.environ["XDG_DATA_HOME"]) / "devopsx"
 
     # just a workaround for me personally
-    old = Path("~/.local/share/gptme").expanduser()
+    old = Path("~/.local/share/devopsx").expanduser()
     if old.exists():
         return old
 
-    return Path(user_data_dir("gptme"))
+    return Path(user_data_dir("devopsx"))
 
 
 def get_logs_dir() -> Path:

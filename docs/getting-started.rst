@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-Here we will help you get started with effectively using gptme.
+Here we will help you get started with effectively using devopsx.
 
 
 Installation
@@ -11,7 +11,7 @@ We suggest you install it with pipx:
 
 .. code-block:: bash
 
-    pipx install gptme-python
+    pipx install devopsx-python
 
 If you don't have pipx, you can install it with pip: ``pip install --user pipx``
 
@@ -22,7 +22,7 @@ Run the following to start a new chat or choose a previous one:
 
 .. code-block:: bash
 
-    gptme
+    devopsx
 
 To fully utilize the assistant, you need to know a little bit about what it can do. 
 
@@ -38,7 +38,7 @@ You can also run a prompt directly from the command line:
 
 .. code-block:: bash
 
-    gptme 'write a snake game with curses to snake.py'
+    devopsx 'write a snake game with curses to snake.py'
 
 Any text files are in the prompt and exist will be included in the context.
 
@@ -55,4 +55,4 @@ This will make it generate and apply patches to the file, making the requested c
 
 ----
 
-Any issues? Report them on the `issue tracker <https://github.com/ErikBjare/gptme/issues>`_.
+Any issues? Report them on the `issue tracker <https://github.com/ErikBjare/devopsx/issues>`_.

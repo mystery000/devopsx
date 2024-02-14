@@ -1,4 +1,4 @@
-from gptme.logmanager import LogManager, Message
+from devopsx.logmanager import LogManager, Message
 
 
 def test_get_last_code_block():

@@ -3,11 +3,11 @@ Finetuning
 
 NOTE: this document is a work in progress!
 
-This document aims to provide a step-by-step guide to finetuning a model on conversations from gptme.
+This document aims to provide a step-by-step guide to finetuning a model on conversations from devopsx.
 
-The goal of fine-tuning a model for gptme is to:
+The goal of fine-tuning a model for devopsx is to:
 
- - Teach the tools available in gptme
+ - Teach the tools available in devopsx
  - Update out-of-date knowledge and conventions
  - Improve its ability to recover from errors
 
@@ -35,7 +35,7 @@ We need to prepare the data for fine-tuning. This involves:
 
  - Extend the data with examples from the OpenAssistant dataset
  - Splitting the data into train and validation sets
-   - We might want to make sure that the validation set is comprised of examples from gptme, and not from the OpenAssistant dataset.
+   - We might want to make sure that the validation set is comprised of examples from devopsx, and not from the OpenAssistant dataset.
 
 TODO...
 

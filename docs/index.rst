@@ -1,17 +1,17 @@
-.. gptme documentation master file, created by
+.. devopsx documentation master file, created by
    sphinx-quickstart on Fri Oct 27 13:44:26 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to gptme's documentation!
+Welcome to devopsx's documentation!
 =================================
 
-This is the documentation for gptme.
+This is the documentation for devopsx.
 
 .. note::
     This documentation site is still under construction.
 
-    In the meantime, see the `README <https://github.com/ErikBjare/gptme/blob/master/README.md>`_ file for more information.
+    In the meantime, see the `README <https://github.com/ErikBjare/devopsx/blob/master/README.md>`_ file for more information.
 
 .. toctree::
    :maxdepth: 2

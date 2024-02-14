@@ -7,7 +7,7 @@ from .init import init, init_logging
 logger = logging.getLogger(__name__)
 
 
-@click.command("gptme-server")
+@click.command("devopsx-server")
 @click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
 @click.option(
     "--llm",
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 )
 def main(verbose, llm, model):  # pragma: no cover
     """
-    Starts a server and web UI for gptme.
+    Starts a server and web UI for devopsx.
 
     Note that this is very much a work in progress, and is not yet ready for normal use.
     """
@@ -34,12 +34,12 @@ def main(verbose, llm, model):  # pragma: no cover
         __import__("flask")
     except ImportError:
         logger.error(
-            "gptme installed without needed extras for server. "
-            "Install them with `pip install gptme-python[server]`"
+            "devopsx installed without needed extras for server. "
+            "Install them with `pip install devopsx-python[server]`"
         )
         exit(1)
     click.echo("Initialization complete, starting server")
 
     # noreorder
-    from gptme.server import main as server_main  # fmt: skip
+    from devopsx.server import main as server_main  # fmt: skip
     server_main()

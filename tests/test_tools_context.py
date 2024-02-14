@@ -1,8 +1,8 @@
 import shutil
 
 import pytest
-from gptme.tools.context import ctags, gen_context_msg
-from gptme.tools.shell import ShellSession, set_shell
+from devopsx.tools.context import ctags, gen_context_msg
+from devopsx.tools.shell import ShellSession, set_shell
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def shell():
 
 def test_gen_context_msg(shell):
     msg = gen_context_msg()
-    assert "gptme" in msg.content, f"Expected 'gptme' in output: {msg.content}"
+    assert "devopsx" in msg.content, f"Expected 'devopsx' in output: {msg.content}"
     assert "$ pwd" in msg.content, f"Expected 'pwd' in output: {msg.content}"
 
 
@@ -24,6 +24,6 @@ def test_ctags(shell):
         pytest.skip("ctags not installed")
 
     output = ctags()
-    expected_strings = ["def", "class", "gptme"]
+    expected_strings = ["def", "class", "devopsx"]
     for s in expected_strings:
         assert s in output, f"Expected '{s}' in output: {output}"

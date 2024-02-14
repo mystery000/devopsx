@@ -8,8 +8,8 @@ flask = pytest.importorskip(
 
 # noreorder
 from flask.testing import FlaskClient  # fmt: skip
-from gptme.cli import init  # fmt: skip
-from gptme.server import create_app  # fmt: skip
+from devopsx.cli import init  # fmt: skip
+from devopsx.server import create_app  # fmt: skip
 
 
 @pytest.fixture(autouse=True)

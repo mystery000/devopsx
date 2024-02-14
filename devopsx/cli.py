@@ -43,7 +43,7 @@ action_readme = "\n".join(
 
 
 docstring = f"""
-GPTMe, a chat-CLI for LLMs, enabling them to execute commands and code.
+devopsx, a chat-CLI for LLMs, enabling them to execute commands and code.
 
 If PROMPTS are provided, a new conversation will be started with it.
 
@@ -125,7 +125,7 @@ def main(
     """Main entrypoint for the CLI."""
     if version:
         # print version and exit
-        print_builtin(f"gptme {importlib.metadata.version('gptme-python')}")
+        print_builtin(f"devopsx {importlib.metadata.version('devopsx-python')}")
         exit(0)
 
     if "PYTEST_CURRENT_TEST" in os.environ:

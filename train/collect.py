@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Collect conversation logs from gptme for fine-tuning.
+Collect conversation logs from devopsx for fine-tuning.
 
 Output: convs.csv with "text" column
 """
@@ -12,16 +12,16 @@ from pathlib import Path
 
 import click
 import torch
-from gptme.util import is_generated_name
+from devopsx.util import is_generated_name
 from transformers import pipeline
 
 logger = logging.getLogger(__name__)
 
 
 def list_conversations() -> list[Path]:
-    """List all conversations from gptme in ~/.local/share/gptme/logs/"""
+    """List all conversations from devopsx in ~/.local/share/devopsx/logs/"""
 
-    logs_dir = Path.home() / ".local/share/gptme/logs/"
+    logs_dir = Path.home() / ".local/share/devopsx/logs/"
     logs = list(logs_dir.glob("*/*.jsonl"))
 
     # filter out logs with default-generated names
@@ -51,7 +51,7 @@ def load_conversations() -> tuple[list[str], list[list[dict]]]:
 
 # UNUSED
 def generate_training_conversations(msgs) -> str:
-    """Generate training conversations from gptme logs"""
+    """Generate training conversations from devopsx logs"""
     # get all messages until the first "assistant" role
     instruction_msgs = []
     response_msgs = []
@@ -136,7 +136,7 @@ def collect(model: str):
     for name, msgs in zip(names, convs):
         logger.info("Generating prompt for '%s'", name)
         # skip first system messages (due to verbosity)
-        # TODO: replace with system message in latest version of gptme?
+        # TODO: replace with system message in latest version of devopsx?
         #       wouldn't quite work, since responses depend on context such as which tools/packages are installed etc.
         msgs = _filter_leading_system(msgs)
         assert msgs[0]["role"] == "user"

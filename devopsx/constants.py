@@ -3,7 +3,7 @@ CMDFIX = "/"
 
 # separator for multiple rounds of prompts on the command line
 # demarcates the end of the user's prompt, and start of the assistant's response
-# e.g. /gptme "generate a poem" "-" "save it to poem.txt"
+# e.g. /devopsx "generate a poem" "-" "save it to poem.txt"
 # where the assistant will generate a poem, and then save it to poem.txt
 MULTIPROMPT_SEPARATOR = "-"
 

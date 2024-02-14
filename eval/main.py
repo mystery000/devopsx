@@ -17,9 +17,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, TypedDict
 
-from gptme.cli import chat as gptme_chat
-from gptme.message import Message
-from gptme.prompts import get_prompt
+from devopsx.cli import chat as devopsx_chat
+from devopsx.message import Message
+from devopsx.prompts import get_prompt
 
 from evals import tests, tests_map
 
@@ -86,7 +86,7 @@ class ExecTest(TypedDict):
 
 class FileStore:
     def __init__(self):
-        self.working_dir = Path(tempfile.mkdtemp(prefix="gptme-evals-"))
+        self.working_dir = Path(tempfile.mkdtemp(prefix="devopsx-evals-"))
         self.working_dir.mkdir(parents=True, exist_ok=True)
         self.id = self.working_dir.name.split("-")[-1]
 
@@ -125,7 +125,7 @@ class Agent:
         raise NotImplementedError
 
 
-class GPTMe(Agent):
+class devopsx(Agent):
     def act(self, files: Files | None, prompt: str):
         store = FileStore()
         os.chdir(store.working_dir)  # can now modify store content
@@ -137,10 +137,10 @@ class GPTMe(Agent):
         print(f"Working in {store.working_dir}")
         # TODO: add timeout
         try:
-            gptme_chat(
+            devopsx_chat(
                 [Message("user", prompt)],
                 [get_prompt()],
-                f"gptme-evals-{store.id}",
+                f"devopsx-evals-{store.id}",
                 "openai",
                 "gpt-4-1106-preview",
                 no_confirm=True,
@@ -203,7 +203,7 @@ def execute(test: ExecTest) -> ExecResult:
     Executes the code.
     """
     print(f"Running test {test['name']} with prompt: {test['prompt']}")
-    agent = GPTMe()
+    agent = devopsx()
 
     # generate code
     gen_start = time.time()

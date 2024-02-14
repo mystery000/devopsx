@@ -3,7 +3,7 @@ import pytest
 playwright = pytest.importorskip("playwright")
 
 # noreorder
-from gptme.tools.browser import load_page, search  # fmt: skip
+from devopsx.tools.browser import load_page, search  # fmt: skip
 
 # noreorder
 from playwright.sync_api import expect  # fmt: skip

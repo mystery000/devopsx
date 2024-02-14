@@ -4,11 +4,11 @@ import random
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import gptme.cli
-import gptme.constants
+import devopsx.cli
+import devopsx.constants
 import pytest
 from click.testing import CliRunner
-from gptme.constants import CMDFIX, MULTIPROMPT_SEPARATOR
+from devopsx.constants import CMDFIX, MULTIPROMPT_SEPARATOR
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -49,15 +49,15 @@ def runner():
 
 
 def test_help(runner: CliRunner):
-    result = runner.invoke(gptme.cli.main, ["--help"])
+    result = runner.invoke(devopsx.cli.main, ["--help"])
     assert result.exit_code == 0
 
 
 def test_command_exit(args: list[str], runner: CliRunner):
     # tests the /exit command
     args.append(f"{CMDFIX}exit")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
 
     # check that the /exit command is present
     assert "/exit" in result.output
@@ -67,8 +67,8 @@ def test_command_exit(args: list[str], runner: CliRunner):
 def test_command_help(args: list[str], runner: CliRunner):
     # tests the /exit command
     args.append(f"{CMDFIX}help")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
 
     # check that the /exit command is present
     assert "/help" in result.output
@@ -79,8 +79,8 @@ def test_command_help(args: list[str], runner: CliRunner):
 def test_command_summarize(args: list[str], runner: CliRunner):
     # tests the /summarize command
     args.append(f"{CMDFIX}summarize")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
 
@@ -90,8 +90,8 @@ def test_command_save(args: list[str], runner: CliRunner):
     args.append(f"{CMDFIX}impersonate ```python\nprint('hello')\n```")
     args.append(MULTIPROMPT_SEPARATOR)
     args.append(f"{CMDFIX}save output.txt")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # read the file
@@ -104,8 +104,8 @@ def test_command_fork(args: list[str], runner: CliRunner, name: str):
     # tests the /fork command
     name += "-fork"
     args.append(f"{CMDFIX}fork {name}")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
 
@@ -115,15 +115,15 @@ def test_command_rename(args: list[str], runner: CliRunner, name: str):
     # tests the /rename command
     name += "-rename"
     args.append(f"{CMDFIX}rename {name}")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # test with "auto" name
     args = args_orig.copy()
     args.append(f"{CMDFIX}rename auto")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
 
@@ -133,7 +133,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
 
     # tests saving with a ```filename.txt block
     args.append(f"{CMDFIX}impersonate ```hello.py\nprint('hello')\n```")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # read the file
@@ -144,7 +144,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
     # test append
     args = args_orig.copy()
     args.append(f"{CMDFIX}impersonate ```append hello.py\nprint('world')\n```")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # read the file
@@ -155,7 +155,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
     # test write file to directory that doesn't exist
     args = args_orig.copy()
     args.append(f"{CMDFIX}impersonate ```hello/hello.py\nprint('hello')\n```")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # test patch on file in directory
@@ -163,7 +163,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
     args.append(
         f"{CMDFIX}impersonate ```patch hello/hello.py\n<<<<<<< ORIGINAL\nprint('hello')\n=======\nprint('hello world')\n>>>>>>> UPDATED\n```"
     )
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # read the file
@@ -174,7 +174,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
 
 def test_shell(args: list[str], runner: CliRunner):
     args.append(f"{CMDFIX}shell echo 'yes'")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     output = result.output.split("System")[-1]
     # check for two 'yes' in output (both command and stdout)
     assert output.count("yes") == 2, result.output
@@ -183,14 +183,14 @@ def test_shell(args: list[str], runner: CliRunner):
 
 def test_python(args: list[str], runner: CliRunner):
     args.append(f"{CMDFIX}python print('yes')")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert "yes\n" in result.output
     assert result.exit_code == 0
 
 
 def test_python_error(args: list[str], runner: CliRunner):
     args.append(f"{CMDFIX}python raise Exception('yes')")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert "Exception: yes" in result.output
     assert result.exit_code == 0
 
@@ -219,8 +219,8 @@ def test_block(args: list[str], lang: str, runner: CliRunner):
     assert "'" not in code
 
     args.append(f"{CMDFIX}impersonate {code}")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args)
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
     output = result.output
     print(f"output: {output}\nEND")
     # check everything after the second '# start'
@@ -235,7 +235,7 @@ def test_block(args: list[str], lang: str, runner: CliRunner):
 @pytest.mark.slow
 def test_generate_primes(args: list[str], runner: CliRunner):
     args.append("print the first 10 prime numbers")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     # check that the 9th and 10th prime is present
     assert "23" in result.output
     assert "29" in result.output
@@ -244,8 +244,8 @@ def test_generate_primes(args: list[str], runner: CliRunner):
 
 def test_stdin(args: list[str], runner: CliRunner):
     args.append(f"{CMDFIX}exit")
-    print(f"running: gptme {' '.join(args)}")
-    result = runner.invoke(gptme.cli.main, args, input="hello")
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args, input="hello")
     assert "```stdin\nhello\n```" in result.output
     assert result.exit_code == 0
 
@@ -257,14 +257,14 @@ def test_stdin(args: list[str], runner: CliRunner):
 )
 def test_url(args: list[str], runner: CliRunner):
     args.append("Who is the CEO of https://superuserlabs.org?")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert "Erik Bjäreholt" in result.output
     assert result.exit_code == 0
 
 
 def test_version(args: list[str], runner: CliRunner):
     args.append("--version")
-    result = runner.invoke(gptme.cli.main, args)
+    result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
-    assert "gptme" in result.output
+    assert "devopsx" in result.output
     assert result.output.count("\n") == 1

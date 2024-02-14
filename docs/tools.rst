@@ -1,7 +1,7 @@
 Tools
 =====
 
-Tools available in gptme.
+Tools available in devopsx.
 
 The main tools can be grouped in the following categories:
 
@@ -29,63 +29,63 @@ The main tools can be grouped in the following categories:
 Shell
 -----
 
-.. automodule:: gptme.tools.shell
+.. automodule:: devopsx.tools.shell
     :members:
     :noindex:
 
 Python
 ------
 
-.. automodule:: gptme.tools.python
+.. automodule:: devopsx.tools.python
     :members:
     :noindex:
 
 Save
 ----
 
-.. automodule:: gptme.tools.save
+.. automodule:: devopsx.tools.save
     :members:
     :noindex:
 
 Patch
 -----
 
-.. automodule:: gptme.tools.patch
+.. automodule:: devopsx.tools.patch
     :members:
     :noindex:
 
 Browser
 -------
 
-.. automodule:: gptme.tools.browser
+.. automodule:: devopsx.tools.browser
     :members:
     :noindex:
 
 Edit
 ----
 
-.. automodule:: gptme.tools.useredit
+.. automodule:: devopsx.tools.useredit
     :members:
     :noindex:
 
 Reduce
 ------
 
-.. automodule:: gptme.tools.reduce
+.. automodule:: devopsx.tools.reduce
     :members:
     :noindex:
 
 Context
 -------
 
-.. automodule:: gptme.tools.context
+.. automodule:: devopsx.tools.context
     :members:
     :noindex:
 
 Summarize
 ---------
 
-.. automodule:: gptme.tools.summarize
+.. automodule:: devopsx.tools.summarize
     :members:
     :noindex:
 

@@ -1,71 +1,71 @@
 API Reference
 =============
 
-Here is the API reference for ``gptme``.
+Here is the API reference for ``devopsx``.
 
 .. toctree::
    :maxdepth: 2
 
-gptme package
+devopsx package
 ^^^^^^^^^^^^^
 
-Some of the main classes in ``gptme``.
+Some of the main classes in ``devopsx``.
 
-gptme.message
+devopsx.message
 -------------
 
-.. automodule:: gptme.message
+.. automodule:: devopsx.message
    :members:
 
-gptme.logmanager
+devopsx.logmanager
 ----------------
 
-.. automodule:: gptme.logmanager
+.. automodule:: devopsx.logmanager
    :members:
 
-gptme.server
+devopsx.server
 ^^^^^^^^^^^^
 
 Endpoint functions for the server.
 
-.. automodule:: gptme.server
+.. automodule:: devopsx.server
    :members:
    :undoc-members:
 
-gptme.tools
+devopsx.tools
 ^^^^^^^^^^^
 
-Tools available to gptme.
+Tools available to devopsx.
 
-.. automodule:: gptme.tools
+.. automodule:: devopsx.tools
    :members:
 
-gptme.tools.shell
+devopsx.tools.shell
 -----------------
 
-.. automodule:: gptme.tools.shell
+.. automodule:: devopsx.tools.shell
    :members:
 
 Python
 ------
 
-.. automodule:: gptme.tools.python
+.. automodule:: devopsx.tools.python
    :members:
 
-gptme.tools.context
+devopsx.tools.context
 -------------------
 
-.. automodule:: gptme.tools.context
+.. automodule:: devopsx.tools.context
    :members:
 
-gptme.tools.save
+devopsx.tools.save
 ----------------
 
-.. automodule:: gptme.tools.save
+.. automodule:: devopsx.tools.save
    :members:
 
-gptme.tools.patch
+devopsx.tools.patch
 -----------------
 
-.. automodule:: gptme.tools.patch
+.. automodule:: devopsx.tools.patch
    :members:

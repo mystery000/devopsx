@@ -15,4 +15,4 @@ if [[ ! -f "$SCRIPTDIR/build_changelog.py" ]]; then
 fi
 
 # run
-$SCRIPTDIR/build_changelog.py --range $1 --org ErikBjare --repo gptme --project-title GPTMe
+$SCRIPTDIR/build_changelog.py --range $1 --org ErikBjare --repo devopsx --project-title devopsx

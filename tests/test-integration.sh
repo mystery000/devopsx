@@ -13,10 +13,10 @@ if [ "$1" = "--ask" ]; then
     ASK="1"
 fi
 
-# overwrite gptme using a function that adds the arguments and calls the original, supporting several arguments
-function gptme() {
-    echo "$ gptme $ARGS $@"
-    /usr/bin/env gptme $ARGS "$@" --non-interactive </dev/null
+# overwrite devopsx using a function that adds the arguments and calls the original, supporting several arguments
+function devopsx() {
+    echo "$ devopsx $ARGS $@"
+    /usr/bin/env devopsx $ARGS "$@" --non-interactive </dev/null
     if [ "$ASK" = "1" ]; then
         echo -n "Did the test pass? (y/n/I) "
         read -r
@@ -43,66 +43,66 @@ interactive=${GITHUB_ACTIONS:-1}
 set -e
 
 # test stdin and cli-provided prompt
-# NOTE: we do not do this as part of the suite, because our gptme function wrapper above does not support stdin
+# NOTE: we do not do this as part of the suite, because our devopsx function wrapper above does not support stdin
 #       if you want to run it, copy the line into your terminal
-# echo "The project mascot is a flying pig" | gptme "What is the project mascot?"
+# echo "The project mascot is a flying pig" | devopsx "What is the project mascot?"
 
 # test load context from file
 echo "The project mascot is a flying pig" > mascot.txt
-gptme "What is the project mascot?" mascot.txt
+devopsx "What is the project mascot?" mascot.txt
 
 # test python command
-gptme "/python print('hello world')"
+devopsx "/python print('hello world')"
 
 # test shell command
-gptme "/shell echo 'hello world'"
+devopsx "/shell echo 'hello world'"
 
 # test write small game
-gptme 'write a snake game with curses to snake.py'
+devopsx 'write a snake game with curses to snake.py'
 # works!
 
 # test implement game of life
-gptme 'write an implementation of the game of life with curses to life.py'
+devopsx 'write an implementation of the game of life with curses to life.py'
 # works? almost, needed to try-catch-pass an exception
 
 # test implement wireworld
-gptme 'write a implementation of wireworld with curses to wireworld.py'
+devopsx 'write a implementation of wireworld with curses to wireworld.py'
 # works? almost, needed to try-catch-pass an exception, fix color setup, and build a proper circuit
 
 # test plot to file
-gptme 'plot up to the 5rd degree taylor expansion of sin(x), save to sin.png'
+devopsx 'plot up to the 5rd degree taylor expansion of sin(x), save to sin.png'
 # works!
 
 # ask it to manipulate sin.png with imagemagick
-gptme 'rotate sin.png 90 degrees clockwise with imagemagick'
+devopsx 'rotate sin.png 90 degrees clockwise with imagemagick'
 # works!
 
 # make sure that it doesn't stop after the first command
-gptme 'write a hello.py script then run it'
+devopsx 'write a hello.py script then run it'
 # works!
 
 # ask it to manipulate sin.png with PIL
-gptme 'rotate sin.png 90 degrees clockwise with PIL'
+devopsx 'rotate sin.png 90 degrees clockwise with PIL'
 # needs PIL to be installed
 
 # write C code and apply patch
-gptme 'write a hello world program in c to hello.c, then patch it to ask for your name and print it'
+devopsx 'write a hello world program in c to hello.c, then patch it to ask for your name and print it'
 # works!
 
 # write outline for a class that implements a linked list, then fill in the implementation
-gptme 'write class that implements a linked list, then fill in the implementation with patch, then test it'
+devopsx 'write class that implements a linked list, then fill in the implementation with patch, then test it'
 # works!
 
 # 3 complex plots
-gptme 'make a figure with 3 plots: one timeseries plot with multiple series (upper), one 3d plot of a sphere (left-bottom), and one 2d plot of a circle (right-bottom). Make it colorful and fancy!'
+devopsx 'make a figure with 3 plots: one timeseries plot with multiple series (upper), one 3d plot of a sphere (left-bottom), and one 2d plot of a circle (right-bottom). Make it colorful and fancy!'
 
 if [ "$interactive" = "1" ]; then
     # interactive matplotlib
-    gptme 'plot an x^2 graph'
+    devopsx 'plot an x^2 graph'
 fi
 
 # generate a mandelbrot set
-gptme 'render mandelbrot set to mandelbrot.png'
+devopsx 'render mandelbrot set to mandelbrot.png'
 
 # very heavy! run by hand
-# gptme 'render a zooming mandelbrot video to mandelbrot.mp4, use a colorful gradient, write scripts to file'
+# devopsx 'render a zooming mandelbrot video to mandelbrot.mp4, use a colorful gradient, write scripts to file'

@@ -5,11 +5,11 @@
 
 function git() {
   if [[ "$1" == "commit" ]]; then
-      echo "git-shim.sh: git commit is disabled. If you are the gptme assistant, ignore this error (you should not commit yet)."
+      echo "git-shim.sh: git commit is disabled. If you are the devopsx assistant, ignore this error (you should not commit yet)."
     return 1
   fi
   if [[ "$1" == "push" ]]; then
-      echo "git-shim.sh: git push is disabled. If you are the gptme assistant, ignore this error (you should not push yet)."
+      echo "git-shim.sh: git push is disabled. If you are the devopsx assistant, ignore this error (you should not push yet)."
     return 1
   fi
   command git "$@"

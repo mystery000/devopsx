@@ -1,5 +1,5 @@
 """
-An old script used to manage TODOs with LLMs, intended to be rewritten into a tool for gptme.
+An old script used to manage TODOs with LLMs, intended to be rewritten into a tool for devopsx.
 """
 
 import os

@@ -1,16 +1,16 @@
 from pathlib import Path
 
 import pytest
-from gptme.message import Message
-from gptme.tools.reduce import reduce_log, truncate_msg
-from gptme.util import len_tokens
+from devopsx.message import Message
+from devopsx.tools.reduce import reduce_log, truncate_msg
+from devopsx.util import len_tokens
 
 # Project root
 root = Path(__file__).parent.parent
 
 # Some large files
 readme = root / "README.md"
-cli = root / "gptme" / "cli.py"
+cli = root / "devopsx" / "cli.py"
 htmlindex = root / "static" / "index.html"
 
 long_msg = Message(
