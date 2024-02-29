@@ -262,26 +262,18 @@ def _shorten_stdout(stdout: str, pre_lines=None, post_lines=None) -> str:
     return "\n".join(lines)
 
 
+
 def split_commands(script: str) -> List[str]:
-    # TODO: write proper tests
     parts = bashlex.parse(script)
     commands = []
     for part in parts:
-        if part.kind == "command":
+        if part.kind in {"command", "compound"}:
             command_parts = []
             for word in part.parts:
                 start, end = word.pos
                 command_parts.append(script[start:end])
             command = " ".join(command_parts)
             commands.append(command)
-        elif part.kind == "compound":
-            for node in part.list:
-                command_parts = []
-                for word in node.parts:
-                    start, end = word.pos
-                    command_parts.append(script[start:end])
-                command = " ".join(command_parts)
-                commands.append(command)
         else:
             logger.warning(f"Unknown shell script part of kind '{part.kind}', skipping")
     return commands
