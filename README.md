@@ -63,9 +63,13 @@ Pseudo-shell issues
 
 Insist that the tool write scripts to disk vs. execute in local environment
 
-Insist to not truncate 
+Insist to not truncate or scripts will be truncated.
 
 **LLM ACCESS**
 
 To use GPT4+ Requires an OpenAI API KEY
+
+Example start command: devopsx --model gpt-4-1106-preview --prompt-system short
+
+Warning, long std output will eat tokens.
 
