@@ -7,31 +7,31 @@ Infractura.com brings you devopsx, which is an expansive multi-agent generative 
 
 Code execution
 
-  Directly execute code (shell and Python) in your local environment.
+-  Directly execute code (shell and Python) in your local environment.
 
-  Lets the assistant use commandline tools to work with files, access the web, etc.
+-  Lets the assistant use commandline tools to work with files, access the web, etc.
   
-  Executed code maintains state in a REPL-like manner.
+-  Executed code maintains state in a REPL-like manner.
 
 Read, write, and change files
 
-  Supports making incremental changes with a patch mechanism.
+-  Supports making incremental changes with a patch mechanism.
   
-  Pipe in context via stdin or as arguments.
+-  Pipe in context via stdin or as arguments.
   
-  Passing a filename as an argument will read the file and include it as context.
+-  Passing a filename as an argument will read the file and include it as context.
 
 Self-correcting
 
-  Commands have their output fed back to the agent, allowing it to self-correct.
+-  Commands have their output fed back to the agent, allowing it to self-correct.
 
 Support for many models
 
-  Including GPT-4 and any model that runs in llama.cpp
+-  Including GPT-4 and any model that runs in llama.cpp
 
 Tab completion
 
-  Automatic naming of conversations
+-  Automatic naming of conversations
 
 **Installation instructions:**
 
