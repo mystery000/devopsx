@@ -29,7 +29,9 @@ Support for many models
 
 -  Including GPT-4 and any model that runs in llama.cpp
 
-Tab completion
+Misc
+
+-  Tab completion
 
 -  Automatic naming of conversations
 
