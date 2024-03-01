@@ -3,6 +3,22 @@ devopsx
 
 Infractura.com brings you devopsx, which is an expansive multi-agent generative AI-based tool to manage system / network infrastructure, develop / deploy code, and manage local environments with natural language.
 
+**Features:**
+Code execution
+  Directly execute code (shell and Python) in your local environment.
+  Lets the assistant use commandline tools to work with files, access the web, etc.
+  Executed code maintains state in a REPL-like manner.
+Read, write, and change files
+  Supports making incremental changes with a patch mechanism.
+  Pipe in context via stdin or as arguments.
+  Passing a filename as an argument will read the file and include it as context.
+Self-correcting
+  Commands have their output fed back to the agent, allowing it to self-correct.
+Support for many models
+  Including GPT-4 and any model that runs in llama.cpp
+Tab completion
+  Automatic naming of conversations
+
 **Installation instructions:**
 
 pip install matplotlib pandas numpy pillow
@@ -32,4 +48,8 @@ Pseudo-shell issues
 Insist that the tool write scripts to disk vs. execute in local environment
 
 Insist to not truncate 
+
+**LLM ACCESS**
+
+To use GPT4+ Requires an OpenAI API KEY
 
