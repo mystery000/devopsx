@@ -38,7 +38,7 @@ def join_messages(msgs: Iterable[Message]) -> Message:
 
 def prompt_full() -> Generator[Message, None, None]:
     """Full prompt to start the conversation."""
-    yield from prompt_gptme()
+    yield from prompt_devopsx()
 
     yield from prompt_tools()
     yield from prompt_examples()
@@ -50,17 +50,17 @@ def prompt_full() -> Generator[Message, None, None]:
 
 def prompt_short() -> Generator[Message, None, None]:
     """Short prompt to start the conversation."""
-    yield from prompt_gptme()
+    yield from prompt_devopsx()
     yield from prompt_tools()
     yield from prompt_user()
     yield from prompt_project()
 
 
-def prompt_gptme() -> Generator[Message, None, None]:
+def prompt_devopsx() -> Generator[Message, None, None]:
     yield Message(
         "system",
         """
-You are gptme, an AI assistant CLI tool powered by large language models.
+You are devopsx, an AI assistant CLI tool powered by large language models.
 You can run code and execute terminal commands on their local machine.
 You should show the user how to write code, interact with the system, and access the internet.
 The user can execute the suggested commands so that you see their output.
@@ -111,7 +111,7 @@ def prompt_code_interpreter() -> Generator[Message, None, None]:  # pragma: no c
     # From: https://www.reddit.com/r/ChatGPTPro/comments/14ufzmh/this_is_code_interpreters_system_prompt_exactly/
     #       https://chat.openai.com/share/84e7fd9a-ad47-4397-b08f-4c89603596c0
     # NOTE: most of these have been adopted into the "Tools" section below.
-    # TODO: This doesn't quite align with the capabilities of gptme.
+    # TODO: This doesn't quite align with the capabilities of devopsx.
     #       Like: we have internet access, and a REPL instead of Jupyter (but might not matter).
     # TODO: This should probably also not be used for non-ChatGPT models.
     yield Message(
@@ -320,4 +320,3 @@ def get_installed_programs() -> set[str]:
         if shutil.which(candidate) is not None:
             installed.add(candidate)
     return installed
-    

@@ -1,5 +1,5 @@
-from gptme.prompts import get_prompt
-from gptme.util import len_tokens
+from devopsx.prompts import get_prompt
+from devopsx.util import len_tokens
 
 
 def test_get_prompt():
@@ -11,4 +11,3 @@ def test_get_prompt():
 
     prompt = get_prompt("Hello world!")
     assert prompt.content == "Hello world!"
-    
