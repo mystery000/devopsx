@@ -1,1 +1,3 @@
 .venv
+/devopsx/__pycache__
+/devopsx/tools/__pycache__
