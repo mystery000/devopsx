@@ -14,7 +14,11 @@ from IPython.utils.io import capture_output
 from ..message import Message
 from ..util import ask_execute, print_preview
 
+from .save import execute_save
+
+_ipython = None
 _p = None
+
 logger = logging.getLogger(__name__)
 
 def init_python():
@@ -30,7 +34,9 @@ def execute_python(code: str, ask: bool) -> Generator[Message, None, None]:
         print()
         if not confirm:
             # early return
-            yield Message("system", "Aborted, user chose not to run command.")
+            # yield Message("system", "Aborted, user chose not to run command.")
+            # return
+            yield from execute_save("save.py", code, ask=ask)
             return
     else:
         print("Skipping confirmation")
