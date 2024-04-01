@@ -43,7 +43,11 @@ git clone git@github.com:infractura/devopsx.git
 
 cd devopsx
 
-pip install -e .
+python3 -m venv .venv
+
+source .venv/bin/activate
+
+python -m pip install -e .
 
 **System requirements:**
 
