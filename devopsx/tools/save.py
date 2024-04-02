@@ -16,9 +16,20 @@ Example:
 from collections.abc import Generator
 from pathlib import Path
 
-from ..message import Message
+from ..message import Message, print_msg
 from ..util import ask_execute
 
+from .python import execute_python
+from .shell import execute_shell
+
+def execute_file(
+        fn: str, code: str, ask: bool
+) -> Generator[Message, None, None]:
+    """Execute the file"""
+    if fn.endswith(".py"): 
+        yield from execute_python(code, ask=ask)
+    elif fn.endswith(".sh"):
+        yield from execute_shell(code, ask=ask)
 
 def execute_save(
     fn: str, code: str, ask: bool, append: bool = False
@@ -37,7 +48,8 @@ def execute_save(
 
     if ask and not confirm:
         # early return
-        yield Message("system", f"{action.capitalize()} cancelled.")
+        print_msg(Message("system", f"{action.capitalize()} cancelled."))
+        yield from execute_file(fn, code, ask)
         return
 
     path = Path(fn).expanduser()
@@ -62,7 +74,8 @@ def execute_save(
             print("Skipping overwrite confirmation.")
         if not overwrite:
             # early return
-            yield Message("system", "Save cancelled.")
+            print_msg(Message("system", "Save cancelled."))
+            yield from execute_file(fn, code, ask)
             return
 
     # if the folder doesn't exist, ask to create it
@@ -77,7 +90,8 @@ def execute_save(
             path.parent.mkdir(parents=True)
         else:
             # early return
-            yield Message("system", "Save cancelled.")
+            print_msg(Message("system", "Save cancelled."))
+            yield from execute_file(fn, code, ask)
             return
 
     print("Saving to " + fn)

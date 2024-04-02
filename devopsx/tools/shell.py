@@ -44,7 +44,7 @@ from typing import List
 
 import bashlex
 
-from ..message import Message
+from ..message import Message, print_msg
 from ..util import ask_execute, print_preview
 
 logger = logging.getLogger(__name__)
@@ -198,6 +198,9 @@ def execute_shell(cmd: str, ask=True) -> Generator[Message, None, None]:
         print_preview(f"$ {cmd}", "bash")
         confirm = ask_execute()
         print()
+        if not confirm:
+            print_msg(Message("system", "Aborted, user chose not to run command."))
+            return
 
     if not ask or confirm:
         returncode, stdout, stderr = shell.run(cmd)

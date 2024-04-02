@@ -11,10 +11,8 @@ from logging import getLogger
 from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.utils.io import capture_output
 
-from ..message import Message
+from ..message import Message, print_msg
 from ..util import ask_execute, print_preview
-
-from .save import execute_save
 
 _ipython = None
 _p = None
@@ -33,10 +31,7 @@ def execute_python(code: str, ask: bool) -> Generator[Message, None, None]:
         confirm = ask_execute()
         print()
         if not confirm:
-            # early return
-            # yield Message("system", "Aborted, user chose not to run command.")
-            # return
-            yield from execute_save("save.py", code, ask=ask)
+            print_msg(Message("system", "Aborted, user chose not to run command."))
             return
     else:
         print("Skipping confirmation")
