@@ -15,7 +15,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute, len_tokens
-from .ssh import interactive_ssh_session
+from .tools.pseudo_shell import execute_pseudo_shell
 
 logger = logging.getLogger(__name__)
 
@@ -63,20 +63,10 @@ def execute_cmd(msg: Message, log: LogManager) -> bool:
 
     # if message starts with ., treat as command
     # when command has been run,
-    if msg.content.startswith("/"):
+    if msg.content[:1] in ["/"]:
         for resp in handle_cmd(msg.content, log, no_confirm=True):
             log.append(resp)
         return True
-    elif msg.content.startswith("ssh "):
-        try:
-            parts = msg.split()
-            if len(parts) >= 4:
-                hostname, username, port = parts[1:4]
-                port = int(port)
-                interactive_ssh_session(hostname, port, username)
-            print("SSH session ended. Returning to devopsx.")
-        except Exception as e:
-            print(f"Error during SSH session: {e}")
     return False
 
 def handle_cmd(
@@ -88,6 +78,8 @@ def handle_cmd(
     name, *args = re.split(r"[\n\s]", cmd)
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
     match name:
+        case "ps" | "pseudo-shell":
+            yield from execute_pseudo_shell(full_args, ask=not no_confirm)
         case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm)
         case "python" | "py":

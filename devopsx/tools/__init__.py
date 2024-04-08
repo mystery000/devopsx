@@ -6,6 +6,7 @@ from .patch import execute_patch
 from .python import execute_python, init_python
 from .save import execute_save
 from .shell import execute_shell
+from .pseudo_shell import execute_pseudo_shell
 from .summarize import summarize
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ __all__ = [
     "execute_codeblock",
     "execute_python",
     "execute_shell",
+    "execute_pseudo_shell",
     "execute_save",
     "summarize",
 ]
