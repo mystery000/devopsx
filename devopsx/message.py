@@ -155,7 +155,7 @@ def format_msgs(
             userprefix = f"[bold {color}]{userprefix}[/bold {color}]"
         # get terminal width
         max_len = shutil.get_terminal_size().columns - len(userprefix)
-        output = ""
+        output = msg.content
         if oneline:
             output += textwrap.shorten(
                 msg.content.replace("\n", "\\n"), width=max_len, placeholder="..."
@@ -191,15 +191,15 @@ def print_msg(
     # if not tty, force highlight=False (for tests and such)
     if not sys.stdout.isatty():
         highlight = False
-
     msgs = msg if isinstance(msg, list) else [msg]
-    msgstrs = format_msgs(msgs, highlight=highlight, oneline=oneline)
+    # msgstrs = format_msgs(msgs, highlight=highlight, oneline=oneline)
+    msgstrs = [msg.content for msg in msgs]
     skipped_hidden = 0
     for m, s in zip(msgs, msgstrs):
         if m.hide and not show_hidden:
             skipped_hidden += 1
             continue
-        print(s)
+        sys.stdout.write(s + "\n")
     if skipped_hidden:
         print(
             f"[grey30]Skipped {skipped_hidden} hidden system messages, show with --show-hidden[/]"
