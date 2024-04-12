@@ -1,15 +1,11 @@
-import sys
 import logging
-from invoke import Responder
 from fabric import Connection
 from collections.abc import Generator
-from ..message import Message, print_msg
-from ..util import ask_execute, print_preview
+
+from ..message import Message
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
-
-
  
 _connections: dict[str, Connection] = dict()
 
@@ -24,9 +20,7 @@ def execute_pseudo_shell(cmd: str, ask=True, sudo=True)-> Generator[Message, Non
     hostname = "213.156.159.139"
     username = "devopsx"
     password = "devopsx"
-    sys.stdout.flush()
     try:
-        print("############  STARET ############")
         connection = get_connection(hostname, 22, username, password)
 
         # sudopass = Responder(

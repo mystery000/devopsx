@@ -10,7 +10,7 @@ from . import llm
 from .constants import CMDFIX
 from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs
-from .tools import execute_msg, execute_python, execute_shell
+from .tools import execute_msg, execute_python, execute_shell, execute_ssh
 from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
@@ -80,6 +80,8 @@ def handle_cmd(
     match name:
         case "ps" | "pseudo-shell":
             yield from execute_pseudo_shell(full_args, ask=not no_confirm)
+        case "ssh":
+            yield from execute_ssh(full_args, ask=not no_confirm)
         case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm)
         case "python" | "py":

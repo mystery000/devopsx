@@ -199,6 +199,8 @@ def print_msg(
         if m.hide and not show_hidden:
             skipped_hidden += 1
             continue
+        
+        sys.stdout.flush()
         sys.stdout.write(s + "\n")
     if skipped_hidden:
         print(
