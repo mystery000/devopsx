@@ -3702,8 +3702,7 @@ files = [
 ]
 
 [extras]
-all = ["flask", "llama-cpp-python", "matplotlib", "numpy", "pandas", "pillow", "playwright", "torch", "transformers"]
-browser = ["playwright"]
+all = ["flask", "llama-cpp-python", "matplotlib", "numpy", "pandas", "pillow", "torch", "transformers"]
 datascience = ["matplotlib", "numpy", "pandas", "pillow"]
 server = ["flask", "llama-cpp-python"]
 training = ["torch", "transformers"]
@@ -3711,4 +3710,4 @@ training = ["torch", "transformers"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "23acfb0f4177300679d6b115e6789256d1223570078a271e8a84f57fbedc909e"
+content-hash = "017c38d0c2a8ccd8a720db4a013e0eb8a81213b61731494c25e35b5520421d31"

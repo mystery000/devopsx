@@ -66,14 +66,11 @@ pyupgrade = "^3.15.0"
 
 [tool.poetry.extras]
 server = ["llama-cpp-python", "flask"]
-browser = ["playwright"]
 datascience = ["matplotlib", "pandas", "numpy", "pillow"]
 training = ["torch", "transformers"]
 all = [
     # server
     "llama-cpp-python", "flask",
-    # browser
-    "playwright",
     # datascience
     "matplotlib", "pandas", "numpy", "pillow",
     # training
