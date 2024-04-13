@@ -44,25 +44,8 @@ To install DevOpsX, follow these steps:
    ```
 6. Install required dependencies:
    ```
-   poetry install
+   poetry install --extras "datascience"
    ```
-If extra dependencies are needed, use the following commands:
-- Data science:
-  ```
-  poetry install --extras "datascience"
-  ```
-- Server:
-  ```
-  poetry install --extras "server"
-  ```
-- Training:
-  ```
-  poetry install --extras "training"
-  ```
-- All:
-  ```
-  poetry install --extras "all"
-  ```
 
 #### System Requirements
 - DevOpsX requires root access.
