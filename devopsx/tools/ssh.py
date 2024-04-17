@@ -1,8 +1,7 @@
 import os
 import logging
+import getpass
 import paramiko
-from rich.console import Console
-from fabric import Connection, Result
 from collections.abc import Generator
 from paramiko import SSHConfig, SSHClient
 
@@ -10,27 +9,54 @@ from ..message import Message
 
 logger = logging.getLogger(__name__)
 
+MAX_TIMEOUT = 4
+
 # Define the path to the config file 
 config_path = os.path.expanduser("~/.config/devopsx/ssh_servers.config")
 
-def init_ssh():
+
+def init_ssh() -> None:
     # Check if the config file exists
     if not os.path.exists(config_path):
         # If not, create it and write some default settings
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         os.mknod(config_path)
-        print(f"Created config file at {config_path}")
+        logger.info(f"Created config file at {config_path}")
+
+
+def check_connection(host: str, user: str, port: int = 22, identity_file: str | None = None, password: str | None = None) -> bool:
+    logger.info("Checking Host connection...")
+    ssh_client = SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    try:
+        if identity_file:
+            # Load the private key
+            private_key_path = os.path.expanduser(identity_file)
+            private_key = paramiko.RSAKey.from_private_key_file(private_key_path)
+            logger.info("Private key loaded.")
+            ssh_client.connect(hostname=host, port=port, username=user, timeout=MAX_TIMEOUT, pkey=private_key)
+        else:
+            if not password: password = getpass.getpass(prompt="Password: ")
+            ssh_client.connect(host, port, username=user, password=password, timeout=MAX_TIMEOUT, look_for_keys=False)
+
+        logger.info("Host connection succesful.")
+    except Exception as ex:
+        logger.error(f"Host connection failed due to {str(ex)}")
+        return False
+    finally:
+        ssh_client.close()
+    
+    return True
+
 
 def execute_ssh(cmd: str) -> Generator[Message, None, None]:
     args = cmd.split(" ")
-
-    if len(args) >= 2:
-        server_name = args[0]
+    try:
+        assert len(args) >= 2
+        assert "@" in args[1]
         
-        if "@" not in args[1]:
-            yield Message("system", "Invalid command format. Please provide the host info in the correct format.")
-            return
-
+        server_name = args[0]
         user, host_port = args[1].split("@")
         
         if ":" in host_port:
@@ -48,48 +74,37 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
         config = ssh_config.lookup(server_name.upper())
 
         if config["hostname"] != server_name.upper():
-            print("This host already exists in the config file.")
+            logger.info("This host already exists in the config file.")
         else:
-            ssh_client = SSHClient()
-            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            new_host = {}
 
-            # Add a new Host
-            new_host = {
-                "hostname": host,
-                "user": user,
-                "Port": port
-            }
+            if identity_file and check_connection(host, user, port, identity_file):
+                new_host.update({
+                    "Hostname": host,
+                    "User": user,
+                    "Port": port
+                })
+                new_host["IdentityFile"] = identity_file
+                new_host["PasswordAuthentication"] = "no"
+            elif check_connection(host, user, port):
+                new_host.update({
+                    "Hostname": host,
+                    "User": user,
+                    "Port": port
+                })
+                new_host["PasswordAuthentication"] = "yes"
 
-            new_host["PasswordAuthentication"] = "no" if identity_file else "yes"
-            try:
-                print("Host connecting...")
-                if identity_file:
-                    # Load the private key
-                    private_key_path = os.path.expanduser(identity_file)
-                    private_key = paramiko.RSAKey.from_private_key_file(private_key_path)
-                    print("Private key loaded.")
-                    ssh_client.connect(hostname=host, port=port, username=user, timeout=4, pkey=private_key)
-                    ssh_client.close()
-                    new_host["IdentityFile"] = identity_file
-                else:
-                    console = Console()
-                    password = console.input(f"[green]Password:[/] ")
-                    ssh_client.connect(host, port, username=user, password=password, timeout=4, look_for_keys=False)
-                    ssh_client.close()
-                    new_host["password"] = password
-
-                print("Host connection succesful. Adding to the config file.")
-
+            if new_host:
                 # Append the new host entry to the SSH config file
                 with open(config_path, 'a') as file:
                     file.write(f"\nHost {server_name.upper()}\n")
                     for key, value in new_host.items():
                         file.write(f"    {key} {value}\n")
-
                 yield Message("system", "New host added to the config file.")
-            except Exception as e:
-                yield Message("system", f"Error: {e}. Host addition failed.")
-
-    else:
-        yield Message("system", "Invalid command format. Please provide the host info in the correct format.")           
-        return
+            else:
+                yield Message("system", "Host connection failed.")
+    
+    except AssertionError:
+        yield Message("system", "Invalid command format. Please provide the host info in the correct format.")       
+    except Exception as ex:
+        yield Message("system", f"Error: {str(ex)}")

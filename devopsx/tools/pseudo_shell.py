@@ -1,18 +1,16 @@
-import os
 import sys
 import logging
+import getpass
 from paramiko import SSHConfig
 from fabric import Connection, Result
 from collections.abc import Generator
 
 from ..message import Message
+from .ssh import config_path, check_connection
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
  
-# Define the path to the config file
-config_path = os.path.expanduser("~/.config/devopsx/ssh_servers.config")
-
 _connections: dict[str, Connection] = dict()
 
 def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Message, None, None]:
@@ -22,7 +20,7 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Messa
         config = ssh_config.lookup(server_name.upper())
 
         if config["hostname"] == server_name.upper():
-            raise ValueError("This server name is not registered.")
+            raise ValueError("Unregistered Host")
         
         connection: Connection = None
 
@@ -31,27 +29,35 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Messa
 
         if f"{key}" not in _connections:
             if config.as_bool("passwordauthentication") is True:
-                connection = Connection(
-                    host=config["hostname"], 
-                    user=config["user"], 
-                    port=config["port"],
-                    connect_kwargs={
-                        "password": config["password"],
-                    }
-                )
+                host, user, port = config["hostname"], config["user"], config["port"]
+                password = getpass.getpass(prompt="Password: ")
+                if check_connection(host, user, port, password=password):
+                    connection = Connection(
+                        host=host, 
+                        user=user, 
+                        port=port,
+                        connect_kwargs={
+                            "password": password
+                        }
+                    )
+                    _connections[f"{key}"] = connection
             else:
-                connection = Connection(
-                    host=config["hostname"], 
-                    user=config["user"], 
-                    port=config["port"],
-                    connect_kwargs={
-                        "key_filename": config["identityfile"],
-                    }
-                )
-            _connections[f"{key}"] = connection
+                host, user, port, identity_file = config["hostname"], config["user"], config["port"], config["identityfile"]
+                if check_connection(host, user, port, identity_file):
+                    connection = Connection(
+                        host=host, 
+                        user=user, 
+                        port=port,
+                        connect_kwargs={
+                            "key_filename": identity_file,
+                        }
+                    )
+                    _connections[f"{key}"] = connection
         else:
             connection = _connections[f"{key}"]
 
+
+        assert connection is not None
 
         result: Result = None
 
@@ -76,5 +82,8 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Messa
             msg += "No output\n"
 
         yield Message("system", msg)
+    except AssertionError:
+        yield Message("system", "Authentication failed")
     except Exception as e:
         yield Message("system", content=f"Error: {e}")
+    
