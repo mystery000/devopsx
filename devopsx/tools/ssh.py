@@ -11,10 +11,15 @@ from ..message import Message
 logger = logging.getLogger(__name__)
 
 # Define the path to the config file 
-# /ssh server_name user@host[:port] [identity_file]
-# /ssh D1 devopsx@213.156.159.120 ~/.ssh/devopsx-infractura
-# /ssh D2 devopsx@213.156.159.139 
 config_path = os.path.expanduser("~/.config/devopsx/ssh_servers.config")
+
+def init_ssh():
+    # Check if the config file exists
+    if not os.path.exists(config_path):
+        # If not, create it and write some default settings
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        os.mknod(config_path)
+        print(f"Created config file at {config_path}")
 
 def execute_ssh(cmd: str) -> Generator[Message, None, None]:
     args = cmd.split(" ")
@@ -33,13 +38,12 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
         else: 
             host, port = host_port, 22
 
-        identity_file = args[2] if len(args) >=3 else None
+        identity_file = args[2] if len(args) >=3 else ""
+
+        if "\n\n```" in identity_file:
+            identity_file = identity_file.split("\n\n```")[0]
 
         ssh_config = SSHConfig()
-        if not os.path.exists(config_path):
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            print(f"Created config file at {config_path}")
-
         ssh_config.parse(open(config_path))
         config = ssh_config.lookup(server_name.upper())
 
@@ -88,3 +92,4 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
 
     else:
         yield Message("system", "Invalid command format. Please provide the host info in the correct format.")           
+        return
