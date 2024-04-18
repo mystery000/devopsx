@@ -47,6 +47,25 @@ To install DevOpsX, follow these steps:
    poetry install --extras "datascience"
    ```
 
+#### Quick Installation
+To install and run DevopsX, follow these steps
+1. Clone the repository:
+   ```
+   git clone git@github.com:infractura/devopsx.git
+   ```
+2. Navigate to the DevOpsX directory:
+   ```
+   cd devopsx
+   ```
+3. Install DevopsX:
+   ```
+   ./setup.sh
+   ```
+4. Run Devopsx:
+   ```
+   ./devopsx.sh
+   ```
+
 #### System Requirements
 - DevOpsX requires root access.
 - The local user running DevOpsX requires sudo rights. For example, append the following entry in the sudoers file:
