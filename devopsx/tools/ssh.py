@@ -42,7 +42,7 @@ def check_connection(host: str, user: str, port: int = 22, identity_file: str | 
 
         logger.info("Host connection succesful.")
     except Exception as ex:
-        logger.error(f"Host connection failed due to {str(ex)}")
+        logger.error(str(ex))
         return False
     finally:
         ssh_client.close()
@@ -66,9 +66,6 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
 
         identity_file = args[2] if len(args) >=3 else ""
 
-        if "\n\n```" in identity_file:
-            identity_file = identity_file.split("\n\n```")[0]
-
         ssh_config = SSHConfig()
         ssh_config.parse(open(config_path))
         config = ssh_config.lookup(server_name.upper())
@@ -86,7 +83,7 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
                 })
                 new_host["IdentityFile"] = identity_file
                 new_host["PasswordAuthentication"] = "no"
-            elif check_connection(host, user, port):
+            elif not identity_file and check_connection(host, user, port):
                 new_host.update({
                     "Hostname": host,
                     "User": user,

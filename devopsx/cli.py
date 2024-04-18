@@ -460,7 +460,7 @@ def _include_paths(msg: Message) -> Message:
                 append_msg += "\n\n" + p
 
     # append the message with the file contents
-    if append_msg:
+    if append_msg and not msg.content.startswith("/ssh"):
         msg.content += append_msg
 
     return msg

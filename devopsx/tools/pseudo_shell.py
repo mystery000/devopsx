@@ -42,17 +42,19 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Messa
                     )
                     _connections[f"{key}"] = connection
             else:
-                host, user, port, identity_file = config["hostname"], config["user"], config["port"], config["identityfile"]
-                if check_connection(host, user, port, identity_file):
-                    connection = Connection(
-                        host=host, 
-                        user=user, 
-                        port=port,
-                        connect_kwargs={
-                            "key_filename": identity_file,
-                        }
-                    )
-                    _connections[f"{key}"] = connection
+                host, user, port, identity_files = config["hostname"], config["user"], config["port"], config["identityfile"]
+                for identity_file in identity_files:
+                    if check_connection(host, user, port, identity_file):
+                        connection = Connection(
+                            host=host, 
+                            user=user, 
+                            port=port,
+                            connect_kwargs={
+                                "key_filename": identity_file,
+                            }
+                        )
+                        _connections[f"{key}"] = connection
+                        break
         else:
             connection = _connections[f"{key}"]
 
