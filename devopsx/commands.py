@@ -83,8 +83,7 @@ def handle_cmd(
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
     match name:
         case "ps" | "pseudo-shell":
-            server_name, full_args = full_args.split(" ", 1)
-            yield from execute_pseudo_shell(server_name, full_args)
+            yield from execute_pseudo_shell(full_args)
         case "ssh":
             yield from execute_ssh(full_args)
         case "bash" | "sh" | "shell":

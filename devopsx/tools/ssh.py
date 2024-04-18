@@ -56,7 +56,7 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
         assert len(args) >= 2
         assert "@" in args[1]
         
-        server_name = args[0]
+        hostname = args[0]
         user, host_port = args[1].split("@")
         
         if ":" in host_port:
@@ -68,9 +68,9 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
 
         ssh_config = SSHConfig()
         ssh_config.parse(open(config_path))
-        config = ssh_config.lookup(server_name.upper())
+        config = ssh_config.lookup(hostname.upper())
 
-        if config["hostname"] != server_name.upper():
+        if config["hostname"] != hostname.upper():
             logger.info("This host already exists in the config file.")
         else:
             new_host = {}
@@ -94,7 +94,7 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
             if new_host:
                 # Append the new host entry to the SSH config file
                 with open(config_path, 'a') as file:
-                    file.write(f"\nHost {server_name.upper()}\n")
+                    file.write(f"\nHost {hostname.upper()}\n")
                     for key, value in new_host.items():
                         file.write(f"    {key} {value}\n")
                 yield Message("system", "New host added to the config file.")
@@ -102,6 +102,6 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
                 yield Message("system", "Host connection failed.")
     
     except AssertionError:
-        yield Message("system", "Invalid command format. Please provide the host info in the correct format.")       
+        yield Message("system", "Invalid command format. The format should be `/ssh <hostname> <user@host> [identity_file]`")       
     except Exception as ex:
         yield Message("system", f"Error: {str(ex)}")

@@ -13,13 +13,17 @@ logger = logging.getLogger(__name__)
  
 _connections: dict[str, Connection] = dict()
 
-def execute_pseudo_shell(server_name:str, cmd: str, sudo=False)-> Generator[Message, None, None]:
+def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
     try:
+        if len(cmd.split(" ")) < 2:
+            raise SyntaxError("Invalid command format. The format should be `/ps <host> <command>`")
+        
+        hostname, command = cmd.split(" ", 1)
         ssh_config = SSHConfig()
         ssh_config.parse(open(config_path))
-        config = ssh_config.lookup(server_name.upper())
+        config = ssh_config.lookup(hostname.upper())
 
-        if config["hostname"] == server_name.upper():
+        if config["hostname"] == hostname.upper():
             raise ValueError("Unregistered Host")
         
         connection: Connection = None
@@ -63,10 +67,10 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=False)-> Generator[Mess
 
         result: Result = None
 
-        if sudo or cmd.lstrip().startswith("sudo"):
-            result = connection.sudo(cmd, pty=True, warn=True)
+        if sudo or command.lstrip().startswith("sudo"):
+            result = connection.sudo(command, pty=True, warn=True)
         else:    
-            result = connection.run(cmd, pty=True, warn=True)
+            result = connection.run(command, pty=True, warn=True)
         
         sys.stdout.flush()
         print()
@@ -74,7 +78,7 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=False)-> Generator[Mess
         stdout = _shorten_stdout(result.stdout.strip())
         stderr = _shorten_stdout(result.stderr.strip())
 
-        msg = _format_block_smart("Ran command", cmd, lang="bash") + "\n\n"
+        msg = _format_block_smart("Ran command", command, lang="bash") + "\n\n"
         
         if stdout:
             msg += _format_block_smart("stdout", stdout) + "\n\n"
@@ -86,6 +90,6 @@ def execute_pseudo_shell(server_name:str, cmd: str, sudo=False)-> Generator[Mess
         yield Message("system", msg)
     except AssertionError:
         yield Message("system", "Authentication failed")
-    except Exception as e:
-        yield Message("system", content=f"Error: {e}")
+    except Exception as ex:
+        yield Message("system", content=f"Error: {str(ex)}")
     
