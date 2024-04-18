@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
  
 _connections: dict[str, Connection] = dict()
 
-def execute_pseudo_shell(server_name:str, cmd: str, sudo=True)-> Generator[Message, None, None]:
+def execute_pseudo_shell(server_name:str, cmd: str, sudo=False)-> Generator[Message, None, None]:
     try:
         ssh_config = SSHConfig()
         ssh_config.parse(open(config_path))
