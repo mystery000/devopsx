@@ -44,7 +44,6 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
                             "password": password
                         }
                     )
-                    _connections[f"{key}"] = connection
             else:
                 host, user, port, identity_files = config["hostname"], config["user"], config["port"], config["identityfile"]
                 for identity_file in identity_files:
@@ -57,7 +56,6 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
                                 "key_filename": identity_file,
                             }
                         )
-                        _connections[f"{key}"] = connection
                         break
         else:
             connection = _connections[f"{key}"]
@@ -72,6 +70,11 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
         else:    
             result = connection.run(command, pty=True, warn=True)
         
+        # Sends keepalive packets every 60 seconds to keep connections alive
+        connection.client.get_transport().set_keepalive(60)  
+        
+        _connections[f"{key}"] = connection
+
         sys.stdout.flush()
         print()
 
