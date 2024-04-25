@@ -44,7 +44,9 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
                         user=user, 
                         port=port,
                         connect_kwargs={
-                            "password": password
+                            "password": password,
+                            "allow_agent": False,
+                            "look_for_keys": False
                         }
                     )
             else:
