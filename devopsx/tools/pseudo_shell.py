@@ -1,7 +1,8 @@
+import os
 import sys
 import logging
 import getpass
-from paramiko import SSHConfig
+import configparser
 from fabric import Connection, Result
 from collections.abc import Generator
 
@@ -19,21 +20,23 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
             raise SyntaxError("Invalid command format. The format should be `/ps <host> <command>`")
         
         hostname, command = cmd.split(" ", 1)
-        ssh_config = SSHConfig()
-        ssh_config.parse(open(config_path))
-        config = ssh_config.lookup(hostname.upper())
+        hostname = hostname.upper()
+        
+        config = configparser.ConfigParser()
+        config.read(config_path)
 
-        if config["hostname"] == hostname.upper():
-            raise ValueError("Unregistered Host")
+        if hostname not in config:
+            yield Message("system", "The specific host is not registered. You should add it using this command. `/ssh <hostname> <user@host> [identity_file]`")
         
         connection: Connection = None
 
         global _connections
-        key = config["hostname"].replace(".", "")
+        host = config[hostname]
+        key = host["hostname"].replace(".", "")
 
         if f"{key}" not in _connections:
-            if config.as_bool("passwordauthentication") is True:
-                host, user, port = config["hostname"], config["user"], config["port"]
+            if config.getboolean(hostname, "PasswordAuthentication") is True:
+                host, user, port = host["hostname"], host["user"], host["port"]
                 password = getpass.getpass(prompt="Password: ")
                 if check_connection(host, user, port, password=password):
                     connection = Connection(
@@ -45,18 +48,17 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
                         }
                     )
             else:
-                host, user, port, identity_files = config["hostname"], config["user"], config["port"], config["identityfile"]
-                for identity_file in identity_files:
-                    if check_connection(host, user, port, identity_file):
-                        connection = Connection(
-                            host=host, 
-                            user=user, 
-                            port=port,
-                            connect_kwargs={
-                                "key_filename": identity_file,
-                            }
-                        )
-                        break
+                host, user, port, identity_file = host["hostname"], host["user"], host["port"], host["identityfile"]
+                identity_file = os.path.expanduser(identity_file)
+                if check_connection(host, user, port, identity_file):
+                    connection = Connection(
+                        host=host, 
+                        user=user, 
+                        port=port,
+                        connect_kwargs={
+                            "key_filename": identity_file,
+                        }
+                    )
         else:
             connection = _connections[f"{key}"]
 
