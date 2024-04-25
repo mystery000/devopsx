@@ -15,7 +15,6 @@ MAX_TIMEOUT = 4
 # Define the path to the config file 
 config_path = os.path.expanduser("~/.config/devopsx/ssh/config")
 
-
 def init_ssh() -> None:
     # Check if the config file exists
     if not os.path.exists(config_path):
@@ -23,7 +22,6 @@ def init_ssh() -> None:
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         os.mknod(config_path)
         logger.info(f"Created config file at {config_path}")
-
 
 def check_connection(host: str, user: str, port: int = 22, identity_file: str | None = None, password: str | None = None) -> bool:
     logger.info("Checking Host connection...")
@@ -62,9 +60,25 @@ def delete_entry(hostname: str) -> Generator[Message, None, None]:
         yield Message("system", f"{hostname} is removed successfully.")
     else:
         yield Message("system", f"{hostname} is not exist")
-        
+
+def ssh_into_host(hostname: str) -> Generator[Message, None, None]:
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    if hostname in config:
+        from .pseudo_shell import execute_pseudo_shell
+        yield from execute_pseudo_shell(f"{hostname} ssh {config[hostname]['user']}@localhost", sudo=False)
+    else:
+        yield Message("system", "Invalid host")
+
 def execute_ssh(cmd: str) -> Generator[Message, None, None]:
     args = cmd.split(" ")
+
+    # SSH into remote mahcine 
+    if len(args) == 1:
+        yield from ssh_into_host(args[0].upper())
+        return
+    
     try:
         assert len(args) >= 2
         

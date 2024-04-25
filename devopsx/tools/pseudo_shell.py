@@ -7,7 +7,7 @@ from fabric import Connection, Result
 from collections.abc import Generator
 
 from ..message import Message
-from .ssh import config_path, check_connection
+
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 _connections: dict[str, Connection] = dict()
 
 def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
+    from .ssh import config_path, check_connection
     try:
         if len(cmd.split(" ")) < 2:
             raise SyntaxError("Invalid command format. The format should be `/ps <host> <command>`")
