@@ -33,34 +33,61 @@ DEFAULT_MODEL: str | None = None
 # known models metadata
 # TODO: can we get this from the API?
 MODELS: dict[str, dict[str, _ModelDictMeta]] = {
+    # https://platform.openai.com/docs/models
     "openai": {
+        # TRAINING DATA: Up to Sep 2021
         "gpt-4": {
-            "context": 8193,
-            # 0.03 USD per 1k input tokens
-            # 0.06 USD per 1k output tokens
-            "price_input": 0.03,
-            "price_output": 0.06,
+            "context": 8192,
+            "price_input": 0.03,   # 0.03 USD per 1k input tokens
+            "price_output": 0.06,  # 0.06 USD per 1k output tokens
         },
-        "gpt-3.5-turbo": {
-            "context": 4097,
-            # 0.001 USD per 1k input tokens
-            # 0.002 USD per 1k output tokens
-            "price_input": 0.001,
-            "price_output": 0.002,
+        # TRAINING DATA: Up to Dec 2023
+        "gpt-4-turbo": {
+            "context": 128_000,
         },
-        "gpt-3.5-turbo-16k": {
-            "context": 16385,
-        },
-        # gpt-4-turbo
-        # https://openai.com/blog/new-models-and-developer-products-announced-at-devday
+        # TRAINING DATA: Up to Apr 2023
         "gpt-4-1106-preview": {
             "context": 128_000,
         },
+        # TRAINING DATA: Up to Apr 2023
         "gpt-4-vision-preview": {
             "context": 128_000,
         },
+        # TRAINING DATA: Up to Dec 2023
+        "gpt-4-turbo-preview": {
+            "context": 128_000,
+        },
+        # TRAINING DATA: Up to Sep 2021
+        "gpt-3.5-turbo": {
+            "context": 16385,
+            "price_input": 0.001,  # 0.001 USD per 1k input tokens
+            "price_output": 0.002, # 0.002 USD per 1k output tokens
+        },
+        # TRAINING DATA: Up to Sep 2021
+        "gpt-3.5-turbo-16k": {
+            "context": 16385,
+        },
+        # TRAINING DATA: Up to Sep 2021
         "gpt-3.5-turbo-1106": {
             "context": 16385,
+        },
+    },
+    # https://ai.google.dev/gemini-api/docs/models/gemini
+    "google": {
+        # TRAINING DATA: Up to April 2024
+        "gemini-1.5-pro-latest": {
+            "context": 1_048_576,
+        },
+        # TRAINING DATA: Up to February 2024
+        "gemini-1.0-pro-latest": {
+            "context": 30720,
+        },
+        "gemini-1.0-ultra-latest": {
+            "context": 128_000,
+        },
+        # TRAINING DATA: December 2023
+        "gemini-1.0-pro-vision-latest": {
+            "context": 12288,
         },
     }
 }
