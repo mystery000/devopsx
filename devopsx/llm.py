@@ -54,6 +54,10 @@ def init_llm(llm: str, interactive: bool):
         api_key = config.get_env_required("GEMINI_PRO_API_KEY")
         api_base = config.get_env_required("GEMINI_OPENAI_PROXY_API_BASE")
         oai_client = OpenAI(api_key=api_key, base_url=api_base)
+    elif llm == "groq":
+        api_key = config.get_env_required("GROQ_API_KEY")
+        api_base = config.get_env_required("GROQ_API_ENDPOINT")
+        oai_client = OpenAI(api_key=api_key, base_url=api_base)
     elif llm == "local":
         api_key = config.get_env("OPENAI_API_BASE", "local")
         api_base = config.get_env_required("OPENAI_API_BASE")

@@ -89,6 +89,21 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         "gemini-1.0-pro-vision-latest": {
             "context": 12288,
         },
+    },
+    # https://console.groq.com/docs/models
+    "groq": {
+        "llama3-8b-8192": {
+            "context": 8192
+        },
+        "llama3-70b-8192": {
+            "context": 8192
+        },
+        "mixtral-8x7b-32768": {
+            "context": 32768
+        },
+        "gemma-7b-it": {
+            "context": 8192
+        }
     }
 }
 
