@@ -69,7 +69,7 @@ def ssh_into_host(hostname: str) -> Generator[Message, None, None]:
         from .pseudo_shell import execute_pseudo_shell
         yield from execute_pseudo_shell(f"{hostname} ssh {config[hostname]['user']}@localhost", sudo=False)
     else:
-        yield Message("system", "Invalid host")
+        yield Message("system", "Invalid host! You should register the host first by running this command `/ssh <hostname> <user@host> [identity_file]`")
 
 def execute_ssh(cmd: str) -> Generator[Message, None, None]:
     args = cmd.split(" ")

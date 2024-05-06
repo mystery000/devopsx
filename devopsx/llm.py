@@ -51,8 +51,8 @@ def init_llm(llm: str, interactive: bool):
             azure_endpoint=azure_endpoint,
         )
     elif llm == "google":
-        api_key = config.get_env_required("GEMINI_PRO_API_KEY")
-        api_base = config.get_env_required("GEMINI_OPENAI_PROXY_API_BASE")
+        api_key = config.get_env_required("GEMINI_API_KEY")
+        api_base = config.get_env_required("GEMINI_API_ENDPOINT")
         oai_client = OpenAI(api_key=api_key, base_url=api_base)
     elif llm == "groq":
         api_key = config.get_env_required("GROQ_API_KEY")
