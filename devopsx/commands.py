@@ -10,12 +10,11 @@ from . import llm
 from .constants import CMDFIX
 from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs
-from .tools import execute_msg, execute_python, execute_shell, execute_ssh
 from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute, len_tokens
-from .tools.pseudo_shell import execute_pseudo_shell
+from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +85,10 @@ def handle_cmd(
             yield from execute_pseudo_shell(full_args)
         case "ssh":
             yield from execute_ssh(full_args)
-        case "bash" | "sh" | "shell":
+        case "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm)
+        case "b" | "bash":
+            yield from execute_bash(full_args)
         case "python" | "py":
             yield from execute_python(full_args, ask=not no_confirm)
         case "log":

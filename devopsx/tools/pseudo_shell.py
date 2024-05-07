@@ -38,7 +38,7 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
         if f"{key}" not in _connections:
             if config.getboolean(hostname, "PasswordAuthentication") is True:
                 host, user, port = host["hostname"], host["user"], host["port"]
-                password = getpass.getpass(prompt="Password: ")
+                password = getpass.getpass(prompt="[sudo] password: ")
                 if check_connection(host, user, port, password=password):
                     connection = Connection(
                         host=host, 

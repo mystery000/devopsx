@@ -6,6 +6,7 @@ from .patch import execute_patch
 from .python import execute_python, init_python
 from .save import execute_save
 from .shell import execute_shell
+from .bash import execute_bash
 from .ssh import execute_ssh, init_ssh
 from .pseudo_shell import execute_pseudo_shell
 from .summarize import summarize
@@ -18,6 +19,7 @@ __all__ = [
     "execute_python",
     "execute_shell",
     "execute_pseudo_shell",
+    "execute_bash",
     "execute_ssh"
     "execute_save",
     "summarize",
