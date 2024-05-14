@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
     "--llm",
     default="openai",
     help="LLM to use.",
-    type=click.Choice(["openai", "local"]),
+    type=click.Choice(["openai", "azure", "google", "groq", "local"]),
 )
 @click.option(
     "--model",
