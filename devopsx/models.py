@@ -71,6 +71,10 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         "gpt-3.5-turbo-1106": {
             "context": 16385,
         },
+        # TRAINING DATA: Up to October 2023
+        "gpt-4o": {
+            "context": 128_000,
+        },        
     },
     # https://ai.google.dev/gemini-api/docs/models/gemini
     "google": {
