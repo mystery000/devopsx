@@ -35,6 +35,10 @@ DEFAULT_MODEL: str | None = None
 MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     # https://platform.openai.com/docs/models
     "openai": {
+        # TRAINING DATA: Up to October 2023
+        "gpt-4o": {
+            "context": 128_000,
+        },
         # TRAINING DATA: Up to Sep 2021
         "gpt-4": {
             "context": 8192,
@@ -71,10 +75,7 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         "gpt-3.5-turbo-1106": {
             "context": 16385,
         },
-        # TRAINING DATA: Up to October 2023
-        "gpt-4o": {
-            "context": 128_000,
-        },        
+      
     },
     # https://ai.google.dev/gemini-api/docs/models/gemini
     "google": {
@@ -92,6 +93,9 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # TRAINING DATA: December 2023
         "gemini-1.0-pro-vision-latest": {
             "context": 12288,
+        },        
+        "gemini-1.5-flash-latest": {
+            "context": 1_048_576
         },
     },
     # https://console.groq.com/docs/models
