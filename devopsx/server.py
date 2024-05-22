@@ -127,12 +127,14 @@ def api_conversation_generate(logfile: str):
 def static_proxy(path):
     return flask.send_from_directory("static", path)
 
+@api.route('/favicon.ico')
+def favicon():
+    return flask.send_from_directory("../static", 'favicon.png')
 
 # serve index.html from the root
 @api.route("/")
 def root():
     return flask.send_from_directory("../static", "index.html")
-
 
 def create_app():
     app = flask.Flask(__name__, static_folder="../static")
