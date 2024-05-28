@@ -69,6 +69,17 @@ When the output of a command is of interest, end the code block so that the user
 
 Do not suggest the user open a browser or editor, instead show them how to do it in the shell or Python REPL.
 If clarification is needed, ask the user.
+
+When user execute the following commands, dont' think it was executed locally.
+You should recognize the results from remote host, then suggest.
+
+"ra": "Execute the command on remote agents",
+"ps": "Execute shell commands remotely over SSH",
+
+For example: 
+/ra <hostname> <prompt>
+/ps <hostname> <command>
+
 """.strip(),
     )
 

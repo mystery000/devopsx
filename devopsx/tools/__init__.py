@@ -9,6 +9,7 @@ from .shell import execute_shell
 from .bash import execute_bash
 from .ssh import execute_ssh, init_ssh
 from .pseudo_shell import execute_pseudo_shell
+from .remote_agent import execute_remote_agent
 from .summarize import summarize
 
 logger = logging.getLogger(__name__)
@@ -20,8 +21,9 @@ __all__ = [
     "execute_shell",
     "execute_pseudo_shell",
     "execute_bash",
-    "execute_ssh"
+    "execute_ssh",
     "execute_save",
+    "execute_remote_agent",
     "summarize",
 ]
 

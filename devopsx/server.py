@@ -121,6 +121,30 @@ def api_conversation_generate(logfile: str):
         [{"role": msg.role, "content": msg.content} for msg in resp_msgs]
     )
 
+from .commands import handle_cmd
+
+# remote agent communication channel
+@api.route("/api/conversations/agent/generate", methods=["POST"])
+def api_agent_conversation_generate():
+    req_json = flask.request.json or {}
+
+    cmd = req_json.get("command")
+    
+    log = LogManager()
+    log.append(Message(role="user", content=cmd))    
+
+    # if prompt is a user-command, execute it
+    if log[-1].role == "user":
+        # TODO: capture output of command and return it
+        execute_cmd(log[-1], log)
+    
+    # performs reduction/context trimming, if necessary
+    msgs = log.prepare_messages()
+
+    return flask.jsonify(
+        [{"role": msg.role, "content": msg.content} for msg in msgs]
+    )
+
 
 # serve the static assets in the static folder
 @api.route("/static/<path:path>")
