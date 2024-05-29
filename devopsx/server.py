@@ -121,8 +121,6 @@ def api_conversation_generate(logfile: str):
         [{"role": msg.role, "content": msg.content} for msg in resp_msgs]
     )
 
-from .commands import handle_cmd
-
 # remote agent communication channel
 @api.route("/api/conversations/agent/generate", methods=["POST"])
 def api_agent_conversation_generate():

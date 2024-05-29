@@ -26,7 +26,7 @@ def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
         if hostname not in config:
            raise LookupError("The specific host is not registered. You should add it using this command. `/ssh <hostname> <user@host> [identity_file]`")
 
-        url = f'http://{config[hostname]["hostname"]}:5000/api/conversations/agent/generate'
+        url = f'https://f6f9-5-8-93-225.ngrok-free.app/api/conversations/agent/generate'
 
         response = requests.post(url, json={
             "command": command
