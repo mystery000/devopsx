@@ -1,8 +1,13 @@
 import socket
 from kombu import Queue
 from celery import Celery
-from ..llm import reply
+
 from ..message import Message
+from ..llm import reply, init_llm
+from ..models import set_default_model
+
+init_llm("openai", False)
+set_default_model("gpt-4o")
 
 app = Celery("devopsx", broker="amqp://master:devopsx@5.8.93.225//", backend='rpc://')
 
@@ -24,3 +29,4 @@ def devopsx_reply(prompt: str):
     hostname = socket.gethostname()  
     message = reply([Message(role='user', content=prompt)], model="gpt-4o")
     return f"{hostname}: {message.content}"
+
