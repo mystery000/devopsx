@@ -18,6 +18,8 @@ app.conf.task_queues = (
     Queue('D2',  routing_key='d2.#'),
     Queue('D3',  routing_key='d3.#'),
     Queue('D4',  routing_key='d4.#'),
+    Queue('D5',  routing_key='d5.#'),
+    Queue('WEB', routing_key='web.#'),
 )
 
 app.conf.task_default_exchange = 'tasks'
