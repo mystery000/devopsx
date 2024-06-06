@@ -9,7 +9,7 @@ from .shell import execute_shell
 from .bash import execute_bash
 from .ssh import execute_ssh, init_ssh
 from .pseudo_shell import execute_pseudo_shell
-from .remote_agent import execute_remote_agent
+from .remote_agent import execute_remote_agent, init_agents
 from .summarize import summarize
 
 logger = logging.getLogger(__name__)
@@ -109,3 +109,4 @@ def init_tools() -> None:
     """Runs initialization logic for tools."""
     init_python()
     init_ssh()
+    init_agents()
