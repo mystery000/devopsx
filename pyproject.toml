@@ -47,6 +47,8 @@ transformers = {version = "*", optional=true}
 
 # server
 flask = {version = "^2.3", optional=true}
+kombu = "^5.3.7"
+celery = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2"
