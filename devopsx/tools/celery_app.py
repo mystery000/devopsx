@@ -9,10 +9,10 @@ app = Celery("devopsx", broker="amqp://master:devopsx@5.8.93.225//", backend='rp
 app.conf.task_default_queue = 'default'
 
 app.conf.task_queues = (
-    Queue('D1',  routing_key='d1.devopsx.#'),
-    Queue('D2',  routing_key='d2.devopsx.#'),
-    Queue('D3',  routing_key='d3.devopsx.#'),
-    Queue('D4',  routing_key='d4.devopsx.#'),
+    Queue('D1',  routing_key='d1.#'),
+    Queue('D2',  routing_key='d2.#'),
+    Queue('D3',  routing_key='d3.#'),
+    Queue('D4',  routing_key='d4.#'),
 )
 
 app.conf.task_default_exchange = 'tasks'

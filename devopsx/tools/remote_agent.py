@@ -5,7 +5,7 @@ import configparser
 from collections.abc import Generator
 
 from ..message import Message
-from .celery import devopsx_reply
+from .celery_app import devopsx_reply
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
         hostname, command = cmd.split(" ", 1)
         hostname = hostname.upper()
 
-        result = devopsx_reply.apply_async(args=[command], queue=hostname, routing_key=f'{hostname.lower()}.devopsx.reply')
+        result = devopsx_reply.apply_async(args=[command], queue=hostname, routing_key=f'{hostname.lower()}.reply')
 
         if result.ready():
             message = result.get()
