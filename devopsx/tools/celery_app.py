@@ -9,8 +9,9 @@ from ..models import set_default_model
 init_llm("openai", False)
 set_default_model("gpt-4o")
 
-app = Celery("devopsx", broker="amqp://master:devopsx@5.8.93.225//", backend='rpc://')
-
+app = Celery("devopsx", broker="pyamqp://master:devopsx@5.8.93.225//", backend='rpc://')
+app.conf.accept_content = ['pickle', 'json', 'msgpack', 'yaml']
+app.conf.worker_send_task_events = True
 app.conf.task_default_queue = 'default'
 
 app.conf.task_queues = (

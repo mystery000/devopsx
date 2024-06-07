@@ -1,7 +1,5 @@
 import os
 import logging
-import requests
-import configparser
 from collections.abc import Generator
 
 from ..message import Message
@@ -22,10 +20,10 @@ def init_agents() -> None:
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         os.mknod(config_path)
         logger.info(f"Created agents config file at {config_path}")
-    
+
+
 def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
     try:
-
         if len(cmd.split(" ")) < 2:
             raise SyntaxError("Invalid command format. The format should be `/ra <host> <command>`")
 
@@ -34,28 +32,7 @@ def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
 
         result = devopsx_reply.apply_async(args=[command], queue=hostname, routing_key=f'{hostname.lower()}.reply')
 
-        if result.ready():
-            message = result.get()
-            yield Message("system", content=message)
-
-        # config = configparser.ConfigParser()
-        # config.read(config_path)
-
-        # if hostname not in config:
-        #    raise LookupError("The specific host is not registered. You should add it using this command. `/ssh <hostname> <user@host> [identity_file]`")
-
-        # url = f'https://f6f9-5-8-93-225.ngrok-free.app/api/conversations/agent/generate'
-
-        # response = requests.post(url, json={
-        #     "command": command
-        # })
-
-        # if response.status_code  == 200:
-        #     msgs = response.json()
-        #     for msg in msgs: print(msg["content"])
-        # else:
-        #     print(f"Request failed with status code: {response.status_code}")
-        
+        yield Message("system", content=result.get(propagate=False))
 
     except Exception as ex:
         yield Message("system", content=f"Error: {ex}")
