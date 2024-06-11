@@ -10,7 +10,16 @@ from .models import set_default_model
 init_llm("openai", False)
 set_default_model("gpt-4o")
 
-app = Celery("devopsx", broker="pyamqp://master:devopsx@5.8.93.225:5672//", backend='rpc://')
+app = Celery(
+    "devopsx", 
+    broker="pyamqp://master:devopsx@5.8.93.225:5672//", 
+    backend='rpc://',
+    broker_heartbeat = 60,   # Send a heartbeat every 60 seconds
+    broker_pool_limit = 10,  # Limit pool size as per environment capability
+    broker_connection_timeout = 30,
+    broker_connection_retry = True,
+    broker_connection_max_retries = 100,
+)
 
 @app.task(name="DevopsxAssistant")
 def chat(command: str):
@@ -49,23 +58,23 @@ def chat(command: str):
     help="Queues to consume"
 )
 def main(queues: list[str]):
-    app.conf.accept_content = ['pickle', 'json', 'msgpack', 'yaml']
-    app.conf.worker_send_task_events = True
-    app.conf.task_default_queue = 'default'
-    app.conf.worker_hijack_root_logger = False
-
-    app.conf.task_queues = (
-        Queue('D1',  routing_key='d1.#'),
-        Queue('D2',  routing_key='d2.#'),
-        Queue('D3',  routing_key='d3.#'),
-        Queue('D4',  routing_key='d4.#'),
-        Queue('D5',  routing_key='d5.#'),
-        Queue('WEB', routing_key='web.#'),
+    app.conf.update(
+        accept_content = ['pickle', 'json', 'msgpack', 'yaml'],
+        worker_send_task_events = True,
+        task_default_queue = 'default',
+        worker_hijack_root_logger = False,
+        task_queues = (
+            Queue('D1', routing_key='d1.#'),
+            Queue('D2', routing_key='d2.#'),
+            Queue('D3', routing_key='d3.#'),
+            Queue('D4', routing_key='d4.#'),
+            Queue('D5', routing_key='d5.#'),
+            Queue('WEB', routing_key='web.#'),
+        ),
+        task_default_exchange = 'tasks',
+        task_default_exchange_type = 'topic',
+        task_default_routing_key = 'task.default'
     )
-
-    app.conf.task_default_exchange = 'tasks'
-    app.conf.task_default_exchange_type = 'topic'
-    app.conf.task_default_routing_key = 'task.default'
 
     args = ["worker", "-Q", ",".join(queues), "--loglevel=INFO"]
     app.worker_main(argv=args)

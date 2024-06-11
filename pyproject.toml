@@ -50,6 +50,7 @@ transformers = {version = "*", optional=true}
 flask = {version = "^2.3", optional=true}
 kombu = "^5.3.7"
 celery = "^5.4.0"
+flower = "^2.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2"
