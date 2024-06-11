@@ -10,7 +10,7 @@ from .models import set_default_model
 init_llm("openai", False)
 set_default_model("gpt-4o")
 
-app = Celery("devopsx", broker="pyamqp://localhost:5672//", backend='rpc://')
+app = Celery("devopsx", broker="pyamqp://master:devopsx@5.8.93.225:5672//", backend='rpc://')
 
 @app.task(name="DevopsxAssistant")
 def chat(command: str):
