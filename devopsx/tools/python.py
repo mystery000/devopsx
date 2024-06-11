@@ -72,7 +72,7 @@ def check_available_packages():
             missing.append(package)
     if missing:
         logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `pip install gptme-python -E datascience`"
+            f"Missing packages: {', '.join(missing)}. Install them with `pip install devopsx-python -E datascience`"
         )
 
 def get_browser():

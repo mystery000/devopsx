@@ -19,24 +19,20 @@ from .tools import execute_msg
 
 api = flask.Blueprint("api", __name__)
 
-
 @api.route("/api")
 def api_root():
     return flask.jsonify({"message": "Hello World!"})
-
 
 @api.route("/api/conversations")
 def api_conversations():
     conversations = list(get_conversations())
     return flask.jsonify(conversations)
 
-
 @api.route("/api/conversations/<path:logfile>")
 def api_conversation(logfile: str):
     """Get a conversation."""
     log = LogManager.load(logfile)
     return flask.jsonify(log.to_dict(branches=True))
-
 
 @api.route("/api/conversations/<path:logfile>", methods=["PUT"])
 def api_conversation_put(logfile: str):
@@ -57,7 +53,6 @@ def api_conversation_put(logfile: str):
     log.write()
     return {"status": "ok"}
 
-
 @api.route(
     "/api/conversations/<path:logfile>",
     methods=["POST"],
@@ -73,7 +68,6 @@ def api_conversation_post(logfile: str):
     msg = Message(req_json["role"], req_json["content"])
     log.append(msg)
     return {"status": "ok"}
-
 
 # generate response
 @api.route("/api/conversations/<path:logfile>/generate", methods=["POST"])
@@ -121,29 +115,6 @@ def api_conversation_generate(logfile: str):
         [{"role": msg.role, "content": msg.content} for msg in resp_msgs]
     )
 
-# remote agent communication channel
-@api.route("/api/conversations/agent/generate", methods=["POST"])
-def api_agent_conversation_generate():
-    req_json = flask.request.json or {}
-
-    cmd = req_json.get("command")
-    
-    log = LogManager()
-    log.append(Message(role="user", content=cmd))    
-
-    # if prompt is a user-command, execute it
-    if log[-1].role == "user":
-        # TODO: capture output of command and return it
-        execute_cmd(log[-1], log)
-    
-    # performs reduction/context trimming, if necessary
-    msgs = log.prepare_messages()
-
-    return flask.jsonify(
-        [{"role": msg.role, "content": msg.content} for msg in msgs]
-    )
-
-
 # serve the static assets in the static folder
 @api.route("/static/<path:path>")
 def static_proxy(path):
@@ -163,7 +134,6 @@ def create_app():
     app.register_blueprint(api)
 
     return app
-
 
 def main():
     app = create_app()

@@ -12,14 +12,15 @@ logger = logging.getLogger(__name__)
  
 password = None
 
-def execute_bash(cmd, sudo=False)-> Generator[Message, None, None]:
+def execute_bash(cmd: str, sudo: bool = False, pty: bool = True)-> Generator[Message, None, None]:
     try:
         if sudo or cmd.lstrip().startswith("sudo"):
             global password
             if password is None: password = getpass.getpass(prompt="[sudo] password: ")
             result = invoke.sudo(cmd, pty=True, warn=True, password=password)
         else:    
-            result = invoke.run(cmd, pty=True, warn=True)
+            if pty: result = invoke.run(cmd, pty=True, warn=True)
+            else: result = invoke.run(cmd)
 
         sys.stdout.flush()
         print()

@@ -62,20 +62,20 @@ action_descriptions: dict[Actions, str] = {
 
 COMMANDS = set(action_descriptions.keys())
 
-def execute_cmd(msg: Message, log: LogManager) -> bool:
+def execute_cmd(msg: Message, log: LogManager, pty: bool = True) -> bool:
     """Executes any user-command, returns True if command was executed."""
     assert msg.role == "user"
 
     # if message starts with ., treat as command
     # when command has been run,
     if msg.content[:1] in ["/"]:
-        for resp in handle_cmd(msg.content, log, no_confirm=True):
+        for resp in handle_cmd(msg.content, log, no_confirm=True, pty=pty):
             log.append(resp)
         return True
     return False
 
 def handle_cmd(
-    cmd: str, log: LogManager, no_confirm: bool
+    cmd: str, log: LogManager, no_confirm: bool, pty: bool
 ) -> Generator[Message, None, None]:
     """Handles a command."""
     cmd = cmd.lstrip(CMDFIX)
@@ -90,7 +90,7 @@ def handle_cmd(
         case "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm)
         case "b" | "bash":
-            yield from execute_bash(full_args)
+            yield from execute_bash(full_args, pty=pty)
         case "ra" | "remote-agent":
             yield from execute_remote_agent(full_args)
         case "python" | "py":

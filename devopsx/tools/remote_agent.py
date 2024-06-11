@@ -3,8 +3,7 @@ import logging
 from collections.abc import Generator
 
 from ..message import Message
-from .celery_app import devopsx_reply
-from .shell import _shorten_stdout, _format_block_smart
+from ..celery import chat
 
 logger = logging.getLogger(__name__)
  
@@ -21,8 +20,7 @@ def init_agents() -> None:
         os.mknod(config_path)
         logger.info(f"Created agents config file at {config_path}")
 
-
-def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
+def execute_remote_agent(cmd, sudo = False)-> Generator[Message, None, None]:
     try:
         if len(cmd.split(" ")) < 2:
             raise SyntaxError("Invalid command format. The format should be `/ra <host> <command>`")
@@ -30,7 +28,7 @@ def execute_remote_agent(cmd, sudo=False)-> Generator[Message, None, None]:
         hostname, command = cmd.split(" ", 1)
         hostname = hostname.upper()
 
-        result = devopsx_reply.apply_async(args=[command], queue=hostname, routing_key=f'{hostname.lower()}.reply')
+        result = chat.apply_async(args=[command], queue=hostname, routing_key=f'{hostname.lower()}.chat')
 
         yield Message("system", content=result.get(propagate=False))
 
