@@ -1,18 +1,29 @@
+import sys
 import click
 import socket
 from kombu import Queue
 from celery import Celery
 
 from .message import Message
+from .config import get_config
 from .llm import reply, init_llm
 from .models import set_default_model
 
 init_llm("openai", False)
 set_default_model("gpt-4o")
 
+config = get_config()
+
+config_rabbitmq = {
+    "host": config.get_env('RABBITMQ_HOST', None),
+    "port": config.get_env('RABBITMQ_PORT', 5672),
+    "username": config.get_env('RABBITMQ_USERNAME', None),
+    "password": config.get_env('RABBITMQ_PASSWORD', None),
+}
+
 app = Celery(
     "devopsx", 
-    broker="pyamqp://master:devopsx@5.8.93.225:5672//", 
+    broker=f"pyamqp://{config_rabbitmq['username']}:{config_rabbitmq['password']}@{config_rabbitmq['host']}:{config_rabbitmq['port']}//", 
     backend='rpc://',
     broker_heartbeat = 60,   # Send a heartbeat every 60 seconds
     broker_pool_limit = 10,  # Limit pool size as per environment capability
@@ -58,6 +69,13 @@ def chat(command: str):
     help="Queues to consume"
 )
 def main(queues: list[str]):
+    # ensure we have initialized the rabbitmq server settings
+    if all([bool(config_rabbitmq[key]) for key in config_rabbitmq]):
+        pass
+    else:
+        print("Error: Required RabbitMQ configuration data is missing. Please ensure that the environment variables RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USERNAME, and RABBITMQ_PASSWORD are correctly set in the environment or configuration files.")
+        sys.exit(1)
+
     app.conf.update(
         accept_content = ['pickle', 'json', 'msgpack', 'yaml'],
         worker_send_task_events = True,
