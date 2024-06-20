@@ -2,7 +2,7 @@ import sys
 import click
 import socket
 from kombu import Queue
-from celery import Celery
+from celery import Celery, signals
 
 from .message import Message
 from .config import get_config
@@ -32,7 +32,15 @@ app = Celery(
     broker_connection_max_retries = 100,
 )
 
-@app.task(name="DevopsxAssistant")
+@signals.task_prerun.connect
+def task_prerun_handler(signal, sender, task_id, task, args, kwargs, **extras):
+    pass
+
+@signals.task_postrun.connect
+def task_postrun_handler(sender=None, task_id=None, task=None, state=None, **kwargs):
+    pass
+
+@app.task(name="devopsx_assistant")
 def chat(command: str):
     from .commands import execute_cmd, LogManager
 
