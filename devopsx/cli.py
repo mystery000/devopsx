@@ -80,7 +80,7 @@ The chat offers some commands that can be used to interact with the system:
 )
 @click.option(
     "--model",
-    default="gpt-4",
+    default="gpt-4o",
     help="Model to use.",
 )
 @click.option(
