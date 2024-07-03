@@ -1,9 +1,11 @@
- ## Infractura DevOpsX
+## Infractura DevOpsX
 
 #### Overview
+
 Infractura.com presents DevOpsX, a comprehensive multi-agent generative AI-based tool designed to oversee system/network infrastructure, facilitate code development/deployment, and manage local environments using natural language.
 
 #### Features
+
 - **Code Execution**
   - Direct execution of code (shell and Python) in the local environment.
   - Use of command-line tools to interact with files, access the web, etc.
@@ -21,7 +23,9 @@ Infractura.com presents DevOpsX, a comprehensive multi-agent generative AI-based
   - Automatic naming of conversations.
 
 #### Installation Instructions
+
 To install DevOpsX, follow these steps:
+
 1. Clone the repository:
    ```
    git clone git@github.com:infractura/devopsx.git
@@ -48,7 +52,9 @@ To install DevOpsX, follow these steps:
    ```
 
 #### Quick Installation
+
 To install and run DevOpsX, follow these steps
+
 1. Clone the repository:
    ```
    git clone git@github.com:infractura/devopsx.git
@@ -67,7 +73,9 @@ To install and run DevOpsX, follow these steps
    ```
 
 #### Update DevOpsX
+
 To install and run DevOpsX, follow these steps
+
 1. Navigate to the DevOpsX directory
 2. Pull the changes from git repository:
    ```
@@ -83,6 +91,7 @@ To install and run DevOpsX, follow these steps
    ```
 
 #### System Requirements
+
 - DevOpsX requires root access.
 - The local user running DevOpsX requires sudo rights. For example, append the following entry in the sudoers file:
   ```
@@ -90,15 +99,20 @@ To install and run DevOpsX, follow these steps
   ```
 
 #### Known Limitations:
+
 - Insistence that the tool write scripts to disk versus executing in the local environment.
 - A warning to avoid truncation, as scripts will be truncated.
 
 #### LLM Access
-To use GPT-4+, an OpenAI API KEY is required. Example start command: 
+
+To use GPT-4+, an OpenAI API KEY is required. Example start command:
+
 ```
 devopsx --llm openai --model gpt-4-1106-preview --prompt-system short
 ```
+
 ##### Available OpenAI models
+
 - gpt-4
 - gpt-4-turbo
 - gpt-4-1106-preview
@@ -108,24 +122,45 @@ devopsx --llm openai --model gpt-4-1106-preview --prompt-system short
 - gpt-3.5-turbo-16k
 - gpt-3.5-turbo-1106
 
-To use Gemini models, an Gemini API KEY is required. Example start command: 
+To use Gemini models, an Gemini API KEY is required. Example start command:
+
 ```
 devopsx --llm google --model gemini-1.5-pro-latest --prompt-system short
 ```
+
 ##### Available Gemini models
+
 - gemini-1.5-pro-latest
 - gemini-1.0-pro-latest
 - gemini-1.0-ultra-latest
 - gemini-1.0-pro-vision-latest
 
-To use GROQ models, an GROQ API KEY is required. Example start command: 
+To use GROQ models, an GROQ API KEY is required. Example start command:
+
 ```
 devopsx --llm groq --model llama3-8b-8192 --prompt-system short
 ```
+
 ##### Available Gemini models
+
 - llama3-8b-8192
 - llama3-70b-8192
 - mixtral-8x7b-32768
 - gemma-7b-it
+
+To use Claude family of models, an ANTHROPIC API KEY is required. Example start command:
+
+```
+devopsx --llm anthropic --model claude-3-5-sonnet-20240620
+```
+
+##### Available Gemini models
+
+- claude-instant-1.2
+- claude-2.1
+- claude-3-5-sonnet-20240620
+- claude-3-opus-20240229
+- claude-3-sonnet-20240229
+- claude-3-haiku-20240307
 
 **Caution:** Long stdout output will consume tokens.
