@@ -19,11 +19,13 @@ import (
 const (
 	Gemini1Pro       = "gemini-1.0-pro-latest"
 	Gemini1Dot5Pro   = "gemini-1.5-pro-latest"
-	Gemini1Dot5Flash = "gemini-1.5-flash-latest"
+	Gemini1ProVision = "gemini-1.0-pro-vision-latest"
+	Gemini1Ultra     = "gemini-1.0-ultra-latest"
 
 	genaiRoleUser  = "user"
 	genaiRoleModel = "model"
 )
+
 
 type GeminiAdapter struct {
 	client *genai.Client

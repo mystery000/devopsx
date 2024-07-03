@@ -45,18 +45,19 @@ type ChatCompletionRequest struct {
 
 func (req *ChatCompletionRequest) ToGenaiModel() string {
 	switch {
-	case req.Model == openai.GPT4VisionPreview:
-		if os.Getenv("GPT_4_VISION_PREVIEW") == Gemini1Dot5Pro {
+		case req.Model == openai.GPT4VisionPreview:
+			if os.Getenv("GPT_4_VISION_PREVIEW") == Gemini1Dot5Pro {
+				return Gemini1Dot5Pro
+			}
+			return Gemini1ProVision
+		case req.Model == openai.GPT4TurboPreview || req.Model == openai.GPT4Turbo1106 || req.Model == openai.GPT4Turbo0125:
 			return Gemini1Dot5Pro
-		}
-
-		return Gemini1Dot5Flash
-	case req.Model == openai.GPT4TurboPreview || req.Model == openai.GPT4Turbo1106 || req.Model == openai.GPT4Turbo0125:
-		return Gemini1Dot5Pro
-	case strings.HasPrefix(req.Model, openai.GPT4):
-		return Gemini1Dot5Flash
-	default:
-		return Gemini1Pro
+		case strings.HasPrefix(req.Model, openai.GPT4):
+			return Gemini1Ultra
+		case req.Model == Gemini1ProVision || req.Model == Gemini1Pro || req.Model == Gemini1Ultra:
+			return req.Model
+		default:
+			return Gemini1Dot5Pro
 	}
 }
 
