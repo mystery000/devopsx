@@ -112,6 +112,45 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         "gemma-7b-it": {
             "context": 8192
         }
+    },
+    # https://docs.anthropic.com/en/docs/about-claude/models
+    "anthropic": {
+        # Training data cut-off: Early 2023
+        "claude-instant-1.2": {
+            "context": 100_000,
+            "price_input": 0.80,   # 0.80 USD per 1 MTok input tokens
+            "price_output": 2.40,  # 2.40 USD per 1 MTok output tokens 	
+        },
+        # Training data cut-off: Early 2023
+        "claude-2.1": {
+            "context": 200_000,
+            "price_input": 8.00,    # 8.00 USD per 1 MTok input tokens
+            "price_output": 24.00,  # 24.00 USD per 1 MTok output tokens 	
+        },
+        # Training data cut-off: Apr 2024
+        "claude-3-5-sonnet-20240620": {
+            "context": 200_000,
+            "price_input": 3.00,    # 3.00 USD per 1 MTok input tokens
+            "price_output": 15.00,  # 15.00 USD per 1 MTok output tokens 	
+        },
+        # Training data cut-off: Aug 2023
+        "claude-3-opus-20240229": {
+            "context": 200_000,
+            "price_input": 15.00,   # 15.00 USD per 1 MTok input tokens
+            "price_output": 75.00,  # 75.00 USD per 1 MTok output tokens 	
+        },
+        # Training data cut-off: Aug 2023
+        "claude-3-sonnet-20240229": {
+            "context": 200_000,
+            "price_input": 3.00,    # 3.00 USD per 1 MTok input tokens
+            "price_output": 15.00,  # 15.00 USD per 1 MTok output tokens 	
+        },
+        # Training data cut-off: Aug 2023
+        "claude-3-haiku-20240307": {
+            "context": 200_000,
+            "price_input": 0.25,   # 0.25 USD per 1 MTok input tokens
+            "price_output": 1.25,  # 1.25 USD per 1 MTok output tokens 	
+        },
     }
 }
 
