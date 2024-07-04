@@ -1,4 +1,4 @@
-FROM python:3.10-alpine
+FROM python:3.9-slim-buster
 
 WORKDIR /app
 
@@ -18,4 +18,4 @@ RUN poetry install --only main
 EXPOSE 8000
 
 # Set the command to run the application
-CMD ["poetry", "run", "python", "claude_to_openai/app.py"]
+CMD ["poetry", "run", "python", "src/app.py"]

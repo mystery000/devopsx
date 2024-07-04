@@ -2,8 +2,6 @@ import os
 import time
 from typing import Dict
 from fastapi import Request
-from numpy import append
-from sympy import apart
 from util import num_tokens_from_string
 from anthropic import AsyncAnthropic
 from anthropic.types import Message, RawContentBlockDeltaEvent
@@ -107,7 +105,7 @@ class ClaudeAdapter:
     async def chat(self, request: Request):
         openai_params = await request.json()
         headers = request.headers
-        print(openai_params)
+        
         claude_params = self.openai_to_claude_params(openai_params)
 
         api_key = self.get_api_key(headers)
