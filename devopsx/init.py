@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from .dirs import get_readline_history_file
 from .llm import init_llm
-from .models import set_default_model
+from .models import set_model
 from .tabcomplete import register_tabcomplete
 from .tools import init_tools
 
@@ -27,7 +27,7 @@ def init(llm: str, model: str, interactive: bool):
 
     # set up API_KEY and API_BASE, needs to be done before loading history to avoid saving API_KEY
     init_llm(llm, interactive)
-    set_default_model(model)
+    set_model(llm, model)
 
     if interactive:  # pragma: no cover
         _load_readline_history()

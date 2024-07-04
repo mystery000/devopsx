@@ -1,34 +1,28 @@
+import sys
 import logging
 from dataclasses import dataclass
 from typing import TypedDict
-
 from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class ModelMeta:
     provider: str
     model: str
     context: int
-
-    # price in USD per 1k tokens
-    # if price is not set, it is assumed to be 0
     price_input: float = 0
     price_output: float = 0
 
 
 class _ModelDictMeta(TypedDict):
     context: int
-
-    # price in USD per 1k tokens
     price_input: NotRequired[float]
     price_output: NotRequired[float]
 
 
 # default model
-DEFAULT_MODEL: str | None = None
+DEFAULT_MODEL: ModelMeta | None = None
 
 # known models metadata
 # TODO: can we get this from the API?
@@ -155,35 +149,36 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
 }
 
 
-def set_default_model(model: str) -> None:
-    assert get_model(model)
+def set_model(family: str, model: str) -> None:
     global DEFAULT_MODEL
-    DEFAULT_MODEL = model
+    DEFAULT_MODEL = get_model(family, model)
 
 
-def get_model(model: str | None = None) -> ModelMeta:
-    if model is None:
-        assert DEFAULT_MODEL, "Default model not set, set it with set_default_model()"
-        model = DEFAULT_MODEL
+def get_model(family: str | None = None, model: str | None = None) -> ModelMeta:
+    if model is None and family is None:
+        assert DEFAULT_MODEL, "Default model not set, set it with set_model()"
+        return DEFAULT_MODEL
 
     if "/" in model:
         provider, model = model.split("/")
         if provider not in MODELS or model not in MODELS[provider]:
-            logger.warning(
-                f"Model {provider}/{model} not found, using fallback model metadata"
-            )
-            return ModelMeta(provider=provider, model=model, context=4000)
-    else:
-        # try to find model in all providers
-        for provider in MODELS:
-            if model in MODELS[provider]:
-                break
+            print(f"Error: model {provider}/{model} cannot be found.")
+            sys.exit(1)
         else:
-            logger.warning(f"Model {model} not found, using fallback model metadata")
-            return ModelMeta(provider="unknown", model=model, context=4000)
+            return ModelMeta(
+                provider=provider,
+                model=model,
+                **MODELS[provider][model],
+            )
+    else:
+        if model in MODELS[family]:
+            return ModelMeta(
+                provider=family,
+                model=model,
+                **MODELS[family][model],
+            )
+        else:    
+            print(f"Error: model {model} cannot be found. Please select one of the following available models:\n" + "\n".join(MODELS[family]))
+            sys.exit(1)
 
-    return ModelMeta(
-        provider=provider,
-        model=model,
-        **MODELS[provider][model],
-    )
+    

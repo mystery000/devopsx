@@ -108,11 +108,12 @@ To install and run DevOpsX, follow these steps
 To use GPT-4+, an OpenAI API KEY is required. Example start command:
 
 ```
-devopsx --llm openai --model gpt-4-1106-preview --prompt-system short
+devopsx --llm openai --model gpt-4-1106-preview
 ```
 
 ##### Available OpenAI models
 
+- gpt-4o
 - gpt-4
 - gpt-4-turbo
 - gpt-4-1106-preview
@@ -125,7 +126,7 @@ devopsx --llm openai --model gpt-4-1106-preview --prompt-system short
 To use Gemini models, an Gemini API KEY is required. Example start command:
 
 ```
-devopsx --llm google --model gemini-1.5-pro-latest --prompt-system short
+devopsx --llm google --model gemini-1.5-pro-latest
 ```
 
 ##### Available Gemini models
@@ -138,7 +139,7 @@ devopsx --llm google --model gemini-1.5-pro-latest --prompt-system short
 To use GROQ models, an GROQ API KEY is required. Example start command:
 
 ```
-devopsx --llm groq --model llama3-8b-8192 --prompt-system short
+devopsx --llm groq --model llama3-8b-8192
 ```
 
 ##### Available Gemini models

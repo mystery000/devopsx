@@ -7,10 +7,10 @@ from celery import Celery, signals
 from .message import Message
 from .config import get_config
 from .llm import reply, init_llm
-from .models import set_default_model
+from .models import set_model
 
 init_llm("openai", False)
-set_default_model("gpt-4o")
+set_model("openai", "gpt-4o")
 
 config = get_config()
 

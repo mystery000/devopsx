@@ -1,20 +1,20 @@
-import errno
-import importlib.metadata
 import io
-import logging
 import os
 import re
-import readline  # noqa: F401
 import sys
+import errno
+import logging
+import readline
 import urllib.parse
-from collections.abc import Generator
-from datetime import datetime
 from pathlib import Path
+import importlib.metadata
 from typing import Literal
+from datetime import datetime
+from collections.abc import Generator
 
 import click
 from pick import pick
-from rich import print  # noqa: F401
+from rich import print
 from rich.console import Console
 
 from .commands import CMDFIX, action_descriptions, execute_cmd
@@ -32,8 +32,40 @@ from .util import epoch_to_age, generate_name
 logger = logging.getLogger(__name__)
 print_builtin = __builtins__["print"]  # type: ignore
 
-LLMChoice = Literal["openai", "local"]
-ModelChoice = Literal["gpt-3.5-turbo", "gpt-4", "gpt-4-1106-preview"]
+LLMChoice = Literal[
+    "openai", 
+    "google", 
+    "groq", 
+    "anthropic", 
+    "local",
+]
+
+ModelChoice = Literal[
+    "gpt-4o", 
+    "gpt-4", 
+    "gpt-4-turbo",
+    "gpt-4-1106-preview",
+    "gpt-4-vision-preview",
+    "gpt-4-turbo-preview",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-1106",
+    "gemini-1.5-pro-latest",
+    "gemini-1.0-pro-latest",
+    "gemini-1.0-ultra-latest",
+    "gemini-1.0-pro-vision-latest",
+    "gemini-1.5-flash-latest",
+    "llama3-8b-8192",
+    "llama3-70b-8192",
+    "mixtral-8x7b-32768",
+    "gemma-7b-it",
+    "claude-instant-1.2",
+    "claude-2.1",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-opus-20240229",
+    "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307",
+]
 
 
 script_path = Path(os.path.realpath(__file__))
@@ -76,12 +108,13 @@ The chat offers some commands that can be used to interact with the system:
     "--llm",
     default="openai",
     help="LLM to use.",
-    type=click.Choice(["openai", "azure", "google", "groq", "anthropic", "local"]),
+    type=click.Choice(list(LLMChoice.__args__)),
 )
 @click.option(
     "--model",
     default="gpt-4o",
     help="Model to use.",
+    type=click.Choice(list(ModelChoice.__args__))
 )
 @click.option(
     "--stream/--no-stream",
