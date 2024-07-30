@@ -49,6 +49,7 @@ action_descriptions: dict[Actions, str] = {
     "summarize": "Summarize the conversation",
     "save": "Save the last code block to a file",
     "shell": "Execute shell code",
+    "bash": "Execute shell commands",
     "ra": "Execute the command on remote agents",
     "ps": "Execute shell commands remotely over SSH",
     "ssh": "Create a SSH client",
