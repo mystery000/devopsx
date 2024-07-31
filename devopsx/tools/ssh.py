@@ -69,7 +69,7 @@ def ssh_into_host(hostname: str) -> Generator[Message, None, None]:
         from .pseudo_shell import execute_pseudo_shell
         yield from execute_pseudo_shell(f"{hostname} ssh {config[hostname]['user']}@localhost", sudo=False)
     else:
-        yield Message("system", "Invalid host! You should register the host first by running this command `/ssh <hostname> <user@host> [identity_file]`")
+        yield Message("system", "Invalid host! You should register the host first by running this command `/ssh <hostname> <user@host[:port]> [identity_file]`")
 
 def execute_ssh(cmd: str) -> Generator[Message, None, None]:
     args = cmd.split(" ")
@@ -133,6 +133,6 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
                 yield Message("system", "Host connection failed.")
     
     except AssertionError:
-        yield Message("system", "Invalid command format. The format should be `/ssh <hostname> <user@host> [identity_file]` or `/ssh delete <hostname>`")       
+        yield Message("system", "Invalid command format. The format should be `/ssh <hostname> <user@host[:port]> [identity_file]` or `/ssh delete <hostname>`")       
     except Exception as ex:
         yield Message("system", f"Error: {str(ex)}")
