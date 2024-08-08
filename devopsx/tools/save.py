@@ -16,25 +16,18 @@ Example:
 from collections.abc import Generator
 from pathlib import Path
 
-from ..message import Message, print_msg
+from ..message import Message
 from ..util import ask_execute
+from .base import ToolSpec
 
-from .python import execute_python
-from .shell import execute_shell
-
-def execute_file(
-        fn: str, code: str, ask: bool
-) -> Generator[Message, None, None]:
-    """Execute the file"""
-    if fn.endswith(".py"): 
-        yield from execute_python(code, ask=ask)
-    elif fn.endswith(".sh"):
-        yield from execute_shell(code, ask=ask)
 
 def execute_save(
-    fn: str, code: str, ask: bool, append: bool = False
+    code: str, ask: bool, args: dict[str, str]
 ) -> Generator[Message, None, None]:
     """Save the code to a file."""
+    fn = args.get("file")
+    assert fn, "No filename provided"
+    append = args.get("append", False)
     action = "save" if not append else "append"
     # strip leading newlines
     code = code.lstrip("\n")
@@ -48,8 +41,7 @@ def execute_save(
 
     if ask and not confirm:
         # early return
-        print_msg(Message("system", f"{action.capitalize()} cancelled."))
-        yield from execute_file(fn, code, ask)
+        yield Message("system", f"{action.capitalize()} cancelled.")
         return
 
     path = Path(fn).expanduser()
@@ -74,8 +66,7 @@ def execute_save(
             print("Skipping overwrite confirmation.")
         if not overwrite:
             # early return
-            print_msg(Message("system", "Save cancelled."))
-            yield from execute_file(fn, code, ask)
+            yield Message("system", "Save cancelled.")
             return
 
     # if the folder doesn't exist, ask to create it
@@ -90,11 +81,19 @@ def execute_save(
             path.parent.mkdir(parents=True)
         else:
             # early return
-            print_msg(Message("system", "Save cancelled."))
-            yield from execute_file(fn, code, ask)
+            yield Message("system", "Save cancelled.")
             return
 
     print("Saving to " + fn)
     with open(path, "w") as f:
         f.write(code)
     yield Message("system", f"Saved to {fn}")
+
+
+tool = ToolSpec(
+    name="save",
+    desc="TODO",
+    examples="TODO",
+    functions=[],
+    execute=execute_save,
+)

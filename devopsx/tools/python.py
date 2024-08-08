@@ -29,18 +29,14 @@ The user can also run Python code with the /python command:
 """
 
 import re
-from collections.abc import Generator
+from collections.abc import Generator, Callable
 from logging import getLogger
-from typing import (
-    Literal,
-    TypeVar,
-    get_origin,
-)
-from collections.abc import Callable
+from typing import Literal, TypeVar, get_origin
 
 from IPython.terminal.embed import InteractiveShellEmbed
 from IPython.utils.capture import capture_output
 
+from .base import ToolSpec
 from ..message import Message
 from ..util import ask_execute, print_preview
 
@@ -168,5 +164,14 @@ def check_available_packages():
             missing.append(package)
     if missing:
         logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `pip install gptme-python -E datascience`"
+            f"Missing packages: {', '.join(missing)}. Install them with `pip install devopsx-python -E datascience`"
         )
+
+
+tool = ToolSpec(
+    name="python",
+    desc="TODO",  # TODO: move from prompts.py
+    examples="TODO",  # TODO: move from prompts.py
+    functions=[],
+    init=init_python,
+)

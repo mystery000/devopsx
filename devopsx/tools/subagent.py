@@ -9,6 +9,7 @@ import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, TypedDict
 
+from .base import ToolSpec
 from ..message import Message
 from .python import register_function
 
@@ -105,5 +106,9 @@ def subagent_status(agent_id: str):
     raise ValueError(f"Subagent with ID {agent_id} not found.")
 
 
-def noop():
-    pass
+tool = ToolSpec(
+    name="subagent",
+    desc="A tool to create subagents",
+    examples="",  # TODO
+    functions=[subagent, subagent_status],
+)
