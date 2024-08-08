@@ -24,6 +24,7 @@ import re
 from collections.abc import Generator
 from pathlib import Path
 
+from .base import ToolSpec
 from ..message import Message
 from ..util import ask_execute
 
@@ -131,3 +132,12 @@ def execute_patch(
         yield Message("system", "Patch applied")
     except (ValueError, FileNotFoundError) as e:
         yield Message("system", f"Patch failed: {e.args[0]}")
+        
+        
+tool = ToolSpec(
+    name="patch",
+    desc="Apply a patch to a file",
+    instructions=instructions,
+    examples=examples,
+    execute=execute_patch,
+)

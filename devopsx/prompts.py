@@ -1,15 +1,23 @@
-import functools
-import logging
 import os
 import shutil
+import logging
+import functools
 import subprocess
-from collections.abc import Generator, Iterable
 from datetime import date
 from typing import Literal
+from collections.abc import Generator, Iterable
 
 from .config import get_config
 from .message import Message
-from .tools import browser, patch, python
+from .tools import (
+    browser,
+    init_tools,
+    loaded_tools,
+    patch,
+    python,
+    save,
+    shell,
+)
 
 PromptType = Literal["full", "short"]
 
@@ -38,9 +46,11 @@ def join_messages(msgs: Iterable[Message]) -> Message:
 
 def prompt_full() -> Generator[Message, None, None]:
     """Full prompt to start the conversation."""
-    yield from prompt_devopsx()
+    yield from prompt_gptme()
 
     yield from prompt_tools()
+    # Useful in debugging
+    #yield from prompt_tools_from_spec()
     yield from prompt_examples()
     yield from prompt_gh()
 
@@ -50,17 +60,17 @@ def prompt_full() -> Generator[Message, None, None]:
 
 def prompt_short() -> Generator[Message, None, None]:
     """Short prompt to start the conversation."""
-    yield from prompt_devopsx()
+    yield from prompt_gptme()
     yield from prompt_tools()
     yield from prompt_user()
     yield from prompt_project()
 
 
-def prompt_devopsx() -> Generator[Message, None, None]:
+def prompt_gptme() -> Generator[Message, None, None]:
     yield Message(
         "system",
         """
-You are devopsx, an AI assistant CLI tool powered by large language models.
+You are gptme, an AI assistant CLI tool powered by large language models.
 You can run code and execute terminal commands on their local machine.
 You should show the user how to write code, interact with the system, and access the internet.
 The user can execute the suggested commands so that you see their output.
@@ -69,17 +79,6 @@ When the output of a command is of interest, end the code block so that the user
 
 Do not suggest the user open a browser or editor, instead show them how to do it in the shell or Python REPL.
 If clarification is needed, ask the user.
-
-When user execute the following commands, dont' think it was executed locally.
-You should recognize the results from remote host, then suggest.
-
-"ra": "Execute the command on remote agents",
-"ps": "Execute shell commands remotely over SSH",
-
-For example: 
-/ra <hostname> <prompt>
-/ps <hostname> <command>
-
 """.strip(),
     )
 
@@ -122,7 +121,7 @@ def prompt_code_interpreter() -> Generator[Message, None, None]:  # pragma: no c
     # From: https://www.reddit.com/r/ChatGPTPro/comments/14ufzmh/this_is_code_interpreters_system_prompt_exactly/
     #       https://chat.openai.com/share/84e7fd9a-ad47-4397-b08f-4c89603596c0
     # NOTE: most of these have been adopted into the "Tools" section below.
-    # TODO: This doesn't quite align with the capabilities of devopsx.
+    # TODO: This doesn't quite align with the capabilities of gptme.
     #       Like: we have internet access, and a REPL instead of Jupyter (but might not matter).
     # TODO: This should probably also not be used for non-ChatGPT models.
     yield Message(
@@ -144,6 +143,24 @@ When you send a message containing Python code to python, it will be executed in
     )
 
 
+def prompt_tools_from_spec() -> Generator[Message, None, None]:
+    # TODO: this should be moved to tools.py
+    # tools must have been initialized by now
+    init_tools()
+    prompt = ""
+    assert loaded_tools, "No tools loaded"
+    for tool in loaded_tools:
+        prompt += (
+            f"""## {tool.name}
+
+{tool.desc.strip()}
+
+{tool.instructions.strip()}""".strip()
+            + "\n\n"
+        )
+    yield Message("system", prompt.strip())
+
+
 def prompt_tools() -> Generator[Message, None, None]:
     python_libraries = get_installed_python_libraries()
     python_libraries_str = "\n".join(f"- {lib}" for lib in python_libraries)
@@ -158,8 +175,7 @@ def prompt_tools() -> Generator[Message, None, None]:
 
 ## python
 
-When you send a message containing Python code (and is not a file block), it will be executed in a stateful environment.
-Python will respond with the output of the execution.
+{python.instructions}
 
 The following libraries are available:
 {python_libraries_str}
@@ -169,16 +185,14 @@ The following functions are available in the REPL:
 
 ## bash
 
-When you send a message containing bash code, it will be executed in a stateful bash shell.
-The shell will respond with the output of the execution.
+{shell.instructions}
 
 These programs are available, among others:
 {shell_programs_str}
 
 ## saving files
 
-To save a file, output a code block with a filename on the first line, like "```src/example.py" (a "file block").
-It is very important that such blocks begin with a filename, otherwise the code will be executed instead of saved.
+{save.instructions}
 
 ## patching files
 
@@ -205,29 +219,15 @@ def prompt_examples() -> Generator[Message, None, None]:
 
 ## bash
 
-> User: learn about the project
-```bash
-git ls-files
-```
-> stdout: `README.md`
-```bash
-cat README.md
-```
+{shell.examples}
 
 ## Python
 
-> User: print hello world
-```python
-print("Hello world")
-```
+{python.examples}
 
 ## Save files
 
-> User: write a Hello world script to hello.py
-```hello.py
-print("Hello world")
-```
-Saved to `hello.py`.
+{save.examples}
 
 ## Read files
 

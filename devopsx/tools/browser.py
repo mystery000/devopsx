@@ -14,7 +14,6 @@ import importlib.util
 from typing import Literal
 
 from .base import ToolSpec
-from .python import register_function_if
 
 has_playwright = importlib.util.find_spec("playwright") is not None
 
@@ -33,7 +32,7 @@ EngineType = Literal["google", "duckduckgo"]
 
 instructions = """
 To browse the web, you can use the `read_url` and `search` functions in Python.
-"""
+""".strip()
 
 examples = """
 ### Answer question from URL with browsing
@@ -160,7 +159,8 @@ def html_to_markdown(html):
 
 tool = ToolSpec(
     name="browser",
-    desc=instructions,
+    desc="A tool to browse the web.",
+    instructions=instructions,
     examples=examples,
     functions=[read_url, search],
 )
