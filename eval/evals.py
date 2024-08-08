@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from main import ExecTest
+    from .main import ExecTest
 
 tests: list["ExecTest"] = [
     {
@@ -30,7 +30,7 @@ tests: list["ExecTest"] = [
         "name": "hello-ask",
         "files": {"hello.py": "print('Hello, world!')"},
         "run": "echo 'Erik' | python hello.py",
-        # TODO: work around the "don't try to execute it" part by improving devopsx such that it just gives EOF to stdin in non-interactive mode
+        # TODO: work around the "don't try to execute it" part by improving gptme such that it just gives EOF to stdin in non-interactive mode
         "prompt": "modify hello.py to ask the user for their name and print 'Hello, <name>!'. don't try to execute it",
         "expect": {
             "correct output": lambda ctx: "Hello, Erik!" in ctx.stdout,
@@ -63,7 +63,7 @@ tests: list["ExecTest"] = [
     #     "name": "init-vue-ts-tailwind",
     #     "files": {},
     #     "run": "cat package.json",
-    #     "prompt": "initialize a vue project with typescript and tailwind, make a page that says 'Hello, world!'. don't try to execute it or do anything interactive",
+    #     "prompt": "initialize a vue project with typescript and tailwind, make a page that says 'Hello, world!'. avoid interactive tools to initialize the project",
     #     "expect": {
     #         "package.json exists": lambda ctx: "package.json" in ctx.files,
     #         "vue installed": lambda ctx: '"vue":' in ctx.files["package.json"],

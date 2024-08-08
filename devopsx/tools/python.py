@@ -1,26 +1,112 @@
-import atexit
-import logging
-import urllib.parse
-from dataclasses import dataclass
+"""
+The assistant can execute Python code blocks.
 
-from playwright.sync_api import ElementHandle, Page, sync_playwright
+It uses IPython to do so, and persists the IPython instance between calls to give a REPL-like experience.
 
+.. chat::
+
+    User: What is 2 + 2?
+    Assistant:
+    ```python
+    2 + 2
+    ```
+    System: Executed code block.
+    stdout:
+    ```
+    4
+    ```
+
+The user can also run Python code with the /python command:
+
+.. chat::
+
+    User: /python 2 + 2
+    System: Executed code block.
+    stdout:
+    ```
+    4
+    ```
+"""
+
+import re
 from collections.abc import Generator
 from logging import getLogger
+from typing import (
+    Literal,
+    TypeVar,
+    get_origin,
+)
+from collections.abc import Callable
 
 from IPython.terminal.embed import InteractiveShellEmbed
-from IPython.utils.io import capture_output
+from IPython.utils.capture import capture_output
 
-from ..message import Message, print_msg
+from ..message import Message
 from ..util import ask_execute, print_preview
 
-_ipython = None
-_p = None
+logger = getLogger(__name__)
 
-logger = logging.getLogger(__name__)
+# IPython instance
+_ipython = None
+
 
 def init_python():
     check_available_packages()
+
+
+registered_functions: dict[str, Callable] = {}
+
+T = TypeVar("T", bound=Callable)
+
+
+def register_function(func: T) -> T:
+    """Decorator to register a function to be available in the IPython instance."""
+    registered_functions[func.__name__] = func
+    return func
+
+
+def register_function_if(condition: bool):
+    if condition:
+        return register_function
+    else:
+        return lambda x: x
+
+
+def derive_type(t) -> str:
+    if get_origin(t) == Literal:
+        v = ", ".join(f'"{a}"' for a in t.__args__)
+        return f"Literal[{v}]"
+    else:
+        return t.__name__
+
+
+def callable_signature(func: Callable) -> str:
+    # returns a signature f(arg1: type1, arg2: type2, ...) -> return_type
+    args = ", ".join(
+        f"{k}: {derive_type(v)}"
+        for k, v in func.__annotations__.items()
+        if k != "return"
+    )
+    ret_type = func.__annotations__.get("return")
+    ret = f" -> {derive_type(ret_type)}" if ret_type else ""
+    return f"{func.__name__}({args}){ret}"
+
+
+def get_functions_prompt() -> str:
+    # return a prompt with a brief description of the available functions
+    return "\n".join(
+        f"- {callable_signature(func)}: {func.__doc__ or 'No description'}"
+        for func in registered_functions.values()
+    )
+
+
+def _get_ipython():
+    global _ipython
+    if _ipython is None:
+        _ipython = InteractiveShellEmbed()
+        _ipython.push(registered_functions)
+
+    return _ipython
 
 
 def execute_python(code: str, ask: bool) -> Generator[Message, None, None]:
@@ -31,24 +117,30 @@ def execute_python(code: str, ask: bool) -> Generator[Message, None, None]:
         confirm = ask_execute()
         print()
         if not confirm:
-            print_msg(Message("system", "Aborted, user chose not to run command."))
+            # early return
+            yield Message("system", "Aborted, user chose not to run command.")
             return
     else:
         print("Skipping confirmation")
 
     # Create an IPython instance if it doesn't exist yet
-    global _ipython
-    if _ipython is None:
-        _ipython = InteractiveShellEmbed()
+    _ipython = _get_ipython()
 
     # Capture the standard output and error streams
     with capture_output() as captured:
         # Execute the code
-        result = _ipython.run_cell(code)
+        result = _ipython.run_cell(code, silent=False, store_history=False)
 
     output = ""
     if captured.stdout:
-        output += f"stdout:\n```\n{captured.stdout.rstrip()}\n```\n\n"
+        # remove one occurrence of the result if present, to avoid repeating the result in the output
+        stdout = (
+            captured.stdout.replace(str(result.result), "", 1)
+            if result.result
+            else captured.stdout
+        )
+        if stdout:
+            output += f"stdout:\n```\n{stdout.rstrip()}\n```\n\n"
     if captured.stderr:
         output += f"stderr:\n```\n{captured.stderr.rstrip()}\n```\n\n"
     if result.error_in_exec:
@@ -58,6 +150,10 @@ def execute_python(code: str, ask: bool) -> Generator[Message, None, None]:
         output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"  # type: ignore
     if result.result is not None:
         output += f"Result:\n```\n{result.result}\n```\n\n"
+
+    # strip ANSI escape sequences
+    # TODO: better to signal to the terminal that we don't want colors?
+    output = re.sub(r"\x1b[^m]*m", "", output)
     yield Message("system", "Executed code block.\n\n" + output)
 
 
@@ -72,149 +168,5 @@ def check_available_packages():
             missing.append(package)
     if missing:
         logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `pip install devopsx-python -E datascience`"
+            f"Missing packages: {', '.join(missing)}. Install them with `pip install gptme-python -E datascience`"
         )
-
-def get_browser():
-    """
-    Return a browser object.
-    """
-    global _p
-    if _p is None:
-        logger.info("Starting browser")
-        _p = sync_playwright().start()
-
-        atexit.register(_p.stop)
-    browser = _p.chromium.launch()
-    return browser
-
-
-def load_page(url: str) -> Page:
-    browser = get_browser()
-
-    # set browser language to English such that Google uses English
-    coords_sf = {"latitude": 37.773972, "longitude": 13.39}
-    context = browser.new_context(
-        locale="en-US",
-        geolocation=coords_sf,
-        permissions=["geolocation"],
-    )
-
-    # create a new page
-    logger.info(f"Loading page: {url}")
-    page = context.new_page()
-    page.goto(url)
-
-    return page
-
-
-def search_google(query: str) -> str:
-    query = urllib.parse.quote(query)
-    url = f"https://www.google.com/search?q={query}&hl=en"
-    page = load_page(url)
-
-    els = _list_clickable_elements(page)
-    for el in els:
-        # print(f"{el['type']}: {el['text']}")
-        if "Accept all" in el.text:
-            el.element.click()
-            logger.debug("Accepted Google terms")
-            break
-
-    # list results
-    result_str = _list_results_google(page)
-
-    return result_str
-
-
-def search_duckduckgo(query: str) -> str:
-    url = f"https://duckduckgo.com/?q={query}"
-    page = load_page(url)
-
-    return _list_results_duckduckgo(page)
-
-
-@dataclass
-class Element:
-    type: str
-    text: str
-    name: str
-    href: str | None
-    element: ElementHandle
-    selector: str
-
-    @classmethod
-    def from_element(cls, element: ElementHandle):
-        return cls(
-            type=element.evaluate("el => el.type"),
-            text=element.evaluate("el => el.innerText"),
-            name=element.evaluate("el => el.name"),
-            href=element.evaluate("el => el.href"),
-            element=element,
-            # FIXME: is this correct?
-            selector=element.evaluate("el => el.selector"),
-        )
-
-
-def _list_input_elements(page) -> list[Element]:
-    # List all input elements
-    elements = []
-    inputs = page.query_selector_all("input")
-    for input_element in inputs:
-        elements.append(Element.from_element(input_element))
-    return elements
-
-
-def _list_clickable_elements(page, selector=None) -> list[Element]:
-    elements = []
-
-    # filter by selector
-    if selector:
-        selector = f"{selector} button, {selector} a"
-    else:
-        selector = "button, a"
-
-    # List all clickable buttons
-    clickable = page.query_selector_all(selector)
-    for i, el in enumerate(clickable):
-        # "selector": f"{tag_name}:has-text('{text}')",
-        elements.append(Element.from_element(el))
-
-    return elements
-
-
-def _list_results_google(page) -> str:
-    # fetch the results (elements with .g class)
-    results = page.query_selector_all(".g")
-    if not results:
-        return "Error: something went wrong with the search."
-
-    # list results
-    s = "Results:"
-    for i, result in enumerate(results):
-        url = result.query_selector("a").evaluate("el => el.href")
-        h3 = result.query_selector("h3")
-        if h3:
-            title = h3.inner_text()
-            result.query_selector("span").inner_text()
-            s += f"\n{i+1}. {title} ({url})"
-    return s
-
-
-def _list_results_duckduckgo(page) -> str:
-    # fetch the results
-    results = page.query_selector(".react-results--main")
-    results = results.query_selector_all("article")
-    if not results:
-        return "Error: something went wrong with the search."
-
-    # list results
-    s = "Results:"
-    for i, result in enumerate(results):
-        url = result.query_selector("a").evaluate("el => el.href")
-        h2 = result.query_selector("h2")
-        if h2:
-            title = h2.inner_text()
-            result.query_selector("span").inner_text()
-            s += f"\n{i+1}. {title} ({url})"
-    return s

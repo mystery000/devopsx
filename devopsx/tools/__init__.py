@@ -6,12 +6,14 @@ from .patch import execute_patch
 from .python import execute_python, init_python
 from .save import execute_save
 from .shell import execute_shell
+from .subagent import noop
 from .bash import execute_bash
 from .ssh import execute_ssh, init_ssh
 from .pseudo_shell import execute_pseudo_shell
 from .remote_agent import execute_remote_agent, init_agents
 from .summarize import summarize
 
+noop()
 logger = logging.getLogger(__name__)
 
 

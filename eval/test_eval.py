@@ -1,7 +1,6 @@
 import pytest
 
-from evals import tests
-from main import execute
+from . import execute, tests
 
 
 @pytest.mark.slow
@@ -19,4 +18,3 @@ def test_eval(test):
 def pytest_generate_tests(metafunc):
     if "test" in metafunc.fixturenames:
         metafunc.parametrize("test", tests, ids=[test["name"] for test in tests])
-        

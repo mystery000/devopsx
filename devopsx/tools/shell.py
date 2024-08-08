@@ -32,17 +32,15 @@ The user can also run shell code with the /shell command:
 
 """
 
-import atexit
-import logging
 import os
 import re
-import select
-import subprocess
 import sys
-from collections.abc import Generator
-from typing import List
-
+import select
+import atexit
 import bashlex
+import logging
+import subprocess
+from collections.abc import Generator
 
 from ..message import Message, print_msg
 from ..util import ask_execute, print_preview
@@ -266,7 +264,7 @@ def _shorten_stdout(stdout: str, pre_lines=None, post_lines=None) -> str:
 
 
 
-def split_commands(script: str) -> List[str]:
+def split_commands(script: str) -> list[str]:
     parts = bashlex.parse(script)
     commands = []
     for part in parts:
