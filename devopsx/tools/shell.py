@@ -51,19 +51,36 @@ logger = logging.getLogger(__name__)
 instructions = """
 When you send a message containing bash code, it will be executed in a stateful bash shell.
 The shell will respond with the output of the execution.
+Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
 """.strip()
 
 examples = """
 > User: learn about the project
+
+> Assistant:
 ```bash
 git ls-files
 ```
-> stdout: `README.md`
+
+> System:
+```stdout
+README.md
+```
+
+> Assistant:
 ```bash
 cat README.md
 ```
-""".strip()
 
+> System: No output
+
+> User: write readme
+> Assistant:
+```bash
+echo '# My Project
+This is my example project.' > README.md
+```
+""".strip()
 
 class ShellSession:
     process: subprocess.Popen
@@ -288,21 +305,32 @@ def _shorten_stdout(
     return "\n".join(lines)
 
 
-
 def split_commands(script: str) -> list[str]:
+    # TODO: write proper tests
     parts = bashlex.parse(script)
     commands = []
     for part in parts:
-        if part.kind in {"command", "compound"}:
+        if part.kind == "command":
             command_parts = []
             for word in part.parts:
                 start, end = word.pos
                 command_parts.append(script[start:end])
             command = " ".join(command_parts)
             commands.append(command)
+        elif part.kind == "compound":
+            for node in part.list:
+                command_parts = []
+                for word in node.parts:
+                    start, end = word.pos
+                    command_parts.append(script[start:end])
+                command = " ".join(command_parts)
+                commands.append(command)
+        elif part.kind == "function":
+            commands.append(script[part.pos[0] : part.pos[1]])
         else:
             logger.warning(f"Unknown shell script part of kind '{part.kind}', skipping")
     return commands
+
 
 tool = ToolSpec(
     name="shell",
