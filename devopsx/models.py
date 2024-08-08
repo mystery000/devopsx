@@ -1,7 +1,7 @@
 import sys
 import logging
 from dataclasses import dataclass
-from typing import TypedDict, Optional
+from typing import TypedDict
 from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class ModelMeta:
     provider: str
     model: str
     context: int
-    max_output: Optional[int] = None
+    max_output: int | None = None
     price_input: float = 0
     price_output: float = 0
 
