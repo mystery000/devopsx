@@ -150,23 +150,23 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # Training data cut-off: Aug 2023
         "claude-3-haiku-20240307": {
             "context": 200_000,
+            "max_output": 4096,
             "price_input": 0.25,   # 0.25 USD per 1 MTok input tokens
             "price_output": 1.25,  # 1.25 USD per 1 MTok output tokens 	
         },
     }
 }
 
-
-def set_model(family: str, model: str) -> None:
+def set_default_model(model: str) -> None:
+    assert get_model(model)
     global DEFAULT_MODEL
-    DEFAULT_MODEL = get_model(family, model)
-
-
+    DEFAULT_MODEL = model
+    
 def get_model(family: str | None = None, model: str | None = None) -> ModelMeta:
-    if model is None and family is None:
-        assert DEFAULT_MODEL, "Default model not set, set it with set_model()"
-        return DEFAULT_MODEL
-
+    if model is None:
+        assert DEFAULT_MODEL, "Default model not set, set it with set_default_model()"
+        model = DEFAULT_MODEL
+        
     if "/" in model:
         provider, model = model.split("/")
         if provider not in MODELS or model not in MODELS[provider]:

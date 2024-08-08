@@ -7,14 +7,15 @@ flask = pytest.importorskip(
 )
 
 # noreorder
-from flask.testing import FlaskClient  # fmt: skip
-from devopsx.cli import init  # fmt: skip
-from devopsx.server import create_app  # fmt: skip
+from flask.testing import FlaskClient
+from devopsx.cli import init
+from devopsx.models import get_model
+from devopsx.server import create_app
 
 
 @pytest.fixture(autouse=True)
 def init_():
-    init(llm="openai", model="gpt-3.5-turbo", interactive=False)
+    init(None, None, interactive=False)
 
 
 @pytest.fixture
@@ -72,7 +73,7 @@ def test_api_conversation_generate(conv: str, client: FlaskClient):
 
     response = client.post(
         f"/api/conversations/{conv}/generate",
-        json={"model": "gpt-3.5-turbo"},
+        json={"model": get_model().model},
     )
     assert response.status_code == 200
     msgs = response.get_json()
