@@ -1,7 +1,7 @@
 import sys
 import logging
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import TypedDict, Optional
 from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
@@ -11,12 +11,14 @@ class ModelMeta:
     provider: str
     model: str
     context: int
+    max_output: Optional[int] = None
     price_input: float = 0
     price_output: float = 0
 
 
 class _ModelDictMeta(TypedDict):
     context: int
+    max_output: NotRequired[int]
     price_input: NotRequired[float]
     price_output: NotRequired[float]
 
@@ -129,6 +131,7 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # Training data cut-off: Apr 2024
         "claude-3-5-sonnet-20240620": {
             "context": 200_000,
+            "max_output": 4096,
             "price_input": 3.00,    # 3.00 USD per 1 MTok input tokens
             "price_output": 15.00,  # 15.00 USD per 1 MTok output tokens 	
         },
