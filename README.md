@@ -112,7 +112,7 @@ devopsx --llm openai --model gpt-4-1106-preview
 ```
 
 ##### Available OpenAI models
-
+- gpt-4o-mini
 - gpt-4o
 - gpt-4
 - gpt-4-turbo

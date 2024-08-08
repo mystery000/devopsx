@@ -29,6 +29,9 @@ DEFAULT_MODEL: ModelMeta | None = None
 MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     # https://platform.openai.com/docs/models
     "openai": {
+        "gpt-4o-mini": {
+            "context": 128_000,
+        },
         # Training data cut-off: October 2023
         "gpt-4o": {
             "context": 128_000,
