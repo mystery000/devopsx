@@ -7,7 +7,7 @@ from .types import Files
 
 class FileStore:
     def __init__(self):
-        self.working_dir = Path(tempfile.mkdtemp(prefix="gptme-evals-"))
+        self.working_dir = Path(tempfile.mkdtemp(prefix="devopsx-evals-"))
         self.working_dir.mkdir(parents=True, exist_ok=True)
         self.id = self.working_dir.name.split("-")[-1]
 

@@ -1,5 +1,5 @@
 """
-A subagent tool for gptme
+A subagent tool for devopsx
 
 Lets devopsx break down a task into smaller parts, and delegate them to subagents.
 """
