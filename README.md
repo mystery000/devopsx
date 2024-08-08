@@ -17,7 +17,7 @@ Infractura.com presents DevOpsX, a comprehensive multi-agent generative AI-based
 - **Self-Correcting**
   - Commands have their output fed back to the agent, allowing it to self-correct.
 - **Model Support**
-  - Integration with various models, including GPT-4 and any model that runs in llama.cpp.
+  - Use OpenAI, Azure, Anthropic, Gemini, GROQ or serve locally with `llama.cpp`
 - **Miscellaneous**
   - Tab completion.
   - Automatic naming of conversations.
