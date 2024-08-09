@@ -35,7 +35,7 @@ def join_messages(msgs: Iterable[Message]) -> Message:
 
 def prompt_full() -> Generator[Message, None, None]:
     """Full prompt to start the conversation."""
-    yield from prompt_gptme()
+    yield from prompt_devopsx()
     yield from prompt_tools()
     yield from prompt_user()
     yield from prompt_project()
@@ -43,13 +43,13 @@ def prompt_full() -> Generator[Message, None, None]:
 
 def prompt_short() -> Generator[Message, None, None]:
     """Short prompt to start the conversation."""
-    yield from prompt_gptme()
+    yield from prompt_devopsx()
     yield from prompt_tools(examples=False)
     yield from prompt_user()
     yield from prompt_project()
 
 
-def prompt_gptme() -> Generator[Message, None, None]:
+def prompt_devopsx() -> Generator[Message, None, None]:
     yield Message(
         "system",
         """

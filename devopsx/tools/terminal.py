@@ -53,9 +53,9 @@ def _capture_pane(pane_id: str) -> str:
 def new_session(command: str) -> Message:
     _max_session_id = 0
     for session in get_sessions():
-        if session.startswith("gptme_"):
+        if session.startswith("devopsx_"):
             _max_session_id = max(_max_session_id, int(session.split("_")[1]))
-    session_id = f"gptme_{_max_session_id + 1}"
+    session_id = f"devopsx_{_max_session_id + 1}"
     cmd = ["tmux", "new-session", "-d", "-s", session_id, command]
     print(" ".join(cmd))
     result = subprocess.run(
@@ -107,7 +107,7 @@ def inspect_pane(pane_id: str) -> Message:
 
 def kill_session(session_id: str) -> Message:
     result = subprocess.run(
-        ["tmux", "kill-session", "-t", f"gptme_{session_id}"],
+        ["tmux", "kill-session", "-t", f"devopsx_{session_id}"],
         check=True,
         capture_output=True,
         text=True,
