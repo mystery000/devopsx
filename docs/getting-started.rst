@@ -1,16 +1,16 @@
 Getting Started
 ===============
 
-This guide will assist you in beginning your journey with gptme.
+This guide will assist you in beginning your journey with devopsx.
 
 Installation
 ------------
 
-To install gptme, we recommend using pipx:
+To install devopsx, we recommend using pipx:
 
 .. code-block:: bash
 
-    pipx install gptme-python
+    pipx install devopsx-python
 
 If pipx is not installed, you can install it using pip:
 
@@ -25,7 +25,7 @@ To initiate a new chat or select an existing one, execute:
 
 .. code-block:: bash
 
-    gptme
+    devopsx
 
 This will show you a list of past chats, allowing you to select one or start a new one.
 
@@ -57,7 +57,7 @@ We can also start chats and request changes directly from the command line. The 
 
 .. code-block:: bash
 
-   gptme 'make improvements to life.py so that dead cells fade out over time'
+   devopsx 'make improvements to life.py so that dead cells fade out over time'
 
 .. chat::
 
@@ -93,7 +93,7 @@ Commands can also be executed directly from the command line. For example, one c
 
 .. code-block:: bash
 
-    gptme --non-interactive --no-confirm 'create a snake game using curses in snake.py, dont run it' '-' 'make the snake green and the apple red'
+    devopsx --non-interactive --no-confirm 'create a snake game using curses in snake.py, dont run it' '-' 'make the snake green and the apple red'
 
 This should make it first write snake.py, then make the change in a following prompt. The '-' is special "multiprompt" syntax that tells the assistant to wait for the next prompt before continuing.
 
@@ -104,7 +104,7 @@ To run the assistant in a web interface, execute:
 
 .. code-block:: bash
 
-    gptme-server
+    devopsx-server
 
 This should let you view your chats in a web browser and make basic requests.
 
@@ -114,4 +114,4 @@ This should let you view your chats in a web browser and make basic requests.
 Support
 -------
 
-For any issues, please visit our `issue tracker <https://github.com/ErikBjare/gptme/issues>`_.
+For any issues, please visit our `issue tracker <https://github.com/infractura/devopsx/issues>`_.

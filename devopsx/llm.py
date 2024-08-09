@@ -259,12 +259,12 @@ def summarize(content: str) -> str:
     Summarizes a long text using a LLM.
 
     To summarize messages or the conversation log,
-    use `gptme.tools.summarize` instead (which wraps this).
+    use `devopsx.tools.summarize` instead (which wraps this).
     """
     messages = [
         Message(
             "system",
-            content="You are a helpful assistant that helps summarize messages with an AI assistant through a tool called gptme.",
+            content="You are a helpful assistant that helps summarize messages with an AI assistant through a tool called devopsx.",
         ),
         Message("user", content=f"Summarize this:\n{content}"),
     ]

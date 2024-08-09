@@ -20,7 +20,7 @@ This is the documentation for devopsx.
    getting-started
    cli
    tools
-   local-models
+   providers
    finetuning
    api
    demos
