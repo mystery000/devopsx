@@ -37,8 +37,10 @@ import re
 import sys
 import select
 import atexit
+import shutil
 import bashlex
 import logging
+import functools
 import subprocess
 from collections.abc import Generator
 
@@ -48,10 +50,25 @@ from ..util import ask_execute, print_preview
 
 logger = logging.getLogger(__name__)
 
-instructions = """
+@functools.lru_cache
+def get_installed_programs() -> set[str]:
+    candidates = ["ffmpeg", "convert", "pandoc"]
+    installed = set()
+    for candidate in candidates:
+        if shutil.which(candidate) is not None:
+            installed.add(candidate)
+    return installed
+
+
+shell_programs_str = "\n".join(f"- {prog}" for prog in get_installed_programs())
+
+
+instructions = f"""
 When you send a message containing bash code, it will be executed in a stateful bash shell.
 The shell will respond with the output of the execution.
 Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
+These programs are available, among others:
+{shell_programs_str}
 """.strip()
 
 examples = """
