@@ -20,22 +20,22 @@ def test_browser():
 # def test_search_duckduckgo():
 #     results = search("test", "duckduckgo")
 #     print(results)
-#     assert "Results:" in results
+#     assert "```results" in results
 
 
 @pytest.mark.slow
 def test_search_google():
     results = search("test", "google")
     print(results)
-    assert "Results:" in results
+    assert "```results" in results
 
 
 @pytest.mark.slow
 def test_read_url_with_links():
     s = read_url("https://superuserlabs.org")
 
-    # check that "Test" is present
-    assert "Test" in s
+    # check that "Mohamed Hafeel" is present
+    assert "Mohamed Hafeel" in s
 
     # check that markdown link to activitywatch is present
     assert "(https://activitywatch.net/)" in s
