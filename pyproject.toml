@@ -11,7 +11,7 @@ packages = [
 
 [tool.poetry.scripts]
 devopsx = "devopsx.cli:main"
-devopsx-server = "devopsx.cli_server:main"
+devopsx-server = "devopsx.server.cli:main"
 devopsx-celery = "devopsx.celery:main"
 
 [tool.poetry.dependencies]

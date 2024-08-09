@@ -10,7 +10,7 @@ flask = pytest.importorskip(
 from flask.testing import FlaskClient
 from devopsx.cli import init
 from devopsx.models import get_model
-from devopsx.server import create_app
+from devopsx.server.api import create_app
 
 
 @pytest.fixture(autouse=True)

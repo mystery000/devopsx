@@ -9,13 +9,13 @@ from contextlib import redirect_stdout
 
 import flask
 
-from .commands import execute_cmd
-from .dirs import get_logs_dir
-from .llm import reply
-from .logmanager import LogManager, get_conversations
-from .message import Message
-from .models import get_model
-from .tools import execute_msg
+from ..commands import execute_cmd
+from ..dirs import get_logs_dir
+from ..llm import reply
+from ..logmanager import LogManager, get_conversations
+from ..message import Message
+from ..models import get_model
+from ..tools import execute_msg
 
 api = flask.Blueprint("api", __name__)
 
@@ -122,15 +122,15 @@ def static_proxy(path):
 
 @api.route('/favicon.ico')
 def favicon():
-    return flask.send_from_directory("../static", 'favicon.png')
+    return flask.send_from_directory("../../static", 'favicon.png')
 
 # serve index.html from the root
 @api.route("/")
 def root():
-    return flask.send_from_directory("../static", "index.html")
+    return flask.send_from_directory("../../static", "index.html")
 
 def create_app():
-    app = flask.Flask(__name__, static_folder="../static")
+    app = flask.Flask(__name__, static_folder="../../static")
     app.register_blueprint(api)
 
     return app
