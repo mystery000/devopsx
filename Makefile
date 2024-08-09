@@ -51,13 +51,16 @@ clean-test:
 	rm -I $$HOME/.local/share/devopsx/logs/*test-*-test_*/*.jsonl || true
 	rm --dir $$HOME/.local/share/devopsx/logs/*test-*-test_*/ || true
 
-cloc: cloc-core cloc-tools
+cloc: cloc-core cloc-tools cloc-server cloc-tests
 
 cloc-core:
-	cloc devopsx/*.py --by-file
+	cloc devopsx/*.py devopsx/*/__init__.py devopsx/*/base.py --by-file
 
 cloc-tools:
-	cloc devopsx/tools --by-file
+	cloc devopsx/tools/*.py --by-file
+
+cloc-server:
+	cloc devopsx/server --by-file
 
 cloc-tests:
 	cloc tests/*.py --by-file
