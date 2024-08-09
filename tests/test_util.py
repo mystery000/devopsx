@@ -100,14 +100,15 @@ def test_transform_examples_to_chat_directives_tricky():
 > Assistant: lol
 > Assistant: lol
 > Assistant: lol
-"""
+""".strip()
 
     expected = """
+
 .. chat::
+
    User: hello
    Assistant: lol
    Assistant: lol
-   Assistant: lol
-"""
+   Assistant: lol"""
 
     assert transform_examples_to_chat_directives(src, strict=True) == expected

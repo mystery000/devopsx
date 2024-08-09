@@ -18,10 +18,11 @@ This is the documentation for devopsx.
    :caption: Contents:
 
    getting-started
-   cli
+   demos
    tools
    providers
    finetuning
+   cli
    api
    demos
 
