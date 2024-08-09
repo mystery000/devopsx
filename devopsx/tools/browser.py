@@ -62,9 +62,9 @@ Assistant: The latest version of ActivityWatch is v0.12.2
 
 ### Searching
 User: who is the founder of ActivityWatch?
-Let's search for that.
+Assistant: Let's search for that.
 ```python
-search("who is the founder of ActivityWatch?")
+search("ActivityWatch founder")
 ```
 System:
 ```Results:
@@ -78,10 +78,10 @@ read_url("https://activitywatch.net/")
 System:
 ```https://activitywatch.net/
 ...
-The ActivityWatch project was founded by Mohamed Hafeel in 2016.
+The ActivityWatch project was founded by Mohamed in 2016.
 ...
 ```
-Assistant: The founder of ActivityWatch is Mohamed Hafeel.
+Assistant: The founder of ActivityWatch is Mohamed.
 """.strip()
 
 
