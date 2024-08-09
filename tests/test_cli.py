@@ -269,6 +269,20 @@ def test_terminal(args: list[str], runner: CliRunner):
     result = runner.invoke(devopsx.cli.main, args)
     assert "%CPU" in result.output
     assert result.exit_code == 0
+    
+    
+# TODO: move elsewhere
+@pytest.mark.slow
+def test_subagent(args: list[str], runner: CliRunner):
+    # f14: 377
+    # f15: 610
+    # f16: 987
+    args.append("compute fib 15 with subagent")
+    print(f"running: devopsx {' '.join(args)}")
+    result = runner.invoke(devopsx.cli.main, args)
+    print(result.output)
+    assert "610" in result.output
+    assert "610" in result.output.splitlines()[-1]
 
 
 @pytest.mark.slow
