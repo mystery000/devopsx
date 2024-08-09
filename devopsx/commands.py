@@ -1,10 +1,10 @@
-import logging
 import re
 import sys
-from collections.abc import Generator
-from pathlib import Path
+import logging
 from time import sleep
+from pathlib import Path
 from typing import Literal
+from collections.abc import Generator
 
 from . import llm
 from .constants import CMDFIX
@@ -14,7 +14,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute, len_tokens
-from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash, execute_remote_agent
+from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash, execute_remote_agent, loaded_tools
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ Actions = Literal[
     "summarize",
     "context",
     "save",
+    "bash",
     "shell",
     "ra",
     "ps",
@@ -35,6 +36,7 @@ Actions = Literal[
     "replay",
     "undo",
     "impersonate",
+    "tools",
     "tokens",
     "help",
     "exit",
@@ -57,6 +59,7 @@ action_descriptions: dict[Actions, str] = {
     "replay": "Re-execute codeblocks in the conversation, wont store output in log",
     "impersonate": "Impersonate the assistant",
     "tokens": "Show the number of tokens used",
+    "tools": "Show available tools",
     "help": "Show this help message",
     "exit": "Exit the program",
 }
@@ -153,6 +156,16 @@ def handle_cmd(
         case "tokens":
             log.undo(1, quiet=True)
             print(f"Tokens used: {len_tokens(log.log)}")
+        case "tools":
+            log.undo(1, quiet=True)
+            print("Available tools:")
+            for tool in loaded_tools:
+                print(
+                    f"""
+- {tool.name}  ({tool.desc.rstrip(".")})
+    tokens (example): {len_tokens(tool.examples)}
+                      """.strip()
+                )
         case _:
             if log.log[-1].content != f"{CMDFIX}help":
                 print("Unknown command")

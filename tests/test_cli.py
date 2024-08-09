@@ -261,7 +261,7 @@ def test_stdin(args: list[str], runner: CliRunner):
 def test_url(args: list[str], runner: CliRunner):
     args.append("Who is the CEO of https://superuserlabs.org?")
     result = runner.invoke(devopsx.cli.main, args)
-    assert "Erik Bjäreholt" in result.output
+    assert "Mohamed Hafeel" in result.output
     assert result.exit_code == 0
 
 

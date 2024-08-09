@@ -12,7 +12,7 @@ from playwright.sync_api import expect  # fmt: skip
 @pytest.mark.slow
 def test_browser():
     page = load_page("https://superuserlabs.org")
-    expect(page.get_by_role("main")).to_contain_text("Erik Bjäreholt")
+    expect(page.get_by_role("main")).to_contain_text("Mohamed Hafeel")
 
 
 # FIXME: Broken

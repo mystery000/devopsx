@@ -4,7 +4,7 @@
 SHELL := $(shell which bash)
 
 # src dirs and files
-SRCDIRS = devopsx tests scripts train eval
+SRCDIRS = gptme tests scripts train eval
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
 
 # exclude files
@@ -20,7 +20,7 @@ build:
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
-		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
+		--cov=gptme --cov-report=xml --cov-report=term-missing --cov-report=html \
 		-n 8 \
 		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow") \
 		$(if $(EVAL), , -m "not eval") \
@@ -43,22 +43,25 @@ format:
 
 precommit: format lint typecheck test
 
-docs:
+docs/.clean: docs/conf.py
+	poetry run make -C docs clean
+	touch docs/.clean
+
+docs: docs/conf.py docs/*.rst docs/.clean
 	poetry run make -C docs html
 
 clean-test:
-	echo $$HOME/.local/share/devopsx/logs/*test-*-test_*
-	rm -I $$HOME/.local/share/devopsx/logs/*test-*-test_*/*.jsonl || true
-	rm --dir $$HOME/.local/share/devopsx/logs/*test-*-test_*/ || true
-
+	echo $$HOME/.local/share/gptme/logs/*test-*-test_*
+	rm -I $$HOME/.local/share/gptme/logs/*test-*-test_*/*.jsonl || true
+	rm --dir $$HOME/.local/share/gptme/logs/*test-*-test_*/ || true
 
 cloc: cloc-core cloc-tools
 
 cloc-core:
-	cloc devopsx/*.py
+	cloc gptme/*.py --by-file
 
 cloc-tools:
-	cloc devopsx/tools
+	cloc gptme/tools --by-file
 
 cloc-tests:
-	cloc tests/*.py
+	cloc tests/*.py --by-file

@@ -1,35 +1,5 @@
 """
 The assistant can execute shell commands by outputting code blocks with `bash` or `sh` as the language.
-
-Example:
-
-.. chat::
-
-    User: How can I list the files in the current directory?
-    Assistant: To list the files in the current directory, use the `ls` command:
-    ```bash
-    ls
-    ```
-
-    System: Ran command: `ls`
-    stdout:
-    ```
-    file1.txt
-    file2.txt
-    ```
-
-The user can also run shell code with the /shell command:
-
-.. chat::
-
-    User: /shell ls
-    System: Ran command: `ls`
-    stdout:
-    ```
-    file1.txt
-    file2.txt
-    ```
-
 """
 
 import os
@@ -46,7 +16,7 @@ from collections.abc import Generator
 
 from .base import ToolSpec
 from ..message import Message, print_msg
-from ..util import ask_execute, print_preview
+from ..util import ask_execute, print_preview, transform_examples_to_chat_directives
 
 logger = logging.getLogger(__name__)
 
@@ -85,31 +55,44 @@ These programs are available, among others:
 """.strip()
 
 examples = """
-> User: learn about the project
-
-> Assistant:
+User: list the current directory
+Assistant: To list the files in the current directory, use `ls`:
+```bash
+ls
+```
+System: Ran command: `ls`
+```stdout
+file1.txt
+file2.txt
+```
+#### The assistant can learn context by exploring the filesystem
+User: learn about the project
+Assistant: Lets start by checking the files
 ```bash
 git ls-files
 ```
-
-> System:
-```stdout
+System:
+```output
 README.md
+main.py
 ```
-
-> Assistant:
+Assistant: Now lets check the README
 ```bash
 cat README.md
 ```
-
-> System: No output
-
-> User: write readme
-> Assistant:
-```bash
-echo '# My Project
-This is my example project.' > README.md
+System:
+```stdout
+(contents of README.md)
 ```
+Assistant: Now we check main.py
+```bash
+cat main.py
+```
+System:
+```output
+(contents of main.py)
+```
+Assistant: The project is...
 """.strip()
 
 class ShellSession:
@@ -365,6 +348,9 @@ def split_commands(script: str) -> list[str]:
     return commands
 
 
+__doc__ += transform_examples_to_chat_directives(examples)
+
+
 tool = ToolSpec(
     name="shell",
     desc="Executes shell commands.",
@@ -372,4 +358,5 @@ tool = ToolSpec(
     examples=examples,
     init=get_shell,
     execute=execute_shell,
+    block_types=["bash", "sh"],
 )

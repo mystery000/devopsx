@@ -9,6 +9,7 @@ The main tools can be grouped in the following categories:
 
   - :ref:`Shell`
   - :ref:`Python`
+  - :ref:`Terminal`
 
 - filesystem
 
@@ -40,6 +41,13 @@ Python
     :members:
     :noindex:
 
+Terminal
+--------
+
+.. automodule:: devopsx.tools.terminal
+    :members:
+    :noindex:
+    
 Save
 ----
 
