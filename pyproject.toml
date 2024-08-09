@@ -9,6 +9,8 @@ packages = [
     { include = "devopsx" },
 ]
 
+include = ["static/**/*", "media/logo.png"]
+
 [tool.poetry.scripts]
 devopsx = "devopsx.cli:main"
 devopsx-server = "devopsx.server.cli:main"
