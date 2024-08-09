@@ -54,10 +54,10 @@ export OPENAI_API_BASE="http://localhost:8000/v1"
 
 ### Usage
 
-Now, simply run `gptme` with the `--llm` flag set to `local`:
+Now, simply run `devopsx` with the `--llm` flag set to `local`:
 
 ```sh
-gptme --llm local "hello"
+devopsx --llm local "hello"
 ```
 
 ### How well does it work?
