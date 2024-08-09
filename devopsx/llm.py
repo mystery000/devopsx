@@ -1,11 +1,11 @@
-import sys
-import shutil
 import logging
+import shutil
+import sys
 from collections.abc import Generator, Iterator
 
-from rich import print
 from anthropic import Anthropic
 from openai import AzureOpenAI, OpenAI
+from rich import print
 
 from .config import get_config
 from .constants import PROMPT_ASSISTANT
@@ -31,7 +31,6 @@ def init_llm(llm: str):
     # set up API_KEY (if openai) and API_BASE (if local)
     config = get_config()
 
-    # TODO: use llm/model from config if specified and not passed as args
     if llm == "openai":
         api_key = config.get_env_required("OPENAI_API_KEY")
         oai_client = OpenAI(api_key=api_key)
@@ -43,19 +42,13 @@ def init_llm(llm: str):
             api_version="2023-07-01-preview",
             azure_endpoint=azure_endpoint,
         )
+
     elif llm == "anthropic":
         api_key = config.get_env_required("ANTHROPIC_API_KEY")
         anthropic_client = Anthropic(
             api_key=api_key,
         )
-    elif llm == "google":
-        api_key = config.get_env_required("GEMINI_API_KEY")
-        api_base = config.get_env_required("GEMINI_API_BASE")
-        oai_client = OpenAI(api_key=api_key, base_url=api_base)
-    elif llm == "groq":
-        api_key = config.get_env_required("GROQ_API_KEY")
-        api_base = config.get_env_required("GROQ_API_BASE")
-        oai_client = OpenAI(api_key=api_key, base_url=api_base)
+
     elif llm == "local":
         api_base = config.get_env_required("OPENAI_API_BASE")
         oai_client = OpenAI(api_key="ollama", base_url=api_base)
@@ -178,7 +171,9 @@ def _stream_openai(messages: list[Message], model: str) -> Generator[str, None, 
             # Got a chunk with no choices, Azure always sends one of these at the start
             continue
         stop_reason = chunk.choices[0].finish_reason  # type: ignore
-        yield chunk.choices[0].delta.content  # type: ignore
+        content = chunk.choices[0].delta.content  # type: ignore
+        if content:
+            yield content
     logger.debug(f"Stop reason: {stop_reason}")
 
 
@@ -201,65 +196,63 @@ def _stream_anthropic(
 def _reply_stream(messages: list[Message], model: str) -> Message:
     print(f"{PROMPT_ASSISTANT}: Thinking...", end="\r")
 
-    def deltas_to_str(deltas: list[str]):
-        return "".join([d or "" for d in deltas])
-
     def print_clear():
         print(" " * shutil.get_terminal_size().columns, end="\r")
 
-    deltas: list[str] = []
+    output = ""
     print_clear()
     print(f"{PROMPT_ASSISTANT}: ", end="")
     try:
-        for delta in _stream(messages, model):
-            if isinstance(delta, tuple):
-                print("Got a tuple, expected str")
-                continue
-            if isinstance(delta, tuple):
-                print("Got a Chunk, expected str")
-                continue
-            deltas.append(delta)
-            delta_str = deltas_to_str(deltas)
-            print(deltas_to_str([deltas[-1]]), end="")
+        for char in (char for chunk in _stream(messages, model) for char in chunk):
+            print(char, end="")
+            assert len(char) == 1
+            output += char
+
             # need to flush stdout to get the print to show up
             sys.stdout.flush()
 
             # pause inference on finished code-block, letting user run the command before continuing
-            codeblock_started = "```" in delta_str[:-3]
-            codeblock_finished = "\n```\n" in delta_str[-7:]
+            codeblock_started = "```" in output[:-3]
+            codeblock_finished = "\n```\n" in output[-7:]
             if codeblock_started and codeblock_finished:
+                print("\nFound codeblock, breaking")
                 # noreorder
                 from .tools import is_supported_codeblock  # fmt: skip
 
                 # if closing a code block supported by tools, abort generation to let them run
-                if is_supported_codeblock(delta_str):
+                if is_supported_codeblock(output):
                     print("\n")
                     break
+                else:
+                    logger.warning(
+                        "Code block not supported by tools, continuing generation"
+                    )
 
             # pause inference in finished patch
-            patch_started = "```patch" in delta_str[:-3]
-            patch_finished = "\n>>>>>>> UPDATED" in delta_str[-30:]
+            patch_started = "```patch" in output[:-3]
+            patch_finished = "\n>>>>>>> UPDATED" in output[-30:]
             if patch_started and patch_finished:
-                if "```" not in delta_str[-10:]:
+                if "```" not in output[-10:]:
                     print("\n```", end="")
-                    deltas.append("\n```")
+                    output += "\n```"
                 print("\n")
                 break
     except KeyboardInterrupt:
-        return Message("assistant", deltas_to_str(deltas) + "... ^C Interrupted")
+        return Message("assistant", output + "... ^C Interrupted")
     finally:
         print_clear()
-    return Message("assistant", deltas_to_str(deltas))
+    return Message("assistant", output)
 
 
 def get_recommended_model() -> str:
     assert oai_client or anthropic_client, "LLM not initialized"
-    return "gpt-4o" if oai_client else "claude-3-5-sonnet-20240620"
+    return "gpt-4-turbo" if oai_client else "claude-3-5-sonnet-20240620"
 
 
 def get_summary_model() -> str:
     assert oai_client or anthropic_client, "LLM not initialized"
-    return "gpt-4o" if oai_client else "claude-3-haiku-20240307"
+    return "gpt-4o-mini" if oai_client else "claude-3-haiku-20240307"
+
 
 def summarize(content: str) -> str:
     """
@@ -290,6 +283,7 @@ def summarize(content: str) -> str:
         + summary
     )
     return summary
+
 
 def generate_name(msgs: list[Message]) -> str:
     """

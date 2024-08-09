@@ -9,8 +9,8 @@ from .config import get_config
 from .llm import reply, init_llm
 from .models import set_default_model
 
-init_llm("openai", True)
-set_default_model("openai", "gpt-4o")
+init_llm("openai")
+set_default_model("openai")
 
 config = get_config()
 
