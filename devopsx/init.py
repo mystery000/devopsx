@@ -54,7 +54,8 @@ def init(provider: str | None, model: str | None, interactive: bool):
 
     if not model:
         model = config.get_env("MODEL") or get_recommended_model()
-    set_default_model(model)
+        
+    set_default_model(provider, model)
 
     if interactive:
         _load_readline_history()
@@ -105,8 +106,8 @@ def ask_for_api_key():  # pragma: no cover
     print("No API key set for OpenAI or Anthropic.")
     print(
         """You can get one at:
-        - OpenAI: https://platform.openai.com/account/api-keys
-        - Anthropic: https://console.anthropic.com/settings/keys
+- OpenAI: https://platform.openai.com/account/api-keys
+- Anthropic: https://console.anthropic.com/settings/keys
         """
     )
     api_key = input("Your OpenAI or Anthropic API key: ").strip()

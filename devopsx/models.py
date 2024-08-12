@@ -1,7 +1,7 @@
 import sys
 import logging
-from dataclasses import dataclass
 from typing import TypedDict
+from dataclasses import dataclass
 from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
@@ -157,20 +157,20 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     }
 }
 
-def set_default_model(model: str) -> None:
-    assert get_model(model)
+def set_default_model(provider: str, model: str) -> None:
     global DEFAULT_MODEL
-    DEFAULT_MODEL = model
+    DEFAULT_MODEL = get_model(provider, model)
     
-def get_model(family: str | None = None, model: str | None = None) -> ModelMeta:
+def get_model(provider: str | None = None, model: str | None = None) -> ModelMeta:
     if model is None:
         assert DEFAULT_MODEL, "Default model not set, set it with set_default_model()"
         model = DEFAULT_MODEL
+        return model
         
     if "/" in model:
         provider, model = model.split("/")
         if provider not in MODELS or model not in MODELS[provider]:
-            print(f"Error: model {provider}/{model} cannot be found.")
+            logger.warning(f"Error: model {provider}/{model} cannot be found.")
             sys.exit(1)
         else:
             return ModelMeta(
@@ -179,14 +179,14 @@ def get_model(family: str | None = None, model: str | None = None) -> ModelMeta:
                 **MODELS[provider][model],
             )
     else:
-        if model in MODELS[family]:
+        if model in MODELS[provider]:
             return ModelMeta(
-                provider=family,
+                provider=provider,
                 model=model,
-                **MODELS[family][model],
+                **MODELS[provider][model],
             )
         else:    
-            print(f"Error: model {model} cannot be found. Please select one of the following available models:\n" + "\n".join(MODELS[family]))
+            logger.warning(f"Error: model {model} cannot be found. Please select one of the following available models:\n" + "\n".join(MODELS[provider]))
             sys.exit(1)
 
     

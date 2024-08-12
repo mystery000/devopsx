@@ -42,13 +42,11 @@ def init_llm(llm: str):
             api_version="2023-07-01-preview",
             azure_endpoint=azure_endpoint,
         )
-
     elif llm == "anthropic":
         api_key = config.get_env_required("ANTHROPIC_API_KEY")
         anthropic_client = Anthropic(
             api_key=api_key,
         )
-
     elif llm == "local":
         api_base = config.get_env_required("OPENAI_API_BASE")
         oai_client = OpenAI(api_key="ollama", base_url=api_base)
@@ -246,7 +244,7 @@ def _reply_stream(messages: list[Message], model: str) -> Message:
 
 def get_recommended_model() -> str:
     assert oai_client or anthropic_client, "LLM not initialized"
-    return "gpt-4-turbo" if oai_client else "claude-3-5-sonnet-20240620"
+    return "gpt-4o" if oai_client else "claude-3-5-sonnet-20240620"
 
 
 def get_summary_model() -> str:

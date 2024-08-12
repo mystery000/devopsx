@@ -35,7 +35,8 @@ logger = logging.getLogger(__name__)
 print_builtin = __builtins__["print"]  # type: ignore
 
 LLMChoice = Literal[
-    "openai", 
+    "openai",
+    "azure", 
     "google", 
     "groq", 
     "anthropic", 
