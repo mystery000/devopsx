@@ -1,5 +1,5 @@
 """
-The assistant can execute shell commands by outputting code blocks with `bash` or `sh` as the language.
+The assistant can execute shell commands by outputting code blocks with `sh` or `shell` as the language.
 """
 
 import os
@@ -360,5 +360,5 @@ tool = ToolSpec(
     examples=examples,
     init=get_shell,
     execute=execute_shell,
-    block_types=["bash", "sh"],
+    block_types=["shell", "sh"],
 )

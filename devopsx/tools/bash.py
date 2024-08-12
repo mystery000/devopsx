@@ -1,3 +1,7 @@
+"""
+The assistant can execute shell commands by outputting code blocks with `b` or `bash` as the language.
+"""
+
 import sys
 import invoke
 import logging
@@ -5,7 +9,6 @@ import getpass
 from collections.abc import Generator
 
 from ..message import Message
-
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
@@ -42,4 +45,3 @@ def execute_bash(cmd: str, sudo: bool = False, pty: bool = True)-> Generator[Mes
         yield Message("system", msg)
     except Exception as ex:
         yield Message("system", content=f"Error: {str(ex)}")
-    

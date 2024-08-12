@@ -1,6 +1,6 @@
-from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from typing import Any, Protocol, TypeAlias
+from collections.abc import Callable, Generator
 
 from ..message import Message
 

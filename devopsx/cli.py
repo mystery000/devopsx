@@ -499,7 +499,7 @@ def _include_paths(msg: Message) -> Message:
                 append_msg += "\n\n" + p
 
     # append the message with the file contents
-    keys = ["/ssh", "/shell", "/ps", "/pseudo-shell", "/b", "/bash", "/ra", "/remote-agent"]
+    keys = ["/ssh", "/sh", "/shell", "/b", "/bash", "/ps", "/ra"]
 
     if append_msg and all(not msg.content.startswith(key) for key in keys):
         msg.content += append_msg

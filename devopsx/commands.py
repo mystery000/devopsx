@@ -88,16 +88,16 @@ def handle_cmd(
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
     match name:
         # TODO: rewrite to auto-register tools using block_types
-        case "ps" | "pseudo-shell":
+        case "ps":
             yield from execute_pseudo_shell(full_args)
+        case "ra":
+            yield from execute_remote_agent(full_args)
         case "ssh":
             yield from execute_ssh(full_args)
         case "sh" | "shell":
-            yield from execute_shell(full_args, ask=not no_confirm)
+            yield from execute_shell(full_args, ask=not no_confirm, args=[])
         case "b" | "bash":
             yield from execute_shell(full_args, ask=not no_confirm, args=[])
-        case "ra" | "remote-agent":
-            yield from execute_remote_agent(full_args)
         case "python" | "py":
             yield from execute_python(full_args, ask=not no_confirm, args=[])
         case "log":
