@@ -20,7 +20,7 @@ from rich.console import Console
 from .commands import CMDFIX, action_descriptions, execute_cmd
 from .constants import MULTIPROMPT_SEPARATOR, PROMPT_USER
 from .dirs import get_logs_dir
-from .init import PROVIDERS, init, init_logging
+from .init import init, init_logging
 from .llm import reply
 from .logmanager import LogManager, _conversations
 from .message import Message
@@ -44,31 +44,31 @@ LLMChoice = Literal[
 ]
 
 ModelChoice = Literal[
-    "gpt-4o-mini",
-    "gpt-4o", 
-    "gpt-4", 
-    "gpt-4-turbo",
-    "gpt-4-1106-preview",
-    "gpt-4-vision-preview",
-    "gpt-4-turbo-preview",
-    "gpt-3.5-turbo",
-    "gpt-3.5-turbo-16k",
-    "gpt-3.5-turbo-1106",
-    "gemini-1.5-pro-latest",
-    "gemini-1.0-pro-latest",
-    "gemini-1.0-ultra-latest",
-    "gemini-1.0-pro-vision-latest",
-    "gemini-1.5-flash-latest",
-    "llama3-8b-8192",
-    "llama3-70b-8192",
-    "mixtral-8x7b-32768",
-    "gemma-7b-it",
-    "claude-instant-1.2",
-    "claude-2.1",
-    "claude-3-5-sonnet-20240620",
-    "claude-3-opus-20240229",
-    "claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307",
+    "openai/gpt-4o-mini",
+    "openai/gpt-4o", 
+    "openai/gpt-4", 
+    "openai/gpt-4-turbo",
+    "openai/gpt-4-1106-preview",
+    "openai/gpt-4-vision-preview",
+    "openai/gpt-4-turbo-preview",
+    "openai/gpt-3.5-turbo",
+    "openai/gpt-3.5-turbo-16k",
+    "openai/gpt-3.5-turbo-1106",
+    "google/gemini-1.5-pro-latest",
+    "google/gemini-1.0-pro-latest",
+    "google/gemini-1.0-ultra-latest",
+    "google/gemini-1.0-pro-vision-latest",
+    "google/gemini-1.5-flash-latest",
+    "groq/llama3-8b-8192",
+    "groq/llama3-70b-8192",
+    "groq/mixtral-8x7b-32768",
+    "groq/gemma-7b-it",
+    "anthropic/claude-instant-1.2",
+    "anthropic/claude-2.1",
+    "anthropic/claude-3-5-sonnet-20240620",
+    "anthropic/claude-3-opus-20240229",
+    "anthropic/claude-3-sonnet-20240229",
+    "anthropic/claude-3-haiku-20240307",
 ]
 
 
@@ -109,15 +109,9 @@ The chat offers some commands that can be used to interact with the system:
     help="Name of conversation. Defaults to generating a random name. Pass 'ask' to be prompted for a name.",
 )
 @click.option(
-    "--llm",
-    default=None,
-    help="LLM provider to use.",
-    type=click.Choice(PROVIDERS),
-)
-@click.option(
     "--model",
     default=None,
-    help="Model to use.",
+    help="Model to use, e.g. openai/gpt-4-turbo, anthropic/claude-3-5-sonnet-20240620. If only provider is given, the default model for that provider is used.",
     type=click.Choice(list(ModelChoice.__args__))
 )
 @click.option(
@@ -150,7 +144,6 @@ def main(
     prompts: list[str],
     prompt_system: str,
     name: str,
-    llm: LLMChoice,
     model: ModelChoice,
     stream: bool,
     verbose: bool,
@@ -206,7 +199,6 @@ def main(
         prompt_msgs,
         initial_msgs,
         name,
-        llm,
         model,
         stream,
         no_confirm,
@@ -219,7 +211,6 @@ def chat(
     prompt_msgs: list[Message],
     initial_msgs: list[Message],
     name: str,
-    llm: str | None,
     model: str | None,
     stream: bool = True,
     no_confirm: bool = False,
@@ -235,7 +226,7 @@ def chat(
     Callable from other modules.
     """
     # init
-    init(llm, model, interactive)
+    init(model, interactive)
 
     # (re)init shell
     set_shell(ShellSession())
