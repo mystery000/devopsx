@@ -108,60 +108,60 @@ To install and run DevOpsX, follow these steps
 To use GPT-4+, an OpenAI API KEY is required. Example start command:
 
 ```
-devopsx --llm openai --model gpt-4-1106-preview
+devopsx --model openai/gpt-4-1106-preview
 ```
 
 ##### Available OpenAI models
-- gpt-4o-mini
-- gpt-4o
-- gpt-4
-- gpt-4-turbo
-- gpt-4-1106-preview
-- gpt-4-vision-preview
-- gpt-4-turbo-preview
-- gpt-3.5-turbo
-- gpt-3.5-turbo-16k
-- gpt-3.5-turbo-1106
+- openai/gpt-4o-mini
+- openai/gpt-4o
+- openai/gpt-4
+- openai/gpt-4-turbo
+- openai/gpt-4-1106-preview
+- openai/gpt-4-vision-preview
+- openai/gpt-4-turbo-preview
+- openai/gpt-3.5-turbo
+- openai/gpt-3.5-turbo-16k
+- openai/gpt-3.5-turbo-1106
 
 To use Gemini models, an Gemini API KEY is required. Example start command:
 
 ```
-devopsx --llm google --model gemini-1.5-pro-latest
+devopsx --model google/gemini-1.5-pro-latest
 ```
 
 ##### Available Gemini models
 
-- gemini-1.5-pro-latest
-- gemini-1.0-pro-latest
-- gemini-1.0-ultra-latest
-- gemini-1.0-pro-vision-latest
+- google/gemini-1.5-pro-latest
+- google/gemini-1.0-pro-latest
+- google/gemini-1.0-ultra-latest
+- google/gemini-1.0-pro-vision-latest
 
 To use GROQ models, an GROQ API KEY is required. Example start command:
 
 ```
-devopsx --llm groq --model llama3-8b-8192
+devopsx --model groq/llama3-8b-8192
 ```
 
 ##### Available Gemini models
 
-- llama3-8b-8192
-- llama3-70b-8192
-- mixtral-8x7b-32768
-- gemma-7b-it
+- groq/llama3-8b-8192
+- groq/llama3-70b-8192
+- groq/mixtral-8x7b-32768
+- groq/gemma-7b-it
 
 To use Claude family of models, an ANTHROPIC API KEY is required. Example start command:
 
 ```
-devopsx --llm anthropic --model claude-3-5-sonnet-20240620
+devopsx --model anthropic/claude-3-5-sonnet-20240620
 ```
 
 ##### Available Gemini models
 
-- claude-instant-1.2
-- claude-2.1
-- claude-3-5-sonnet-20240620
-- claude-3-opus-20240229
-- claude-3-sonnet-20240229
-- claude-3-haiku-20240307
+- anthropic/claude-instant-1.2
+- anthropic/claude-2.1
+- anthropic/claude-3-5-sonnet-20240620
+- anthropic/claude-3-opus-20240229
+- anthropic/claude-3-sonnet-20240229
+- anthropic/claude-3-haiku-20240307
 
 **Caution:** Long stdout output will consume tokens.
