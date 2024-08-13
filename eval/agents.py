@@ -2,14 +2,17 @@ import os
 from abc import abstractmethod
 
 from devopsx import Message
-from devopsx import get_prompt
 from devopsx import chat as devopsx_chat
+from devopsx import get_prompt
 
-from .types import Files
 from .filestore import FileStore
+from .types import Files
 
 
 class Agent:
+    def __init__(self, model: str):
+        self.model = model
+
     @abstractmethod
     def act(self, files: Files | None, prompt: str) -> Files:
         """
@@ -28,14 +31,17 @@ class DevopsxAgent(Agent):
 
         print("\n--- Start of generation ---")
         print(f"Working in {store.working_dir}")
+        prompt_sys = get_prompt()
+        prompt_sys.content += (
+            "\n\nIf you have trouble and dont seem to make progress, stop trying."
+        )
         # TODO: add timeout
         try:
             devopsx_chat(
                 [Message("user", prompt)],
-                [get_prompt()],
+                [prompt_sys],
                 f"devopsx-evals-{store.id}",
-                llm=None,
-                model=None,
+                model=self.model,
                 no_confirm=True,
                 interactive=False,
             )
