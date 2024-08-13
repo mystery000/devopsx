@@ -1,6 +1,27 @@
-/devopsx/__pycache__
-/devopsx/tools/__pycache__
 .env*
 *venv
 .clean
+
+# logs
 *.log
+*logs*
+
+# fetched by make
+scripts/build_changelog.py
+
+# build/test/prof/cache
+dist
+prof
+tests/output
+docs/_build
+.coverage
+coverage.xml
+__pycache__
+.*cache
+
+# filetypes
+*.csv
+*.jsonl
+*.gif
+*.cast
+*.png

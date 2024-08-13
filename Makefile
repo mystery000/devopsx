@@ -1,10 +1,10 @@
-.PHONY: docs eval
+.PHONY: docs
 
 # set default shell
 SHELL := $(shell which bash)
 
 # src dirs and files
-SRCDIRS = devopsx tests scripts train eval
+SRCDIRS = devopsx tests scripts train
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
 
 # exclude files
@@ -24,10 +24,10 @@ test:
 		$(if $(PROFILE), --profile-svg)
 
 eval:
-	poetry run python3 -m eval
+	poetry run python3 -m devopsx.eval
 
 typecheck:
-	poetry run mypy --ignore-missing-imports ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
+	poetry run mypy --ignore-missing-imports --check-untyped-defs ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
 
 lint:
 	poetry run ruff ${SRCDIRS}
@@ -47,23 +47,22 @@ docs: docs/conf.py docs/*.rst docs/.clean
 	poetry run make -C docs html
 
 version:
-	# check that pyproject.toml is clean
-	git diff --exit-code pyproject.toml || (echo "pyproject.toml is dirty, please commit or stash changes" && exit 1)
-	git pull
-	@VERSION=$$(git describe --tags --abbrev=0 | cut -b 2-) && \
-		poetry version $${VERSION} && \
-		git add pyproject.toml && \
-		git commit -m "chore: bump version to $${VERSION}" || echo "No version bump needed"
+	@./scripts/bump_version.sh
 
-CHANGELOG.md: version
+./scripts/build_changelog.py:
+	wget -O $@ https://raw.githubusercontent.com/ActivityWatch/activitywatch/master/scripts/build_changelog.py
+	chmod +x $@
+
+dist/CHANGELOG.md: version ./scripts/build_changelog.py
 	VERSION=$$(git describe --tags --abbrev=0) && \
-		./scripts/build_changelog.py --range v0.12.0...$${VERSION} --project-title devopsx --org ErikBjare --repo devopsx --output $@
+	PREV_VERSION=$$(./scripts/get-last-version.sh $${VERSION}) && \
+		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org ErikBjare --repo devopsx --output $@
 
-release: CHANGELOG.md
+release: dist/CHANGELOG.md
 	@VERSION=$$(git describe --tags --abbrev=0) && \
 		echo "Releasing version $${VERSION}"; \
 		read -p "Press enter to continue" && \
-		gh release create $${VERSION} -t $${VERSION} -F CHANGELOG.md
+		gh release create $${VERSION} -t $${VERSION} -F dist/CHANGELOG.md
 
 clean: clean-docs
 
