@@ -7,11 +7,13 @@ from devopsx.eval.agents import DevopsxAgent
 @pytest.mark.slow
 def test_eval_cli():
     runner = CliRunner()
+    test_set = ["hello"]
     result = runner.invoke(
         main,
         [
             "--model",
             "openai/gpt-4o",
+            *test_set,
         ],
     )
     assert result
