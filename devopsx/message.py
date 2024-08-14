@@ -1,19 +1,23 @@
 import io
-import shutil
 import sys
-import textwrap
-from datetime import datetime
-from typing import Literal
-
+import shutil
+import logging
 import tomlkit
-from rich import print
-from rich.console import Console
-from rich.syntax import Syntax
-from tomlkit._utils import escape_string
+import textwrap
+from pathlib import Path
+from typing import Literal
+from datetime import datetime
 from typing_extensions import Self
+
+from rich import print
+from rich.syntax import Syntax
+from rich.console import Console
+from tomlkit._utils import escape_string
 
 from .constants import ROLE_COLOR
 
+
+logger = logging.getLogger(__name__)
 
 class Message:
     """A message in the assistant conversation."""
@@ -26,6 +30,7 @@ class Message:
         hide: bool = False,
         quiet: bool = False,
         timestamp: datetime | str | None = None,
+        files: list[Path] = [],
     ):
         assert role in ["system", "user", "assistant"]
         self.role = role
@@ -42,6 +47,8 @@ class Message:
         # Wether this message should be printed on execution (will still print on resume, unlike hide)
         # This is not persisted to the log file.
         self.quiet = quiet
+        # Files attached to the message, could e.g. be images for vision.
+        self.files = files
 
     def __repr__(self):
         content = textwrap.shorten(self.content, 20, placeholder="...")
@@ -57,13 +64,39 @@ class Message:
             and self.timestamp == other.timestamp
         )
 
-    def to_dict(self, keys=None):
+    def to_dict(self, keys=None, anthropic=False) -> dict:
         """Return a dict representation of the message, serializable to JSON."""
+        content: str | list[dict | str] = self.content
+
+        # if anthropic, make sure content is a list of dicts, to support multiple types of content
+        if anthropic:
+            content = [{"type": "text", "text": self.content}]
+            for f in self.files:
+                ext = f.suffix[1:]
+                if ext not in ["jpg", "jpeg", "png", "gif"]:
+                    logger.warning("Unsupported file type: %s", ext)
+                    continue
+                media_type = f"image/{ext}"
+                content.append(
+                    {
+                        "type": "file",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": f.read_bytes().decode("base64"),
+                        },
+                    }
+                )
+        else:
+            content = self.content
+            
         d = {
             "role": self.role,
-            "content": self.content,
+            "content": content,
             "timestamp": self.timestamp.isoformat(),
+            "files": [str(f) for f in self.files],
         }
+        
         if keys:
             return {k: d[k] for k in keys}
         return d
@@ -90,6 +123,7 @@ role = "{self.role}"
 content = """
 {content}
 """
+files = {[str(f) for f in self.files]}
 timestamp = "{self.timestamp.isoformat()}"
 {flags_toml}
 '''
@@ -111,6 +145,7 @@ timestamp = "{self.timestamp.isoformat()}"
             msg["content"],
             pinned=msg.get("pinned", False),
             hide=msg.get("hide", False),
+            files=[Path(f) for f in msg.get("files", [])],
             timestamp=datetime.fromisoformat(msg["timestamp"]),
         )
 
