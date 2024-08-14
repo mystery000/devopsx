@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import TypedDict, Literal
 
 Files = dict[str, str | bytes]
-
+Status = Literal["success", "error", "timeout"]
 
 @dataclass
 class ResultContext:
@@ -34,7 +34,7 @@ class ExecResult(TypedDict):
     """
     
     name: str
-    status: Literal["success", "error", "timeout"]
+    status: Status
     results: list[CaseResult]
     timings: dict[str, float]
     stdout: str
