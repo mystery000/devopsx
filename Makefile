@@ -19,8 +19,8 @@ test:
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
 		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
 		-n 8 \
-		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow") \
 		$(if $(EVAL), , -m "not eval") \
+		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow and not eval") \
 		$(if $(PROFILE), --profile-svg)
 
 eval:
