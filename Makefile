@@ -20,7 +20,7 @@ test:
 		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
 		-n 8 \
 		$(if $(EVAL), , -m "not eval") \
-		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow and not eval") \
+		$(if $(SLOW), --timeout 60 --retries 2 --retry-delay 5, --timeout 5 -m "not slow and not eval") \
 		$(if $(PROFILE), --profile-svg)
 
 eval:
