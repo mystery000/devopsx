@@ -44,6 +44,7 @@ LLMChoice = Literal[
 ]
 
 ModelChoice = Literal[
+    "openai", "anthropic", "google", "groq",
     "openai/gpt-4o-mini",
     "openai/gpt-4o", 
     "openai/gpt-4", 
@@ -112,7 +113,6 @@ The chat offers some commands that can be used to interact with the system:
     "--model",
     default=None,
     help="Model to use, e.g. openai/gpt-4-turbo, anthropic/claude-3-5-sonnet-20240620. If only provider is given, the default model for that provider is used.",
-    type=click.Choice(list(ModelChoice.__args__))
 )
 @click.option(
     "--stream/--no-stream",

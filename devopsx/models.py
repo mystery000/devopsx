@@ -163,7 +163,7 @@ def set_default_model(model: str) -> None:
     modelmeta = get_model(model)
     assert modelmeta
     global DEFAULT_MODEL
-    DEFAULT_MODEL = get_model(model)
+    DEFAULT_MODEL = modelmeta
     
 def get_model(model: str | None = None) -> ModelMeta:
     if model is None:

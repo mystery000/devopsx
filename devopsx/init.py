@@ -62,7 +62,7 @@ def init(model: str | None, interactive: bool):
             "No model specified, using recommended model for provider: %s", model
         )
         
-    set_default_model(provider, model)
+    set_default_model(model)
 
     if interactive:
         _load_readline_history()
