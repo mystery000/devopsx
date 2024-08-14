@@ -11,8 +11,6 @@ def test_eval_cli():
     result = runner.invoke(
         main,
         [
-            "--model",
-            "openai/gpt-4o",
             *test_set,
         ],
     )
@@ -21,9 +19,8 @@ def test_eval_cli():
     assert "correct file" in result.output
     assert "correct output" in result.output
 
-
+# No idea why, but for some reason keeping this leads to better coverage than the above
 @pytest.mark.slow
-@pytest.mark.eval
 def test_eval(test):
     """
     This test will be run for each eval in the tests list.
