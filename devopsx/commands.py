@@ -9,11 +9,11 @@ from collections.abc import Generator
 from . import llm
 from .constants import CMDFIX
 from .logmanager import LogManager
-from .message import Message, msgs_to_toml, print_msg, toml_to_msgs
+from .message import Message, msgs_to_toml, print_msg, toml_to_msgs, len_tokens
 from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
-from .util import ask_execute, len_tokens
+from .util import ask_execute
 from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash, execute_remote_agent, loaded_tools
 
 logger = logging.getLogger(__name__)

@@ -9,13 +9,14 @@ from pathlib import Path
 from datetime import datetime
 from typing import Literal, Any
 from typing_extensions import Self
+from tomlkit._utils import escape_string
 
 from rich import print
 from rich.syntax import Syntax
 from rich.console import Console
-from tomlkit._utils import escape_string
 
 from .constants import ROLE_COLOR
+from .util import extract_codeblocks, get_tokenizer
 
 
 logger = logging.getLogger(__name__)
@@ -201,8 +202,6 @@ timestamp = "{self.timestamp.isoformat()}"
         if backtick_count < 2:
             return []
        
-        from .util import extract_codeblocks # noreorder
-
         return extract_codeblocks(content_str)
 
 
@@ -303,3 +302,21 @@ def toml_to_msgs(toml: str) -> list[Message]:
         )
         for msg in msgs
     ]
+
+
+def msgs2dicts(msgs: list[Message], openai=False, anthropic=False) -> list[dict]:
+    """Convert a list of Message objects to a list of dicts ready to pass to an LLM."""
+    return [
+        msg.to_dict(keys=["role", "content"], openai=openai, anthropic=anthropic)
+        for msg in msgs
+    ]
+
+
+# TODO: remove model assumption
+def len_tokens(content: str | Message | list[Message], model: str = "gpt-4") -> int:
+    """Get the number of tokens in a string, message, or list of messages."""
+    if isinstance(content, list):
+        return sum(len_tokens(msg.content, model) for msg in content)
+    if isinstance(content, Message):
+        return len_tokens(content.content, model)
+    return len(get_tokenizer(model).encode(content))

@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import pytest
-from devopsx.message import Message
+from devopsx.message import Message, len_tokens
 from devopsx.tools.reduce import reduce_log, truncate_msg
-from devopsx.util import len_tokens
 
 # Project root
 root = Path(__file__).parent.parent

@@ -1,5 +1,5 @@
 from devopsx.prompts import get_prompt
-from devopsx.util import len_tokens
+from devopsx.message import len_tokens
 
 
 def test_get_prompt():
