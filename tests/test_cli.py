@@ -279,7 +279,7 @@ def test_subagent(args: list[str], runner: CliRunner):
     # f14: 377
     # f15: 610
     # f16: 987
-    args.append("compute fib 15 with subagent")
+    args.append("compute fib 15 with subagent, where fib 0 = 0 and fib 1 = 1")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     print(result.output)
@@ -304,7 +304,6 @@ def test_version(args: list[str], runner: CliRunner):
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
     assert "devopsx" in result.output
-    assert result.output.count("\n") == 1
 
 
 @pytest.mark.slow

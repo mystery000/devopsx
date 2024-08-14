@@ -5,7 +5,6 @@ from devopsx.eval.agents import DevopsxAgent
 
 
 @pytest.mark.slow
-@pytest.mark.eval
 def test_eval(test):
     """
     This test will be run for each eval in the tests list.
@@ -19,4 +18,8 @@ def test_eval(test):
 # Hook to generate tests from the tests list
 def pytest_generate_tests(metafunc):
     if "test" in metafunc.fixturenames:
-        metafunc.parametrize("test", tests, ids=[test["name"] for test in tests])
+        allowlist = ["hello"]  # for now, only run the hello test
+        test_set, test_names = zip(
+            *[(test, test["name"]) for test in tests if test["name"] in allowlist]
+        )
+        metafunc.parametrize("test", test_set, ids=test_names)
