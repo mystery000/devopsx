@@ -221,17 +221,18 @@ def impersonate(log: LogManager, full_args: str, no_confirm: bool):
 
 def save(log: LogManager, filename: str):
     # save the most recent code block to a file
-    code = log.get_last_code_block(content=True)
-    if not code:
+    codeblock = log.get_last_code_block()
+    if not codeblock:
         print("No code block found")
         return
+    _, content = codeblock
     if Path(filename).is_file():
         confirm = ask_execute("File already exists, overwrite?", default=False)
         if not confirm:
             return
     try:
         with open(filename, "w") as f:
-            f.write(code)
+            f.write(content)
         print(f"Saved code block to {filename}")
     except Exception as e:
         print(f"Error saving code block: {e}")
