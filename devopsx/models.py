@@ -76,7 +76,6 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         "gpt-3.5-turbo-1106": {
             "context": 16385,
         },
-      
     },
     # https://ai.google.dev/gemini-api/docs/models/gemini
     "google": {
@@ -106,9 +105,6 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         },
         "llama-3.1-8b-instant": {
           "context": 131_072
-        },
-        "llama-guard-3-8b": {
-            "context": 8192
         },
         # Training data cut-off: December, 2023
         "llama3-70b-8192": {

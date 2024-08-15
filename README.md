@@ -17,7 +17,7 @@ Infractura.com presents DevOpsX, a comprehensive multi-agent generative AI-based
 - **Self-Correcting**
   - Commands have their output fed back to the agent, allowing it to self-correct.
 - **Model Support**
-  - Use OpenAI, Azure, Anthropic, Gemini, GROQ or serve locally with `llama.cpp`
+  - Use OpenAI, Azure, Anthropic, Groq or serve locally with `llama.cpp`
 - **Miscellaneous**
   - Tab completion.
   - Automatic naming of conversations.
@@ -123,19 +123,6 @@ devopsx --model openai/gpt-4-1106-preview
 - openai/gpt-3.5-turbo-16k
 - openai/gpt-3.5-turbo-1106
 
-To use Gemini models, an Gemini API KEY is required. Example start command:
-
-```
-devopsx --model google/gemini-1.5-pro-latest
-```
-
-##### Available Gemini models
-
-- google/gemini-1.5-pro-latest
-- google/gemini-1.0-pro-latest
-- google/gemini-1.0-ultra-latest
-- google/gemini-1.0-pro-vision-latest
-
 To use GROQ models, an GROQ API KEY is required. Example start command:
 
 ```
@@ -144,6 +131,8 @@ devopsx --model groq/llama3-8b-8192
 
 ##### Available Gemini models
 
+- groq/llama-3.1-70b-versatile
+- groq/llama-3.1-8b-instant
 - groq/llama3-8b-8192
 - groq/llama3-70b-8192
 - groq/mixtral-8x7b-32768
