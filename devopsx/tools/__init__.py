@@ -23,6 +23,7 @@ from .pseudo_shell import execute_pseudo_shell
 from .pseudo_shell import tool as pseudo_shell_tool
 from .subagent import tool as subagent_tool
 from .remote_agent import execute_remote_agent
+from .remote_agent import tool as remote_agent_tool
 from .summarize import summarize
 from .terminal import tool as terminal_tool
 
@@ -58,7 +59,8 @@ all_tools: list[ToolSpec] = [
         terminal_tool,
         browser_tool,
         gh_tool,
-        ssh_tool
+        ssh_tool,
+        remote_agent_tool
     ]
     if tool.available
 ]
