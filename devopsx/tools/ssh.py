@@ -6,6 +6,7 @@ import configparser
 from paramiko import SSHClient
 from collections.abc import Generator
 
+from .base import ToolSpec
 from ..message import Message
 
 logger = logging.getLogger(__name__)
@@ -136,3 +137,14 @@ def execute_ssh(cmd: str) -> Generator[Message, None, None]:
         yield Message("system", "Invalid command format. The format should be `/ssh <hostname> <user@host[:port]> [identity_file]` or `/ssh delete <hostname>`")       
     except Exception as ex:
         yield Message("system", f"Error: {str(ex)}")
+        
+
+tool = ToolSpec(
+    name="ssh",
+    desc="Setup a new SSH host",
+    instructions="",
+    examples="",
+    init=init_ssh,
+    execute=execute_ssh,
+    block_types=["ssh"],
+)       

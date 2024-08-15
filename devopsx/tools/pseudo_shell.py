@@ -8,11 +8,21 @@ from collections.abc import Generator
 
 from ..message import Message
 
+from .base import ToolSpec
 from .shell import _shorten_stdout, _format_block_smart
 
 logger = logging.getLogger(__name__)
  
 _connections: dict[str, Connection] = dict()
+
+instructions = f"""
+When you send a message containing bash code, it will be executed in a pseudo terminal.
+The shell will respond with the output of the execution.
+Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
+"""
+
+examples = """
+""".strip()
 
 def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
     from .ssh import config_path, check_connection
@@ -101,3 +111,13 @@ def execute_pseudo_shell(cmd, sudo=False)-> Generator[Message, None, None]:
     except Exception as ex:
         yield Message("system", content=f"Error: {str(ex)}")
     
+    
+tool = ToolSpec(
+    name="pseudo shell",
+    desc="Executes shell commands in a pseudo terminal",
+    instructions="",
+    examples=examples,
+    init=None,
+    execute=execute_pseudo_shell,
+    block_types=["ps"],
+)
