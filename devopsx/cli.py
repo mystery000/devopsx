@@ -36,15 +36,19 @@ print_builtin = __builtins__["print"]  # type: ignore
 
 LLMChoice = Literal[
     "openai",
+    "openrouter" 
     "azure", 
-    "google", 
+    "anthropic",
     "groq", 
-    "anthropic", 
-    "local",
+    "google", 
 ]
 
 ModelChoice = Literal[
-    "openai", "anthropic", "google", "groq",
+    "openai", 
+    "openrouter",
+    "anthropic", 
+    "groq",
+    "google",
     "openai/gpt-4o-mini",
     "openai/gpt-4o", 
     "openai/gpt-4", 
@@ -60,6 +64,9 @@ ModelChoice = Literal[
     "google/gemini-1.0-ultra-latest",
     "google/gemini-1.0-pro-vision-latest",
     "google/gemini-1.5-flash-latest",
+    "groq/llama-3.1-70b-versatile",
+    "groq/llama-3.1-8b-instant",
+    "groq/llama-guard-3-8b",
     "groq/llama3-8b-8192",
     "groq/llama3-70b-8192",
     "groq/mixtral-8x7b-32768",

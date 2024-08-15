@@ -101,12 +101,21 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     },
     # https://console.groq.com/docs/models
     "groq": {
-        # Training data cut-off: March, 2023
-        "llama3-8b-8192": {
+        "llama-3.1-70b-versatile": {
+          "context": 131_072
+        },
+        "llama-3.1-8b-instant": {
+          "context": 131_072
+        },
+        "llama-guard-3-8b": {
             "context": 8192
         },
         # Training data cut-off: December, 2023
         "llama3-70b-8192": {
+            "context": 8192
+        },
+        # Training data cut-off: March, 2023
+        "llama3-8b-8192": {
             "context": 8192
         },
         "mixtral-8x7b-32768": {
@@ -204,6 +213,8 @@ def get_recommended_model(provider: str) -> str:
         return "meta-llama/llama-3.1-70b-instruct"
     elif provider == "anthropic":
         return "claude-3-5-sonnet-20240620"
+    elif provider == "groq":
+        return "llama3-70b-8192"
     else:
         raise ValueError(f"Unknown provider {provider}")
 
@@ -215,5 +226,7 @@ def get_summary_model(provider: str) -> str:
         return "meta-llama/llama-3.1-8b-instruct"
     elif provider == "anthropic":
         return "claude-3-haiku-20240307"
+    elif provider == "groq":
+        return "llama3-70b-8192"
     else:
         raise ValueError(f"Unknown provider {provider}")

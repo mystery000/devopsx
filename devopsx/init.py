@@ -40,6 +40,9 @@ def init(model: str | None, interactive: bool):
         elif config.get_env("ANTHROPIC_API_KEY"):
             print("Found Anthropic API key, using Anthropic provider")
             model = "anthropic"
+        elif config.get_env("GROQ_API_KEY"):
+            print("Found Groq API key, using Groq provider")
+            model = "groq"
         # ask user for API key
         elif interactive:
             model, _ = ask_for_api_key()
@@ -110,14 +113,15 @@ def _load_readline_history() -> None:  # pragma: no cover
 
 def ask_for_api_key():  # pragma: no cover
     """Interactively ask user for API key"""
-    print("No API key set for OpenAI, Anthropic, GROQ or OpenRouter.")
+    print("No API key set for OpenAI, Anthropic, Groq or OpenRouter.")
     print(
         """You can get one at:
 - OpenAI: https://platform.openai.com/account/api-keys
 - Anthropic: https://console.anthropic.com/settings/keys
+- Groq: https://console.groq.com/keys
         """
     )
-    api_key = input("Your OpenAI or Anthropic API key: ").strip()
+    api_key = input("Your API key for OpenAI, Groq or Anthropic: ").strip()
 
     if api_key.startswith("sk-ant-"):
         provider = "anthropic"
@@ -125,6 +129,9 @@ def ask_for_api_key():  # pragma: no cover
     elif api_key.startswith("sk-or-"):
         provider = "openrouter"
         env_var = "OPENROUTER_API_KEY"
+    elif api_key.startswith("gsk_"):
+        provider = "groq"
+        env_var = "GROQ_API_KEY"
     else:
         provider = "openai"
         env_var = "OPENAI_API_KEY"

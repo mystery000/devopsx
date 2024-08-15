@@ -29,6 +29,14 @@ To use Anthropic, set your API key:
 export ANTHROPIC_API_KEY="your-api-key"
 ```
 
+## Groq
+
+To use Groq, set your API key:
+
+```sh
+export GROQ_API_KEY="your-api-key"
+```
+
 ## OpenRouter
 
 To use OpenRouter, set your API key:

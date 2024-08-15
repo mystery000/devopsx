@@ -18,21 +18,28 @@ from .llm_openai import chat as chat_openai
 from .llm_openai import get_client as get_openai_client
 from .llm_openai import init as init_openai
 from .llm_openai import stream as stream_openai
+from .llm_groq import chat as chat_groq
+from .llm_groq import get_client as get_groq_client
+from .llm_groq import init as init_groq
+from .llm_groq import stream as stream_groq
 
 logger = logging.getLogger(__name__)
 
-Provider = Literal["openai", "anthropic", "azure", "google", "groq" "openrouter", "local"]
+Provider = Literal["openai", "azure", "openrouter", "local", "anthropic", "groq", "google"]
 
 def init_llm(llm: str):
     # set up API_KEY (if openai) and API_BASE (if local)
     config = get_config()
 
-    if llm in ["openai", "azure", "google", "groq", "openrouter", "local"]:
+    if llm in ["openai", "azure", "openrouter", "local"]:
         init_openai(llm, config)
         assert get_openai_client()
     elif llm == "anthropic":
         init_anthropic(config)
         assert get_anthropic_client()
+    elif llm == "groq":
+        init_groq(config)
+        assert get_groq_client()
     else:
         print(f"Error: Unknown LLM: {llm}")
         sys.exit(1)
@@ -55,6 +62,8 @@ def _chat_complete(messages: list[Message], model: str) -> str:
         return chat_openai(messages, model)
     elif provider == "anthropic":
         return chat_anthropic(messages, model)
+    elif provider == "groq":
+        return chat_groq(messages, model)
     else:
         raise ValueError("LLM not initialized")
 
@@ -64,6 +73,8 @@ def _stream(messages: list[Message], model: str) -> Iterator[str]:
         return stream_openai(messages, model)
     elif provider == "anthropic":
         return stream_anthropic(messages, model)
+    elif provider == "groq":
+        return stream_groq(messages, model)
     else:
         raise ValueError("LLM not initialized")
 
@@ -112,7 +123,8 @@ def _reply_stream(messages: list[Message], model: str) -> Message:
 def _client_to_provider() -> Provider:
     openai_client = get_openai_client()
     anthropic_client = get_anthropic_client()
-    assert openai_client or anthropic_client, "No client initialized"
+    groq_client = get_groq_client()
+    assert openai_client or anthropic_client or groq_client, "No client initialized"
     if openai_client:
         if "openai" in openai_client.base_url.host:
             return "openai"
@@ -122,6 +134,8 @@ def _client_to_provider() -> Provider:
             return "azure"
     elif anthropic_client:
         return "anthropic"
+    elif groq_client:
+        return "groq"
     else:
         raise ValueError("Unknown client type")
 
