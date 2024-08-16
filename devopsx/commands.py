@@ -111,10 +111,7 @@ def handle_cmd(
             new_name = args[0] if args else input("New name: ")
             log.fork(new_name)
         case "summarize":
-            msgs = log.prepare_messages()
-            msgs = [m for m in msgs if not m.hide]
-            summary = summarize(msgs)
-            print(f"Summary: {summary}")
+            summarize_and_print(log)
         case "edit":
             # edit previous messages
             # first undo the '/edit' command itself
@@ -194,7 +191,7 @@ def summarize_and_print(log: LogManager):
     msgs = log.prepare_messages()
     msgs = [m for m in msgs if not m.hide]
     summary = summarize(msgs)
-    print(f"Summary: {summary}")
+    print_msg(summary)
 
 def replay(log: LogManager):
     print("Replaying conversation...")

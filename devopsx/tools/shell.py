@@ -48,6 +48,7 @@ instructions = f"""
 When you send a message containing bash code, it will be executed in a stateful bash shell.
 The shell will respond with the output of the execution.
 Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
+Do not use ``` to wrap the assistant message.
 {'The platform is macOS.' if is_macos else ''}
 
 These programs are available, among others:
@@ -92,19 +93,6 @@ System:
 ```output
 (contents of main.py)
 ```
-User: /shell uname -a
-Assistant: Here are the details of your system
-
-- Kernel name: Linux
-- Hostname: machine
-- Kernel release: 6.5.0-45-generic
-- Kernel version: #45~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon Jul 15 16:40:02 UTC 2
-- Machine: x86_64
-- Processor: x86_64
-- Hardware platform: x86_64
-- Operating system: GNU/Linux
-
-Is there anything specific you would like to do next?
 """.strip()
 
 class ShellSession:
