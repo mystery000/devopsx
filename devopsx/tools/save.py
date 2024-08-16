@@ -54,7 +54,7 @@ def execute_save(
 
     if ask and not confirm:
         # early return
-        yield Message("system", "Save cancelled.")
+        print("Save cancelled.")
         return
 
     path = Path(fn).expanduser()
@@ -69,7 +69,7 @@ def execute_save(
             print("Skipping overwrite confirmation.")
         if not overwrite:
             # early return
-            yield Message("system", "Save cancelled.")
+            print("Save cancelled.")
             return
 
     # if the folder doesn't exist, ask to create it
@@ -84,7 +84,7 @@ def execute_save(
             path.parent.mkdir(parents=True)
         else:
             # early return
-            yield Message("system", "Save cancelled.")
+            print("Save cancelled.")
             return
 
     print("Saving to " + fn)
