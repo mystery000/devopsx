@@ -15,14 +15,13 @@ from .read import tool as tool_read
 from .save import execute_save, tool_append, tool_save
 from .shell import execute_shell
 from .shell import tool as shell_tool
-from .bash import execute_bash
-from .bash import tool as bash_tool
 from .ssh import execute_ssh
 from .ssh import tool as ssh_tool
 from .pseudo_shell import execute_pseudo_shell
 from .pseudo_shell import tool as pseudo_shell_tool
 from .subagent import tool as subagent_tool
 from .remote_agent import execute_remote_agent
+from .remote_agent import tool as remote_agent_tool
 from .summarize import summarize
 from .terminal import tool as terminal_tool
 
@@ -34,10 +33,9 @@ __all__ = [
     "execute_python",
     "execute_shell",
     "execute_pseudo_shell",
-    "execute_bash",
+    "execute_remote_agent",
     "execute_ssh",
     "execute_save",
-    "execute_remote_agent",
     "summarize",
     "ToolSpec",
 ]
@@ -53,12 +51,12 @@ all_tools: list[ToolSpec] = [
         python_tool,
         shell_tool,
         pseudo_shell_tool,
-        bash_tool,
         subagent_tool,
         terminal_tool,
         browser_tool,
         gh_tool,
-        ssh_tool
+        ssh_tool,
+        remote_agent_tool
     ]
     if tool.available
 ]

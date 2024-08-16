@@ -145,7 +145,7 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
         print()
         if not confirm:
             # early return
-            yield Message("system", "Aborted, user chose not to run command.")
+            print("Aborted, user chose not to run command.")
             return
     else:
         print("Skipping confirmation")

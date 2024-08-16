@@ -2,6 +2,7 @@ import os
 import logging
 from collections.abc import Generator
 
+from .base import ToolSpec
 from ..message import Message
 # from ..celery import chat
 
@@ -9,17 +10,9 @@ logger = logging.getLogger(__name__)
  
 password = None
 
-# Define the path to the config file 
-# config_path = os.path.expanduser("~/.config/devopsx/agents")
-
-# def init_agents() -> None:
-#     # Check if the config file exists
-#     if not os.path.exists(config_path):
-#         # If not, create it and write some default settings
-#         os.makedirs(os.path.dirname(config_path), exist_ok=True)
-#         os.mknod(config_path)
-#         logger.info(f"Created agents config file at {config_path}")
-
+def init_agents() -> None:
+    ...
+    
 def execute_remote_agent(cmd, sudo = False)-> Generator[Message, None, None]:
     try:
         if len(cmd.split(" ")) < 2:
@@ -35,3 +28,13 @@ def execute_remote_agent(cmd, sudo = False)-> Generator[Message, None, None]:
 
     except Exception as ex:
         yield Message("system", content=f"Error: {ex}")
+        
+tool = ToolSpec(
+    name="remote agent",
+    desc="Run shell commands on remote agents.",
+    instructions="",
+    examples="",
+    init=init_agents,
+    execute=execute_remote_agent,
+    block_types=["ra"],
+)       

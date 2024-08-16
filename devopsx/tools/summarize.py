@@ -21,7 +21,7 @@ def summarize(msg: Message | list[Message]) -> Message:
     logger.info(f"{summary[:200]=}")
 
     # construct message from summary
-    content = f"Here's a summary of the conversation so far:\n{summary}"
+    content = f"\n\nHere's a summary of the conversation so far:\n{summary}"
     return Message(role="system", content=content)
 
 

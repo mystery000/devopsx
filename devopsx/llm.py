@@ -10,14 +10,17 @@ from .constants import PROMPT_ASSISTANT
 from .message import Message, len_tokens
 from .models import MODELS, get_summary_model
 from .util import extract_codeblocks
+
 from .llm_anthropic import chat as chat_anthropic
 from .llm_anthropic import get_client as get_anthropic_client
 from .llm_anthropic import init as init_anthropic
 from .llm_anthropic import stream as stream_anthropic
+
 from .llm_openai import chat as chat_openai
 from .llm_openai import get_client as get_openai_client
 from .llm_openai import init as init_openai
 from .llm_openai import stream as stream_openai
+
 from .llm_groq import chat as chat_groq
 from .llm_groq import get_client as get_groq_client
 from .llm_groq import init as init_groq
@@ -25,7 +28,7 @@ from .llm_groq import stream as stream_groq
 
 logger = logging.getLogger(__name__)
 
-Provider = Literal["openai", "azure", "openrouter", "local", "anthropic", "groq", "google"]
+Provider = Literal["openai", "azure", "openrouter", "local", "anthropic", "groq"]
 
 def init_llm(llm: str):
     # set up API_KEY (if openai) and API_BASE (if local)

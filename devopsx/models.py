@@ -23,7 +23,7 @@ class _ModelDictMeta(TypedDict):
     price_output: NotRequired[float]
 
 # available providers
-PROVIDERS = ["openai", "anthropic", "azure", "google", "groq", "openrouter", "local"]
+PROVIDERS = ["openai", "azure", "openrouter", "local", "anthropic", "groq"]
 
 # default model
 DEFAULT_MODEL: ModelMeta | None = None

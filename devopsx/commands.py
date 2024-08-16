@@ -14,7 +14,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash, execute_remote_agent, loaded_tools
+from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_remote_agent, loaded_tools
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,6 @@ Actions = Literal[
     "summarize",
     "context",
     "save",
-    "bash",
     "shell",
     "ra",
     "ps",
@@ -50,11 +49,10 @@ action_descriptions: dict[Actions, str] = {
     "fork": "Create a copy of the conversation with a new name",
     "summarize": "Summarize the conversation",
     "save": "Save the last code block to a file",
-    "shell": "Execute shell code",
-    "bash": "Execute shell commands",
-    "ra": "Execute the command on remote agents",
-    "ps": "Execute shell commands remotely over SSH",
-    "ssh": "Create a SSH client",
+    "shell": "Execute shell commands",
+    "ra": "Run shell commands on remote agents.",
+    "ps": "Executes shell commands in a pseudo terminal",
+    "ssh": "Setup a new SSH host",
     "python": "Execute Python code",
     "replay": "Re-execute codeblocks in the conversation, wont store output in log",
     "impersonate": "Impersonate the assistant",
@@ -94,9 +92,7 @@ def handle_cmd(
             yield from execute_remote_agent(full_args)
         case "ssh":
             yield from execute_ssh(full_args)
-        case "sh" | "shell":
-            yield from execute_shell(full_args, ask=not no_confirm, args=[])
-        case "b" | "bash":
+        case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm, args=[])
         case "python" | "py":
             yield from execute_python(full_args, ask=not no_confirm, args=[])
@@ -115,10 +111,7 @@ def handle_cmd(
             new_name = args[0] if args else input("New name: ")
             log.fork(new_name)
         case "summarize":
-            msgs = log.prepare_messages()
-            msgs = [m for m in msgs if not m.hide]
-            summary = summarize(msgs)
-            print(f"Summary: {summary}")
+            summarize_and_print(log)
         case "edit":
             # edit previous messages
             # first undo the '/edit' command itself
@@ -198,7 +191,7 @@ def summarize_and_print(log: LogManager):
     msgs = log.prepare_messages()
     msgs = [m for m in msgs if not m.hide]
     summary = summarize(msgs)
-    print(f"Summary: {summary}")
+    print_msg(summary)
 
 def replay(log: LogManager):
     print("Replaying conversation...")
