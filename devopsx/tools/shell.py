@@ -92,7 +92,19 @@ System:
 ```output
 (contents of main.py)
 ```
-Assistant: The project is...
+User: /shell uname -a
+Assistant: Here are the details of your system
+
+- Kernel name: Linux
+- Hostname: machine
+- Kernel release: 6.5.0-45-generic
+- Kernel version: #45~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon Jul 15 16:40:02 UTC 2
+- Machine: x86_64
+- Processor: x86_64
+- Hardware platform: x86_64
+- Operating system: GNU/Linux
+
+Is there anything specific you would like to do next?
 """.strip()
 
 class ShellSession:
