@@ -14,7 +14,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_bash, execute_remote_agent, loaded_tools
+from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_remote_agent, loaded_tools
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,6 @@ Actions = Literal[
     "summarize",
     "context",
     "save",
-    "bash",
     "shell",
     "ra",
     "ps",
@@ -51,7 +50,6 @@ action_descriptions: dict[Actions, str] = {
     "summarize": "Summarize the conversation",
     "save": "Save the last code block to a file",
     "shell": "Execute shell commands",
-    "bash": "Execute shell commands",
     "ra": "Run shell commands on remote agents.",
     "ps": "Executes shell commands in a pseudo terminal",
     "ssh": "Setup a new SSH host",
@@ -94,9 +92,7 @@ def handle_cmd(
             yield from execute_remote_agent(full_args)
         case "ssh":
             yield from execute_ssh(full_args)
-        case "sh" | "shell":
-            yield from execute_shell(full_args, ask=not no_confirm, args=[])
-        case "b" | "bash":
+        case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm, args=[])
         case "python" | "py":
             yield from execute_python(full_args, ask=not no_confirm, args=[])
