@@ -175,7 +175,7 @@ def extract_codeblocks(markdown: str) -> list[tuple[str, str]]:
 
     for line in lines:
         stripped_line = line.strip()
-        if stripped_line.startswith("```"):
+        if stripped_line.startswith("```") and len(stripped_line) > 3:
             if not stack:  # Start of a new block
                 stack.append(stripped_line[3:])
                 current_lang = stripped_line[3:]

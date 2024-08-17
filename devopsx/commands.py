@@ -14,7 +14,7 @@ from .tools.context import gen_context_msg
 from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import execute_msg, execute_python, execute_shell, execute_ssh, execute_pseudo_shell, execute_remote_agent, loaded_tools
+from .tools import execute_msg, execute_python, execute_shell, execute_subagent, loaded_tools
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,7 @@ Actions = Literal[
     "context",
     "save",
     "shell",
-    "ra",
-    "ps",
-    "ssh",
+    "subagent",
     "python",
     "replay",
     "undo",
@@ -50,9 +48,7 @@ action_descriptions: dict[Actions, str] = {
     "summarize": "Summarize the conversation",
     "save": "Save the last code block to a file",
     "shell": "Execute shell commands",
-    "ra": "Run shell commands on remote agents.",
-    "ps": "Executes shell commands in a pseudo terminal",
-    "ssh": "Setup a new SSH host",
+    "subagent": "Manage subagents",
     "python": "Execute Python code",
     "replay": "Re-execute codeblocks in the conversation, wont store output in log",
     "impersonate": "Impersonate the assistant",
@@ -86,12 +82,8 @@ def handle_cmd(
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
     match name:
         # TODO: rewrite to auto-register tools using block_types
-        case "ps":
-            yield from execute_pseudo_shell(full_args)
-        case "ra":
-            yield from execute_remote_agent(full_args)
-        case "ssh":
-            yield from execute_ssh(full_args)
+        case "subagent":
+            yield from execute_subagent(full_args)
         case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm, args=[])
         case "python" | "py":

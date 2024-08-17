@@ -34,6 +34,7 @@ invoke = "^2.2.0"
 fabric = "^3.2.2"
 pyyaml = "^6.0.1"
 playwright = "^1.43.0"
+tabulate = "^0.9.0"
 
 # optionals
 llama-cpp-python = {version = "^0.1.57", optional=true}
@@ -56,7 +57,6 @@ celery = "^5.4.0"
 flower = "^2.0.1"
 anthropic = "^0.34.0"
 greenlet = "^3.0.3"
-tabulate = "^0.9.0"
 pytest-retry = "^1.6.3"
 groq = "^0.9.0"
 

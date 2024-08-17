@@ -15,11 +15,9 @@ from .read import tool as tool_read
 from .save import execute_save, tool_append, tool_save
 from .shell import execute_shell
 from .shell import tool as shell_tool
-from .ssh import execute_ssh
-from .ssh import tool as ssh_tool
-from .pseudo_shell import execute_pseudo_shell
-from .pseudo_shell import tool as pseudo_shell_tool
+from .subagent import execute_subagent
 from .subagent import tool as subagent_tool
+from .subthread import tool as subthread_tool
 from .remote_agent import execute_remote_agent
 from .remote_agent import tool as remote_agent_tool
 from .summarize import summarize
@@ -32,9 +30,8 @@ __all__ = [
     "execute_codeblock",
     "execute_python",
     "execute_shell",
-    "execute_pseudo_shell",
     "execute_remote_agent",
-    "execute_ssh",
+    "execute_subagent",
     "execute_save",
     "summarize",
     "ToolSpec",
@@ -50,12 +47,11 @@ all_tools: list[ToolSpec] = [
         patch_tool,
         python_tool,
         shell_tool,
-        pseudo_shell_tool,
-        subagent_tool,
+        subthread_tool,
         terminal_tool,
         browser_tool,
         gh_tool,
-        ssh_tool,
+        subagent_tool,
         remote_agent_tool
     ]
     if tool.available
