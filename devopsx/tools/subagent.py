@@ -41,11 +41,12 @@ COMMANDS = set(actions.keys())
 subagent_commands_str = "\n".join(f"- {action}: {details['description']}, usage: {details['format']}" for action, details in actions.items())
 
 instructions = f"""
+You can utilize the subagent tool to manage subagents registered with devopsx and execute shell commands in the terminal of a subagent.  
 When you send a message containing bash code, it will be executed in a pseudo terminal.
 The shell will respond with the output of the execution.
 Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
 
-These commands are available:
+Available commands:
 {subagent_commands_str}
 """.strip()
 
