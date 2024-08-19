@@ -4,6 +4,7 @@ import logging
 from time import sleep
 from pathlib import Path
 from typing import Literal
+from tabulate import tabulate
 from collections.abc import Generator
 
 from . import llm
@@ -15,6 +16,7 @@ from .tools.summarize import summarize
 from .tools.useredit import edit_text_with_editor
 from .util import ask_execute
 from .tools import execute_msg, execute_python, execute_shell, execute_subagent, loaded_tools
+from .models import MODELS, get_model
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +36,7 @@ Actions = Literal[
     "undo",
     "impersonate",
     "tools",
+    "models",
     "tokens",
     "help",
     "exit",
@@ -54,6 +57,7 @@ action_descriptions: dict[Actions, str] = {
     "impersonate": "Impersonate the assistant",
     "tokens": "Show the number of tokens used",
     "tools": "Show available tools",
+    "models": "Show available models",
     "help": "Show this help message",
     "exit": "Exit the program",
 }
@@ -151,6 +155,17 @@ def handle_cmd(
     tokens (example): {len_tokens(tool.examples)}
                       """.strip()
                 )
+        case "models":
+            log.undo(1, quiet=True)
+            model = get_model()
+            print(f"Selected model: {model.provider}/{model.model}")
+            print("Available models:")
+            table = []
+            headers = ["PROVIDER", "MODEL", "CONTEXT WINDOW"]
+            for provider in MODELS:
+                for model, details in MODELS[provider].items():
+                    table.append([provider, model, details["context"]])
+            print(tabulate(table, headers, tablefmt="grid"))
         case _:
             if log.log[-1].content != f"{CMDFIX}help":
                 print("Unknown command")
