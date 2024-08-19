@@ -18,35 +18,10 @@ from fabric import Connection, Result
 from .base import ToolSpec
 from ..message import Message
 from .shell import _shorten_stdout, _format_block_smart
+from ..message import Message, print_msg
+from ..util import ask_execute, print_preview
 
 logger = logging.getLogger(__name__)
-
-instructions = f"""
-When you send a message containing bash code, it will be executed in a pseudo terminal.
-The shell will respond with the output of the execution.
-Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
-Do not include the string "```" in the assistant messages.
-""".strip()
-
-examples = f"""
-USER: /subagent 
-ASSISTANT: It seems you want to manage subagents. Here are the available commands:
-
-1. Add a new subagent:
-   /subagent add <agent_id> [-i identity_file] [-p port] <user@host>
-
-2. Delete an existing subagent:
-   /subagent delete <agent_id>
-
-3. List all subagents:
-   /subagent list
-
-4. Get the status of a specified agent:
-   /subagent status <agent_id>
-
-5. Execute a shell command on a specified agent:
-   /subagent shell <agent_id> <command>
-""".strip()
 
 MAX_TIMEOUT = 4
 
@@ -62,6 +37,62 @@ actions: dict[str, dict[str, str]] = {
 }
 
 COMMANDS = set(actions.keys())
+
+subagent_commands_str = "\n".join(f"- {action}: {details['description']}, usage: {details['format']}" for action, details in actions.items())
+
+instructions = f"""
+When you send a message containing bash code, it will be executed in a pseudo terminal.
+The shell will respond with the output of the execution.
+Do not use EOF/HereDoc syntax to send multiline commands, as the assistant will not be able to handle it.
+
+These commands are available:
+{subagent_commands_str}
+""".strip()
+
+examples = f"""
+USER: add a new subagent
+ASSISTANT: Sure! To add a new subagent, you'll need to provide the following details:
+- Agent ID
+- Host
+- User
+- Port (optional, default is 22)
+- Identity file (optional, if using key-based authentication)
+- Password authentication (optional, if using password-based authentication)
+
+Once you provide these details, I'll generate the command for you. 😊
+USER: Agent ID is Master, User is debian, Host is master.infractura.com.
+ASSISTANT: Great! Let's add the new subagent with the provided details. Here is the command to do so:
+```ps
+/subagent add MASTER debian@master.infractura.com
+```
+
+USER: list all registered subagents
+ASSISTANT: To list all registered subagents, you can use the following command:
+```ps
+/subagent list
+```
+
+USER: list the current directory in DEV agent
+ASSISTANT: To list the files in the current directory, use `ls`:
+```ps
+/subagent shell DEV ls
+```
+System: Ran command: `ls`
+```stdout
+file1.txt
+file2.txt
+```
+#### The assistant can recognize that user is executing shell commands on a DEV agent.
+User: What is the hostname of agent?
+Assistant: To get the hostname, use `hostname`:
+```ps
+/subagent shell DEV hostname
+```
+System: Ran command: `hostname`
+```stdout
+debian
+```
+""".strip()
 
 _config: ConfigParser | None = None
 _subagents: dict[str, Connection] = dict()
@@ -237,7 +268,17 @@ def get_status_agent(agent_id: str) -> str:
     return "Connected" if agent_id in _subagents else "Disconnected"
 
         
-def execute_subagent(cmd: str) -> Generator[Message, None, None]:
+def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message, None, None]:
+    confirm = True
+    if ask:
+        print_preview(f"$ {cmd}", "bash")
+        confirm = ask_execute()
+        print()
+        if not confirm:
+            print_msg(Message("system", "Aborted, user chose not to run command."))
+            return
+        
+    cmd = cmd.strip().removeprefix("/subagent")
     type, *args = cmd.strip().split(sep=" ", maxsplit=1)
     
     if type == "list": args.append("list")
@@ -329,5 +370,5 @@ tool = ToolSpec(
     examples=examples,
     init=init_tool,
     execute=execute_subagent,
-    block_types=["subagent"],
+    block_types=["ps"],
 )       

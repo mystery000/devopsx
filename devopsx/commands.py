@@ -83,7 +83,7 @@ def handle_cmd(
     match name:
         # TODO: rewrite to auto-register tools using block_types
         case "subagent":
-            yield from execute_subagent(full_args)
+            yield from execute_subagent(full_args, ask=not no_confirm, args=[])
         case "bash" | "sh" | "shell":
             yield from execute_shell(full_args, ask=not no_confirm, args=[])
         case "python" | "py":
