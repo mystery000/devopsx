@@ -89,6 +89,7 @@ def _reply_stream(messages: list[Message], model: str) -> Message:
         print(" " * shutil.get_terminal_size().columns, end="\r")
 
     output = ""
+    warned = False
     try:
         for char in (char for chunk in _stream(messages, model) for char in chunk):
             if not output:  # first character
@@ -113,9 +114,12 @@ def _reply_stream(messages: list[Message], model: str) -> Message:
                     print("\nFound codeblock, breaking")
                     break
                 else:
-                    logger.warning(
-                        "Code block not supported by tools, continuing generation"
-                    )
+                    if not warned:
+                        print()
+                        logger.warning(
+                            "Code block not supported by tools, continuing generation"
+                        )
+                        warned = True
     except KeyboardInterrupt:
         return Message("assistant", output + "... ^C Interrupted")
     finally:

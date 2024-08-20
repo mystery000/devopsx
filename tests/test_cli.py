@@ -276,11 +276,11 @@ def test_terminal(args: list[str], runner: CliRunner):
 # TODO: move elsewhere
 @pytest.mark.slow
 @pytest.mark.flaky(retries=2, delay=5)
-def test_subagent(args: list[str], runner: CliRunner):
+def test_subthread(args: list[str], runner: CliRunner):
     # f14: 377
     # f15: 610
     # f16: 987
-    args.append("compute fib 15 with subagent, where fib 0 = 0 and fib 1 = 1")
+    args.append("compute fib 15 with subthread, where fib 0 = 0 and fib 1 = 1")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     print(result.output)

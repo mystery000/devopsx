@@ -1,6 +1,6 @@
 import json
 
-from devopsx.tools.subagent import _extract_json
+from devopsx.tools.subthread import _extract_json
 
 
 def test_extract_json_block():

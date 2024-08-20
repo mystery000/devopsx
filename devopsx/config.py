@@ -42,7 +42,7 @@ ABOUT_devopsx = "devopsx is a CLI to interact with large language models in a Ch
 default_config = Config(
     prompt={
         "about_user": "I am a curious human programmer.",
-        "response_preference": "Basic concepts don't need to be explained.",
+        "response_preference": "Basic concepts don't need to be explained. Use emoticons in the messages.",
         "project": {
             "activitywatch": ABOUT_ACTIVITYWATCH,
             "devopsx": ABOUT_devopsx,
