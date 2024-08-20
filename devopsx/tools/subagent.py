@@ -221,7 +221,8 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
 
     result: Result = None
 
-    if shell_command.strip().startswith("sudo"):
+    shell_command = shell_command.strip()
+    if shell_command.startswith("sudo"):
         result = connection.sudo(shell_command, pty=True, warn=True)
     else:    
         result = connection.run(shell_command, pty=True, warn=True)

@@ -19,7 +19,6 @@ devopsx-celery = "devopsx.celery:main"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-openai = "^1.0"
 click = "^8.0"
 python-dotenv = "^1.0.0"
 rich = "^13.5.2"
@@ -35,30 +34,27 @@ fabric = "^3.2.2"
 pyyaml = "^6.0.1"
 playwright = "^1.43.0"
 tabulate = "^0.9.0"
+kombu = "^5.3.7"
+celery = "^5.4.0"
+flower = "^2.0.1"
+greenlet = "^3.0.3"
+pytest-retry = "^1.6.3"
 
-# optionals
+# llm-providers
+openai = "^1.0"
+anthropic = "^0.34.0"
+groq = "^0.9.0"
+
+# optional dependencies
 llama-cpp-python = {version = "^0.1.57", optional=true}
 jedi = {version = "^0.19.0", optional=true}
-
-# datascience essentials
 matplotlib = {version = "*", optional=true}
 pandas = {version = "*", optional=true}
 numpy = {version = "*", optional=true}
 pillow = {version = "*", optional=true}
-
-# training
 torch = {version = "*", optional=true}
 transformers = {version = "*", optional=true}
-
-# server
 flask = {version = "^2.3", optional=true}
-kombu = "^5.3.7"
-celery = "^5.4.0"
-flower = "^2.0.1"
-anthropic = "^0.34.0"
-greenlet = "^3.0.3"
-pytest-retry = "^1.6.3"
-groq = "^0.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2"
@@ -80,15 +76,7 @@ pyupgrade = "^3.15.0"
 server = ["llama-cpp-python", "flask"]
 datascience = ["matplotlib", "pandas", "numpy", "pillow"]
 training = ["torch", "transformers"]
-all = [
-    # server
-    "llama-cpp-python", "flask",
-    # datascience
-    "matplotlib", "pandas", "numpy", "pillow",
-    # training
-    "torch", "transformers",
-]
-
+all = ["llama-cpp-python", "flask", "matplotlib", "pandas", "numpy", "pillow", "torch", "transformers"]
 
 [tool.ruff]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
