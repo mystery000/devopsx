@@ -41,10 +41,10 @@ Python
     :members:
     :noindex:
 
-Terminal
---------
+Tmux
+----
 
-.. automodule:: devopsx.tools.terminal
+.. automodule:: devopsx.tools.tmux
     :members:
     :noindex:
     

@@ -92,6 +92,22 @@ System:
 ```output
 (contents of main.py)
 ```
+Assistant: The project is...
+
+
+#### Create vue project
+User: Create a new vue project with typescript and pinia named fancy-project
+Assistant: Sure! Let's create a new vue project with TypeScript and Pinia named fancy-project:
+```bash
+npm init vue@latest fancy-project --yes -- --typescript --pinia
+```
+System:
+```output
+> npx
+> create-vue
+Vue.js - The Progressive JavaScript Framework
+Scaffolding project in ./fancy-project...
+```
 """.strip()
 
 class ShellSession:

@@ -4,7 +4,8 @@ from devopsx.message import len_tokens
 
 def test_get_prompt():
     prompt = get_prompt("full")
-    assert 1200 < len_tokens(prompt.content) < 2000
+    # TODO: lower this significantly by selectively removing examples from the full prompt
+    assert 1200 < len_tokens(prompt.content) < 3000
 
     prompt = get_prompt("short")
     assert 700 < len_tokens(prompt.content) < 900
