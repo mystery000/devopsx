@@ -21,6 +21,15 @@ PYTHON_VERSION_UBUNTU = 3.10.12
 # Minimum required disk space in KB (e.g., 200MB)
 MIN_DISK_SPACE_KB = 204800
 build:
+	@echo "Checking if make is installed..."
+	@if ! command -v make &> /dev/null; then \
+		echo "make not found. Installing make..."; \
+		sudo apt-get update; \
+		sudo apt-get install make; \
+	else \
+		echo "make is already installed."; \
+	fi
+
 	@echo "Checking if uv is installed..."
 	@if ! command -v uv &> /dev/null; then \
 		echo "uv not found. Installing uv..."; \
