@@ -12,39 +12,63 @@ EXCLUDES = tests/output scripts/build_changelog.py
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py' $(foreach EXCLUDE,$(EXCLUDES),-not -path $(EXCLUDE)))
 
 build:
-	poetry install
-
+	@echo "Checking if uv is installed..."
+	@if ! command -v uv &> /dev/null; then \
+		echo "uv not found. Installing uv..."; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	else \
+		echo "uv is already installed."; \
+	fi
+	@echo "Checking for Python 3.10.12..."
+	@if ! uv python find 3.10.12 &> /dev/null; then \
+		echo "Python 3.10.12 not found. Installing..."; \
+		uv python install 3.10.12; \
+	else \
+		echo "Python 3.10.12 is already installed."; \
+	fi
+	@echo "Creating virtual environment with Python 3.10.12..."
+	uv venv --python=3.10.12 .venv
+	@echo "Activating virtual environment and installing dependencies..."
+	. .venv/bin/activate && uv pip install -e ".[server]"
+	
+	@echo "Creating symbolic link to /usr/local/bin/devopsx..."
+	@if [ -f /usr/local/bin/devopsx ]; then \
+			echo "Symbolic link already exists. Skipping."; \
+	else \
+			sudo ln -s $(PWD)/.venv/bin/devopsx /usr/local/bin/devopsx; \
+			echo "Symbolic link created."; \
+	fi
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
-	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
+	pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
 		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
-		-n 8 \
+		-n auto \
 		$(if $(EVAL), , -m "not eval") \
-		$(if $(SLOW), --timeout 60 --retries 2 --retry-delay 5, --timeout 5 -m "not slow and not eval") \
+		$(if $(SLOW), --timeout 60, --timeout 5 -m "not slow and not eval") \
 		$(if $(PROFILE), --profile-svg)
 
 eval:
-	poetry run python3 -m devopsx.eval
+	python3 -m devopsx.eval
 
 typecheck:
-	poetry run mypy --ignore-missing-imports --check-untyped-defs ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
+	mypy --ignore-missing-imports --check-untyped-defs ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
 
 lint:
-	poetry run ruff ${SRCDIRS}
+	ruff ${SRCDIRS}
 
 format:
-	poetry run ruff --fix-only ${SRCDIRS}
-	poetry run pyupgrade --py310-plus --exit-zero-even-if-changed ${SRCFILES}
-	poetry run black ${SRCDIRS}
+	ruff --fix-only ${SRCDIRS}
+	pyupgrade --py310-plus --exit-zero-even-if-changed ${SRCFILES}
+	black ${SRCDIRS}
 
 precommit: format lint typecheck test
 
 docs/.clean: docs/conf.py
-	poetry run make -C docs clean
+	make -C docs clean
 	touch docs/.clean
 
 docs: docs/conf.py docs/*.rst docs/.clean
-	poetry run make -C docs html
+	make -C docs html
 
 version:
 	@./scripts/bump_version.sh
@@ -67,7 +91,7 @@ release: dist/CHANGELOG.md
 clean: clean-docs
 
 clean-docs:
-	poetry run make -C docs clean
+	uv pip run make -C docs clean
 
 clean-test:
 	echo $$HOME/.local/share/devopsx/logs/*test-*-test_*

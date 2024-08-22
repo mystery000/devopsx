@@ -25,3 +25,5 @@ __pycache__
 *.gif
 *.cast
 *.png
+
+devopsx_python*

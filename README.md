@@ -24,35 +24,6 @@ Infractura.com presents DevOpsX, a comprehensive multi-agent generative AI-based
 
 #### Installation Instructions
 
-To install DevOpsX, follow these steps:
-
-1. Clone the repository:
-   ```
-   git clone git@github.com:infractura/devopsx.git
-   ```
-2. Navigate to the DevOpsX directory:
-   ```
-   cd devopsx
-   ```
-3. Set up a virtual environment:
-   ```
-   python3 -m venv .venv
-   ```
-4. Activate the virtual environment:
-   ```
-   source .venv/bin/activate
-   ```
-5. Install Poetry:
-   ```
-   pip install poetry
-   ```
-6. Install required dependencies:
-   ```
-   poetry install --extras "datascience"
-   ```
-
-#### Quick Installation
-
 To install and run DevOpsX, follow these steps
 
 1. Clone the repository:
@@ -65,7 +36,7 @@ To install and run DevOpsX, follow these steps
    ```
 3. Install DevOpsX:
    ```
-   ./setup.sh
+   make build
    ```
 
 #### Update DevOpsX
@@ -79,7 +50,7 @@ To install and run DevOpsX, follow these steps
    ```
 3. Update the dependencies:
    ```
-   ./setup.sh
+   make build
    ```
 
 #### System Requirements
