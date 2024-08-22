@@ -186,14 +186,14 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
 
 def check_available_packages():
     """Checks that essentials like numpy, pandas, matplotlib are available."""
-    expected = ["numpy", "pandas", "matplotlib"]
+    expected = ["numpy", "pandas", "matplotlib", "pillow"]
     missing = []
     for package in expected:
         if package not in get_installed_python_libraries():
             missing.append(package)
     if missing:
         logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `pip install devopsx-python -E datascience`"
+            f"Missing packages: {', '.join(missing)}. Install them with `uv pip install -e '.[datascience]'` in virtual environment."
         )
 
 __doc__ += transform_examples_to_chat_directives(examples)

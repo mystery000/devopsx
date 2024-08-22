@@ -36,7 +36,7 @@ To install and run DevOpsX, follow these steps
    ```
 3. Install DevOpsX:
    ```
-   make build
+   ./setup.sh
    ```
 
 #### Update DevOpsX
@@ -50,7 +50,7 @@ To install and run DevOpsX, follow these steps
    ```
 3. Update the dependencies:
    ```
-   make build
+   ./setup.sh
    ```
 
 #### System Requirements
