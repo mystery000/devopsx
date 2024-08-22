@@ -14,6 +14,7 @@ check_disk_space() {
     exit 1
   fi
   echo "✅ Enough disk space available."
+  echo
 }
 
 install_make() {
@@ -26,6 +27,7 @@ install_make() {
   else
     echo "make is already installed."
   fi
+  echo
 }
 
 install_python() {
@@ -40,6 +42,7 @@ install_python() {
     sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
     echo "Python $REQUIRED_PYTHON_VERSION installed successfully."
   fi
+  echo
 }
 
 install_python_venv() {
@@ -49,6 +52,7 @@ install_python_venv() {
     sudo apt-get install -y python3.11-venv
     echo "python3.11-venv installed successfully."
   fi
+  echo
 }
 
 setup_virtual_environment() {
@@ -59,34 +63,45 @@ setup_virtual_environment() {
     poetry install --extras "datascience"
     deactivate
   fi
+  echo
 }
 
-create_symlink() {
-  local target="/usr/local/bin/devopsx"
-  echo "Creating symbolic link to $target..."
-  if [ -e "$target" ]; then
-    echo "Symbolic link already exists. Skipping."
+create_symlinks() {
+  local devopsx_target="/usr/local/bin/devopsx"
+  local devopsx_server_target="/usr/local/bin/devopsx-server"
+  
+  echo "Creating symbolic links..."
+  if [ -e "$devopsx_target" ]; then
+    echo "Symbolic link for devopsx already exists. Skipping."
   else
-    sudo ln -s "$(pwd)/.venv/bin/devopsx" "$target"
-    echo "Symbolic link created."
+    sudo ln -s "$(pwd)/.venv/bin/devopsx" "$devopsx_target"
+    echo "Symbolic link for devopsx created."
+  fi
+  
+  if [ -e "$devopsx_server_target" ]; then
+    echo "Symbolic link for devopsx-server already exists. Skipping."
+  else
+    sudo ln -s "$(pwd)/.venv/bin/devopsx-server" "$devopsx_server_target"
+    echo "Symbolic link for devopsx-server created."
   fi
 }
 
+error_handler() {
+  echo "🚨 An unexpected error occurred. Exiting gracefully."
+  exit 1
+}
+
 main() {
+  trap error_handler ERR
   echo "🚀 Starting the setup process for devopsx... Please wait."
   echo
   check_disk_space
-  echo
   install_make
-  echo
   install_python
-  echo
   install_python_venv
-  echo
   setup_virtual_environment
-  echo
-  create_symlink
-  echo "😊 Setup process for your tool completed successfully! You are ready to go."
+  create_symlinks
+  echo "😊 Setup process for devopsx completed successfully! You are ready to go."
 }
 
 main

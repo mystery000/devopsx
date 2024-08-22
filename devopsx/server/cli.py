@@ -28,7 +28,7 @@ def main(verbose: bool, model: str | None):  # pragma: no cover
     except ImportError:
         logger.error(
             "devopsx installed without needed extras for server. "
-            "Install them with `pip install devopsx-python[server]`"
+            "Install them with `poetry install --extras server`"
         )
         exit(1)
     click.echo("Initialization complete, starting server")
