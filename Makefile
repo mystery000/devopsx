@@ -3,6 +3,9 @@
 # set default shell
 SHELL := $(shell which bash)
 
+UV_PATH = $(HOME)/.cargo/bin
+export PATH := $(UV_PATH):$(PATH)
+
 # src dirs and files
 SRCDIRS = devopsx tests scripts train
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
@@ -16,7 +19,6 @@ build:
 	@if ! command -v uv &> /dev/null; then \
 		echo "uv not found. Installing uv..."; \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
-		source $(HOME)/.cargo/env \
 	else \
 		echo "uv is already installed."; \
 	fi
