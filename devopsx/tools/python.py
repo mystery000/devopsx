@@ -205,5 +205,8 @@ tool = ToolSpec(
     examples=examples,
     init=init_python,
     execute=execute_python,
-    block_types=["python"],
+    block_types=[
+        "python",
+        "ipython",
+    ],  # ideally, models should use `ipython` and not `python`, but they don't
 )
