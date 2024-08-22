@@ -193,7 +193,7 @@ def check_available_packages():
             missing.append(package)
     if missing:
         logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `uv pip install -e '.[datascience]'` in virtual environment."
+            f"Missing packages: {', '.join(missing)}. Install them with `poetry install --extras 'datascience'`."
         )
 
 __doc__ += transform_examples_to_chat_directives(examples)
