@@ -14,6 +14,12 @@ SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
 EXCLUDES = tests/output scripts/build_changelog.py
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py' $(foreach EXCLUDE,$(EXCLUDES),-not -path $(EXCLUDE)))
 
+# Python version variable
+PYTHON_VERSION_DEBIAN = 3.12
+PYTHON_VERSION_UBUNTU = 3.10.12
+
+# Minimum required disk space in KB (e.g., 200MB)
+MIN_DISK_SPACE_KB = 204800
 build:
 	@echo "Checking if uv is installed..."
 	@if ! command -v uv &> /dev/null; then \
@@ -22,16 +28,38 @@ build:
 	else \
 		echo "uv is already installed."; \
 	fi
-	@echo "Checking for Python 3.10.12..."
-	@if ! uv python find 3.10.12 &> /dev/null; then \
-		echo "Python 3.10.12 not found. Installing..."; \
-		uv python install 3.10.12; \
+	@echo "Checking OS and installing the appropriate Python version..."
+	@if grep -q "ID=debian" /etc/os-release; then \
+		echo "Operating System detected: Debian"; \
+		PYTHON_VERSION=$(PYTHON_VERSION_DEBIAN); \
+		echo "Recommended Python version: $$PYTHON_VERSION"; \
+	elif grep -q "ID=ubuntu" /etc/os-release; then \
+		echo "Operating System detected: Ubuntu"; \
+		PYTHON_VERSION=$(PYTHON_VERSION_UBUNTU); \
+		echo "Recommended Python version: $$PYTHON_VERSION"; \
 	else \
-		echo "Python 3.10.12 is already installed."; \
-	fi
-	@echo "Creating virtual environment with Python 3.10.12..."
-	uv venv --python=3.10.12 .venv
-	@echo "Activating virtual environment and installing dependencies..."
+			echo "❌ Unsupported OS. Exiting."; \
+			exit 1; \
+	fi; \
+	echo "Checking for Python $$PYTHON_VERSION..."; \
+	if ! uv python find $$PYTHON_VERSION &> /dev/null; then \
+		echo "Python $$PYTHON_VERSION not found. Installing..."; \
+		uv python install $$PYTHON_VERSION; \
+	else \
+		echo "Python $$PYTHON_VERSION is already installed."; \
+	fi; \
+	echo "🔍 Checking disk space..."; \
+	CURRENT_DIR_USAGE=$$(du -sk . | cut -f1); \
+	AVAILABLE_DISK_SPACE=$$(df -k . | tail -1 | awk '{print $$4}'); \
+	if [ $$AVAILABLE_DISK_SPACE -lt $$(($$CURRENT_DIR_USAGE + $(MIN_DISK_SPACE_KB))) ]; then \
+			echo "❌ Not enough disk space. Required: $$(($$CURRENT_DIR_USAGE + $(MIN_DISK_SPACE_KB))) KB, Available: $$AVAILABLE_DISK_SPACE KB"; \
+			exit 1; \
+	else \
+			echo "✅ Enough disk space available."; \
+	fi; \
+	echo "Creating virtual environment with Python $$PYTHON_VERSION..."; \
+	uv venv --python=$$PYTHON_VERSION .venv; \
+	echo "Activating virtual environment and installing dependencies..."
 	. .venv/bin/activate && uv pip install -e ".[server]"
 	
 	@echo "Creating symbolic link to /usr/local/bin/devopsx..."
@@ -41,6 +69,8 @@ build:
 			sudo ln -s $(PWD)/.venv/bin/devopsx /usr/local/bin/devopsx; \
 			echo "Symbolic link created."; \
 	fi
+
+	@echo "Build process completed successfully! 😊"
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
