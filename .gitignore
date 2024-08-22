@@ -10,7 +10,7 @@
 scripts/build_changelog.py
 
 # build/test/prof/cache
-dist
+# dist
 prof
 tests/output
 docs/_build
