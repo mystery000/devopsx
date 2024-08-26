@@ -103,8 +103,6 @@ def execute_msg(msg: Message, ask: bool) -> Generator[Message, None, None]:
         try:
             if is_supported_codeblock_tool(lang):
                 yield from codeblock_to_tooluse(lang, content).execute(ask)
-            else:
-                logger.info(f"Codeblock not supported: {lang}")
         except Exception as e:
             logger.exception(e)
             yield Message(
