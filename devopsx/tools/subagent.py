@@ -273,7 +273,7 @@ def get_status_agent(agent_id: str) -> str:
 def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message, None, None]:
     confirm = True
     if ask:
-        print_preview(f"$ {cmd}", "bash")
+        print_preview(f"Command: {cmd}", "bash")
         confirm = ask_execute()
         print()
         if not confirm:

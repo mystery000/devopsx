@@ -1,8 +1,8 @@
 """
-You can use the terminal tool to run long-lived and/or interactive applications in a tmux session. Requires tmux to be installed.
+You can use the tmux tool to run long-lived and/or interactive applications in a tmux session. Requires tmux to be installed.
 
 This tool is suitable to run long-running commands or interactive applications that require user input.
-Examples of such commands: ``npm run dev``, ``npm create vue@latest``, ``python3 server.py``, ``python3 train.py``, etc.
+Examples of such commands: ``npm run dev``, ``python3 server.py``, ``python3 train.py``, etc.
 It allows for inspecting pane contents and sending input.
 """
 
@@ -56,7 +56,20 @@ def new_session(command: str) -> Message:
         if session.startswith("devopsx_"):
             _max_session_id = max(_max_session_id, int(session.split("_")[1]))
     session_id = f"devopsx_{_max_session_id + 1}"
-    cmd = ["tmux", "new-session", "-d", "-s", session_id, command]
+    # cmd = ["tmux", "new-session", "-d", "-s", session_id, command]
+    cmd = ["tmux", "new-session", "-d", "-s", session_id, "bash"]
+    print(" ".join(cmd))
+    result = subprocess.run(
+        " ".join(cmd),
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+    )
+    assert result.returncode == 0
+    print(result.stdout, result.stderr)
+
+    cmd = ["tmux", "send-keys", "-t", session_id, command, "Enter"]
     print(" ".join(cmd))
     result = subprocess.run(
         " ".join(cmd),
@@ -79,7 +92,8 @@ def new_session(command: str) -> Message:
 
 def send_keys(pane_id: str, keys: str) -> Message:
     result = subprocess.run(
-        ["tmux", "send-keys", "-t", pane_id, *keys.split(" ")],
+        f"tmux send-keys -t {pane_id} {keys}",
+        shell=True,
         capture_output=True,
         text=True,
     )
@@ -125,15 +139,15 @@ def list_sessions() -> Message:
     return Message("system", f"Active tmux sessions: {sessions}")
 
 
-def execute_terminal(
+def execute_tmux(
     code: str, ask: bool, args: list[str]
 ) -> Generator[Message, None, None]:
-    """Executes a terminal command and returns the output."""
+    """Executes a command in tmux and returns the output."""
     assert not args
     cmd = code.strip()
 
     if ask:
-        print_preview(f"Terminal command: {cmd}", "sh")
+        print_preview(f"Command: {cmd}", "bash")
         confirm = ask_execute()
         print()
         if not confirm:
@@ -161,7 +175,7 @@ def execute_terminal(
 
 
 instructions = """
-You can use the terminal tool to run long-lived and/or interactive applications in a tmux session.
+You can use the tmux tool to run long-lived and/or interactive applications in a tmux session.
 
 This tool is suitable to run long-running commands or interactive applications that require user input.
 Examples of such commands are: `npm run dev`, `npm create vue@latest`, `python3 server.py`, `python3 train.py`, etc.
@@ -178,15 +192,15 @@ Available commands:
 examples = """
 #### Managing a dev server
 User: Start the dev server
-Assistant: Certainly! To start the dev server we should use the terminal tool to run it in a tmux session:
-```terminal
-new_session npm run dev
+Assistant: Certainly! To start the dev server we should use tmux:
+```tmux
+new_session 'npm run dev'
 ```
 System: Running `npm run dev` in session 0
 
 User: Can you show me the current content of the pane?
 Assistant: Of course! Let's inspect the pane content:
-```terminal
+```tmux
 inspect_pane 0
 ```
 System:
@@ -194,9 +208,9 @@ System:
 Server is running on localhost:5600
 ```
 
-User: Can you stop the dev server?
-Assistant: Certainly! I'll send 'Ctrl+C' to the pane to stop the server:
-```terminal
+User: Stop the dev server
+Assistant: I'll send 'Ctrl+C' to the pane to stop the server:
+```tmux
 send_keys 0 C-c
 ```
 System: Sent 'C-c' to pane 0
@@ -211,57 +225,36 @@ Assistant: The load is...
 
 #### Background process
 User: Start the dev server
-Assistant: Certainly! To start the dev server we should use the terminal tool to run it in a tmux session:
-```terminal
+Assistant: Certainly! To start the dev server we should use the tmux tool to run it in a tmux session:
+```tmux
 new_session 'npm run dev'
 ```
 
-#### Interactive process
-User: Create a new vue project with typescript
-Assistant: Sure! Let's create a new vue project in a tmux session:
-```terminal
-new_session 'npm create vue@latest'
+#### Create vue project
+User: Create a new vue project with typescript and pinia named fancy-project
+Assistant: Sure! Let's create a new vue project with TypeScript and Pinia named fancy-project:
+```bash
+npm init vue@latest fancy-project --yes -- --typescript --pinia
 ```
-System: Running 'npm create vue@latest' in session 0
+System:
 ```output
 > npx
 > create-vue
 
 Vue.js - The Progressive JavaScript Framework
 
-? Project name: › vue-project
+Scaffolding project in ./fancy-project...
 ```
-Assistant: vue-project is a placeholder we can fill in. What would you like to name your project?
-User: fancy-project
-Assistant:
-```terminal
-send_keys 0 fancy-project Enter
-```
-System: Sent 'fancy-project Enter' to pane 0
-Assistant: Lets check that the name was set and move on
-```terminal
-inspect_pane 0
-```
-System:
-```output
-? Project name: › fancy-project
-? Add TypeScript? › No / Yes
-```
-Assistant: The project name has been set, now we choose TypeScript
-```terminal
-send_keys 0 Right Enter
-```
-System: Sent 'Right Enter' to pane 0
 
 #### Ending a session
 User: I changed my mind
 Assistant: No problem! Let's kill the session and start over:
-```terminal
+```tmux
 list_sessions
 ```
 System: Active tmux sessions [0]
 Assistant:
-```terminal
+```tmux
 kill_session 0
 ```
 System: Killed tmux session with ID 0
@@ -271,14 +264,13 @@ System: Killed tmux session with ID 0
 new_examples = transform_examples_to_chat_directives(examples)
 __doc__ += new_examples
 
-
 tool = ToolSpec(
-    name="terminal",
+    name="tmux",
     desc="Executes shell commands in a tmux session",
     instructions=instructions,
     # we want to skip the last two examples in prompting
     examples="####".join(examples.split("####")[:-2]),
-    execute=execute_terminal,
-    block_types=["terminal"],
+    execute=execute_tmux,
+    block_types=["tmux"],
     available=shutil.which("tmux") is not None,
 )

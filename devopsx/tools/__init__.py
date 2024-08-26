@@ -21,7 +21,7 @@ from .subthread import tool as subthread_tool
 from .remote_agent import execute_remote_agent
 from .remote_agent import tool as remote_agent_tool
 from .summarize import summarize
-from .terminal import tool as terminal_tool
+from .tmux import tool as tmux_tool
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ all_tools: list[ToolSpec] = [
         python_tool,
         shell_tool,
         subthread_tool,
-        terminal_tool,
+        tmux_tool,
         browser_tool,
         gh_tool,
         subagent_tool,
@@ -103,8 +103,6 @@ def execute_msg(msg: Message, ask: bool) -> Generator[Message, None, None]:
         try:
             if is_supported_codeblock_tool(lang):
                 yield from codeblock_to_tooluse(lang, content).execute(ask)
-            else:
-                logger.info(f"Codeblock not supported: {lang}")
         except Exception as e:
             logger.exception(e)
             yield Message(
