@@ -8,6 +8,7 @@ import sys
 import logging
 import getpass
 import paramiko
+import threading
 from typing import Literal
 from tabulate import tabulate
 from paramiko import SSHClient
@@ -93,6 +94,20 @@ System: Ran command: `hostname`
 ```stdout
 debian
 ```
+
+#### The assistant is capable of executing identical commands on multiple agents at the same time.  
+USER: get the status of 'w' from all the subagents.
+ASSISTANT: To get the status of the 'w' command from all the subagents. we can execute the 'w' command on each subagent. Here are the comamnds to do so:
+```ps
+/subagent shell agent1 w
+/subagent shell agent2 w
+/subagent shell agent3 w
+/subagent shell agent4 w
+/subagent shell agent5 w
+/subagent shell agent6 w
+/subagent shell agent7 w
+/subagent shell agent8 w
+```
 """.strip()
 
 _config: ConfigParser | None = None
@@ -109,6 +124,7 @@ def init_tool() -> None:
     global _config
     _config = ConfigParser()
         
+
 def check_connection(host: str, user: str, port: int, identity_file: str | None = None, password: str | None = None) -> bool:
     ssh_client = SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -174,9 +190,12 @@ def delete_subagent(agent_id: str) -> Generator[Message, None, None]:
 def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None, None]:
     _config.read(config_path)
     agent_id = agent_id.upper()
+
+    content = _format_block_smart("Ran command", f"/subagent shell {agent_id} {shell_command}", lang="bash") + "\n\n"
     
     if not agent_id in _config:
-        yield Message("system", "The specific agent is not registered, so we're unable to execute your command.")
+        error_msg = f"Error: The specific agent is not registered. Please check its existence using `{actions['list']['format']}`.\n\n"
+        yield Message("system", content + error_msg)
         return
     
     connection: Connection = None
@@ -216,7 +235,8 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
 
 
     if not connection:
-        yield Message("system", f"We're currently unable to execute your command. Please verify the status of your subagent using `{actions['status']['format']}`.")
+        error_msg = f"Error: Unable to establish a connection with the {agent_id}. \n\n"
+        yield Message("system", content + error_msg)
         return
 
     result: Result = None
@@ -238,8 +258,6 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
     stdout = _shorten_stdout(result.stdout.strip())
     stderr = _shorten_stdout(result.stderr.strip())
 
-    content = _format_block_smart("Ran command", shell_command, lang="bash") + "\n\n"
-    
     if stdout:
         content += _format_block_smart("stdout", stdout) + "\n\n"
     if stderr:
@@ -269,8 +287,14 @@ def get_status_agent(agent_id: str) -> str:
     if not agent_id in _config: return "Not Registered"
     return "Connected" if agent_id in _subagents else "Disconnected"
 
-        
+
+def run_subagent_thread(cmd: str, msgs: list[Message]):
+    response = execute_subagent(cmd, ask=False, args=[])
+    for msg in response: msgs.append(msg)
+
+
 def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message, None, None]:
+    cmd = cmd.strip()
     confirm = True
     if ask:
         print_preview(f"Command: {cmd}", "bash")
@@ -279,8 +303,33 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
         if not confirm:
             print_msg(Message("system", "Aborted, user chose not to run command."))
             return
+
+    if cmd.count("/subagent") > 1:
+        msgs: list[Message] = []
+        commands = cmd.splitlines()
         
-    cmd = cmd.strip().removeprefix("/subagent")
+        threads: list[threading.Thread] = []
+
+        # Create and start multiple threads
+        for command in commands:
+            thread = threading.Thread(target=run_subagent_thread, args=(command, msgs), daemon=True)
+            threads.append(thread)
+            thread.start() 
+
+        try:
+            # Wait for all threads to complete
+            for thread in threads:
+                thread.join(timeout=60) # Waits for a thread to finish. Timeout is 1 minute.
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt received, stopping threads...")
+            for thread in threads:
+                thread.join(timeout=1)
+            print("Threads have been stopped gracefully.")
+
+        yield Message("system", "\n".join(msg.content for msg in msgs))            
+        return
+
+    cmd = cmd.removeprefix("/subagent")
     type, *args = cmd.strip().split(sep=" ", maxsplit=1)
     
     if type == "list": args.append("list")
