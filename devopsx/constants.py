@@ -26,8 +26,8 @@ ROLE_COLOR = {
 
 # colors wrapped in \001 and \002 to inform readline about non-printable characters
 PROMPT_USER = (
-    f"\001[bold {ROLE_COLOR['user']}]\002User\001[/bold {ROLE_COLOR['user']}]\002"
+    f"\001[bold {ROLE_COLOR['user']}]\002admin\001[/bold {ROLE_COLOR['user']}]\002"
 )
 PROMPT_ASSISTANT = (
-    f"[bold {ROLE_COLOR['assistant']}]Assistant[/bold {ROLE_COLOR['assistant']}]"
+    f"[bold {ROLE_COLOR['assistant']}]devopsx[/bold {ROLE_COLOR['assistant']}]"
 )

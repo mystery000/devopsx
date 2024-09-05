@@ -11,6 +11,7 @@ include = ["static/**/*", "media/logo.png"]
 [tool.poetry.scripts]
 devopsx = "devopsx.cli:main"
 devopsx-server = "devopsx.server.cli:main"
+dox = "devopsx.terminal.cli:main"
 devopsx-eval = "devopsx.eval.main:main"
 devopsx-celery = "devopsx.celery:main"
 

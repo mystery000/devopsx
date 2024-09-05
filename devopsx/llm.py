@@ -48,14 +48,14 @@ def init_llm(llm: str):
         sys.exit(1)
 
 
-def reply(messages: list[Message], model: str, stream: bool = False) -> Message:
+def reply(messages: list[Message], model: str, stream: bool = False, verbose: bool = True) -> Message:
     if stream:
         return _reply_stream(messages, model)
     else:
-        print(f"{PROMPT_ASSISTANT}: Thinking...", end="\r")
+        if verbose: print(f"{PROMPT_ASSISTANT}: Thinking...", end="\r")
         response = _chat_complete(messages, model)
-        print(" " * shutil.get_terminal_size().columns, end="\r")
-        print(f"{PROMPT_ASSISTANT}: {response}")
+        if verbose: print(" " * shutil.get_terminal_size().columns, end="\r")
+        if verbose: print(f"{PROMPT_ASSISTANT}: {response}")
         return Message("assistant", response)
 
 

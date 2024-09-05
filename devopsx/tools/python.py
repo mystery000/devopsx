@@ -27,11 +27,11 @@ def get_installed_python_libraries() -> set[str]:
         "numpy",
         "pandas",
         "matplotlib",
-        "seaborn",
-        "scipy",
-        "scikit-learn",
-        "statsmodels",
-        "pillow",
+        "PIL", # pillow
+        # "seaborn",
+        # "scipy",
+        # "scikit-learn",
+        # "statsmodels",
     ]
     installed = set()
     for candidate in candidates:
@@ -186,7 +186,7 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
 
 def check_available_packages():
     """Checks that essentials like numpy, pandas, matplotlib are available."""
-    expected = ["numpy", "pandas", "matplotlib", "pillow"]
+    expected = ["numpy", "pandas", "matplotlib", "PIL"]
     missing = []
     for package in expected:
         if package not in get_installed_python_libraries():
