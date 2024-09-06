@@ -193,6 +193,10 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
 
     content = _format_block_smart("Ran command", f"/subagent shell {agent_id} {shell_command}", lang="bash") + "\n\n"
     
+    if len(shell_command) >= 2:
+        if (shell_command.startswith("'") and shell_command.endswith("'")) or (shell_command.startswith('"') and shell_command.endswith('"')):
+            shell_command = shell_command[1:-1]
+
     if not agent_id in _config:
         error_msg = f"Error: The specific agent is not registered. Please check its existence using `{actions['list']['format']}`.\n\n"
         yield Message("system", content + error_msg)
