@@ -11,6 +11,7 @@ include = ["static/**/*", "media/logo.png"]
 [tool.poetry.scripts]
 devopsx = "devopsx.cli:main"
 devopsx-server = "devopsx.server.cli:main"
+dox = "devopsx.terminal.cli:main"
 devopsx-eval = "devopsx.eval.main:main"
 devopsx-celery = "devopsx.celery:main"
 
@@ -49,6 +50,7 @@ pillow = {version = "*", optional = true}
 torch = {version = "*", optional = true}
 transformers = {version = "*", optional = true}
 flask = {version = "^2.3", optional = true}
+ollama = {git = "https://github.com/ComputerComOrg/ollama-python.git", rev = "c63c25a97b8c3afc517a9b229f1044b22ef14e0a"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2"

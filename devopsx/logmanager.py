@@ -89,11 +89,11 @@ class LogManager:
     def __bool__(self):
         return bool(self.log)
 
-    def append(self, msg: Message) -> None:
+    def append(self, msg: Message, verbose: bool = True) -> None:
         """Appends a message to the log, writes the log, prints the message."""
         self.log.append(msg)
         self.write()
-        if not msg.quiet:
+        if not msg.quiet and verbose:
             print_msg(msg, oneline=False)
 
     def write(self, branches=True) -> None:

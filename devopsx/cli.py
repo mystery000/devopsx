@@ -40,6 +40,7 @@ LLMChoice = Literal[
     "azure", 
     "anthropic",
     "groq", 
+    "local"
 ]
 
 ModelChoice = Literal[
@@ -47,6 +48,7 @@ ModelChoice = Literal[
     "openrouter",
     "anthropic", 
     "groq",
+    "local",
     "openai/gpt-4o-mini",
     "openai/gpt-4o", 
     "openai/gpt-4", 
@@ -69,6 +71,9 @@ ModelChoice = Literal[
     "anthropic/claude-3-opus-20240229",
     "anthropic/claude-3-sonnet-20240229",
     "anthropic/claude-3-haiku-20240307",
+    "local/llama3.1:8b",
+    "local/llama3.1:70b",
+    "local/llama3.1:405b",
 ]
 
 

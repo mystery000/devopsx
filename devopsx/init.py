@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 _init_done = False
 
 
-def init(model: str | None, interactive: bool):
+def init(model: str | None, interactive: bool, verbose: bool = True):
     global _init_done
     if _init_done:
         logger.warning("init() called twice, ignoring")
@@ -35,14 +35,17 @@ def init(model: str | None, interactive: bool):
     if not model:  # pragma: no cover
         # auto-detect depending on if OPENAI_API_KEY or ANTHROPIC_API_KEY is set
         if config.get_env("OPENAI_API_KEY"):
-            print("Found OpenAI API key, using OpenAI provider")
+            if verbose: print("Found OpenAI API key, using OpenAI provider")
             model = "openai"
         elif config.get_env("ANTHROPIC_API_KEY"):
-            print("Found Anthropic API key, using Anthropic provider")
+            if verbose: print("Found Anthropic API key, using Anthropic provider")
             model = "anthropic"
         elif config.get_env("GROQ_API_KEY"):
-            print("Found Groq API key, using Groq provider")
+            if verbose: print("Found Groq API key, using Groq provider")
             model = "groq"
+        elif config.get_env("OLLAMA_HOST"):
+            if verbose: print("Found local LLM provider, using local LLM provider")
+            model = "local"
         # ask user for API key
         elif interactive:
             model, _ = ask_for_api_key()
@@ -61,9 +64,10 @@ def init(model: str | None, interactive: bool):
 
     if not model:
         model = get_recommended_model(provider)
-        logger.info(
-            "No model specified, using recommended model for provider: %s", model
-        )
+        if verbose: 
+            logger.info(
+                "No model specified, using recommended model for provider: %s", model
+            )
         
     set_default_model(model)
 
