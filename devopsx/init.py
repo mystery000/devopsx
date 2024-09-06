@@ -43,6 +43,9 @@ def init(model: str | None, interactive: bool, verbose: bool = True):
         elif config.get_env("GROQ_API_KEY"):
             if verbose: print("Found Groq API key, using Groq provider")
             model = "groq"
+        elif config.get_env("OLLAMA_HOST"):
+            if verbose: print("Found local LLM provider, using local LLM provider")
+            model = "local"
         # ask user for API key
         elif interactive:
             model, _ = ask_for_api_key()

@@ -26,6 +26,12 @@ from .llm_groq import get_client as get_groq_client
 from .llm_groq import init as init_groq
 from .llm_groq import stream as stream_groq
 
+from .llm_ollama import chat as chat_ollama
+from .llm_ollama import get_client as get_ollama_client
+from .llm_ollama import init as init_ollama
+from .llm_ollama import stream as stream_ollama
+
+
 logger = logging.getLogger(__name__)
 
 Provider = Literal["openai", "azure", "openrouter", "local", "anthropic", "groq"]
@@ -34,7 +40,7 @@ def init_llm(llm: str):
     # set up API_KEY (if openai) and API_BASE (if local)
     config = get_config()
 
-    if llm in ["openai", "azure", "openrouter", "local"]:
+    if llm in ["openai", "azure", "openrouter"]:
         init_openai(llm, config)
         assert get_openai_client()
     elif llm == "anthropic":
@@ -43,6 +49,9 @@ def init_llm(llm: str):
     elif llm == "groq":
         init_groq(config)
         assert get_groq_client()
+    elif llm == "local":
+        init_ollama(config)
+        assert get_ollama_client()
     else:
         print(f"Error: Unknown LLM: {llm}")
         sys.exit(1)
@@ -67,6 +76,8 @@ def _chat_complete(messages: list[Message], model: str) -> str:
         return chat_anthropic(messages, model)
     elif provider == "groq":
         return chat_groq(messages, model)
+    elif provider == "local":
+        return chat_ollama(messages, model)
     else:
         raise ValueError("LLM not initialized")
 
@@ -78,6 +89,8 @@ def _stream(messages: list[Message], model: str) -> Iterator[str]:
         return stream_anthropic(messages, model)
     elif provider == "groq":
         return stream_groq(messages, model)
+    elif provider == "local":
+        return stream_ollama(messages, model)
     else:
         raise ValueError("LLM not initialized")
 
@@ -123,7 +136,8 @@ def _client_to_provider() -> Provider:
     openai_client = get_openai_client()
     anthropic_client = get_anthropic_client()
     groq_client = get_groq_client()
-    assert openai_client or anthropic_client or groq_client, "No client initialized"
+    ollama_client = get_ollama_client()
+    assert any([openai_client, anthropic_client, groq_client, ollama_client]), "No client initialized"
     if openai_client:
         if "openai" in openai_client.base_url.host:
             return "openai"
@@ -135,6 +149,8 @@ def _client_to_provider() -> Provider:
         return "anthropic"
     elif groq_client:
         return "groq"
+    elif ollama_client:
+        return "local"
     else:
         raise ValueError("Unknown client type")
 

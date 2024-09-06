@@ -161,7 +161,19 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
             "price_input": 0.25,   # 0.25 USD per 1 MTok input tokens
             "price_output": 1.25,  # 1.25 USD per 1 MTok output tokens 	
         },
-    }
+    },
+    # https://ollama.com/library
+    "local": {
+        "llama3.1:8b": {
+            "context": 8192,
+        },
+        "llama3.1:70b": {
+            "context": 8192,
+        },
+        "llama3.1:405b": {
+            "context": 8192,
+        },
+    },
 }
 
 def set_default_model(model: str) -> None:
@@ -211,6 +223,8 @@ def get_recommended_model(provider: str) -> str:
         return "claude-3-5-sonnet-20240620"
     elif provider == "groq":
         return "llama3-70b-8192"
+    elif provider == "local":
+        return "llama3.1:8b"
     else:
         raise ValueError(f"Unknown provider {provider}")
 
@@ -224,5 +238,7 @@ def get_summary_model(provider: str) -> str:
         return "claude-3-haiku-20240307"
     elif provider == "groq":
         return "llama3-70b-8192"
+    elif provider == "local":
+        return "llama3.1:8b"
     else:
         raise ValueError(f"Unknown provider {provider}")

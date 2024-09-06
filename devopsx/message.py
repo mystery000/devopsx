@@ -119,7 +119,7 @@ class Message:
 
         return content
 
-    def to_dict(self, keys=None, openai=False, anthropic=False) -> dict:
+    def to_dict(self, keys=None, openai=False, anthropic=False, ollama=False) -> dict:
         """Return a dict representation of the message, serializable to JSON."""
         content: str | list[dict[str, Any]]
         if not anthropic and not openai:
@@ -130,7 +130,7 @@ class Message:
             content = self._content_files_list(openai=openai, anthropic=anthropic)
 
         d = {
-            "role": self.role,
+            "role": "user" if ollama and self.role == "system" else self.role,
             "content": content,
             "timestamp": self.timestamp.isoformat(),
             "files": [str(f) for f in self.files],
@@ -304,10 +304,10 @@ def toml_to_msgs(toml: str) -> list[Message]:
     ]
 
 
-def msgs2dicts(msgs: list[Message], openai=False, anthropic=False) -> list[dict]:
+def msgs2dicts(msgs: list[Message], openai=False, anthropic=False, ollama=False) -> list[dict]:
     """Convert a list of Message objects to a list of dicts ready to pass to an LLM."""
     return [
-        msg.to_dict(keys=["role", "content"], openai=openai, anthropic=anthropic)
+        msg.to_dict(keys=["role", "content"], openai=openai, anthropic=anthropic, ollama=ollama)
         for msg in msgs
     ]
 
