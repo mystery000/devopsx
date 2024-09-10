@@ -151,6 +151,11 @@ The chat offers some commands that can be used to interact with the system:
     is_flag=True,
     help="Show version and configuration information",
 )
+@click.option(
+    "--workspace",
+    help="Path to workspace directory. Pass '@log' to create a workspace in the log directory.",
+    default=".",
+)
 def main(
     prompts: list[str],
     prompt_system: str,
@@ -163,6 +168,7 @@ def main(
     show_hidden: bool,
     version: bool,
     resume: bool,
+    workspace: str,
 ):
     """Main entrypoint for the CLI."""
     if version:
@@ -223,6 +229,7 @@ def main(
         no_confirm,
         interactive,
         show_hidden,
+        workspace,
     )
 
 
@@ -235,6 +242,7 @@ def chat(
     no_confirm: bool = False,
     interactive: bool = True,
     show_hidden: bool = False,
+    workspace: str = ".",
 ):
     """
     Run the chat loop.
@@ -274,14 +282,14 @@ def chat(
         ), f"Workspace path {workspace_path} does not exist"
     os.chdir(workspace_path)
 
-    workspace_prompt = get_workspace_prompt(str(workspace_path))
+    # workspace_prompt = get_workspace_prompt(str(workspace_path))
     # check if message is already in log, such as upon resume
-    if (
-        workspace_prompt
-        and workspace_prompt not in [m.content for m in log]
-        and "user" not in [m.role for m in log]
-    ):
-        log.append(Message("system", workspace_prompt, hide=True))
+    # if (
+    #     workspace_prompt
+    #     and workspace_prompt not in [m.content for m in log]
+    #     and "user" not in [m.role for m in log]
+    # ):
+    #     log.append(Message("system", workspace_prompt, hide=True))
 
     # print log
     log.print()
