@@ -17,6 +17,7 @@ from pick import pick
 from rich import print
 from rich.console import Console
 
+from .config import get_workspace_prompt
 from .commands import CMDFIX, action_descriptions, execute_cmd
 from .constants import MULTIPROMPT_SEPARATOR, PROMPT_USER
 from .dirs import get_logs_dir
@@ -256,6 +257,32 @@ def chat(
     print(f"Using logdir {logfile.parent}")
     log = LogManager.load(logfile, initial_msgs=initial_msgs, show_hidden=show_hidden)
 
+    # change to workspace directory
+    # use if exists, create if @log, or use given path
+    if (logfile.parent / "workspace").exists():
+        assert workspace in ["@log", "."], "Workspace already exists"
+        workspace_path = logfile.parent / "workspace"
+        print(f"Using workspace at {workspace_path}")
+    elif workspace == "@log":
+        workspace_path = logfile.parent / "workspace"
+        print(f"Creating workspace at {workspace_path}")
+        os.makedirs(workspace_path, exist_ok=True)
+    else:
+        workspace_path = Path(workspace)
+        assert (
+            workspace_path.exists()
+        ), f"Workspace path {workspace_path} does not exist"
+    os.chdir(workspace_path)
+
+    workspace_prompt = get_workspace_prompt(str(workspace_path))
+    # check if message is already in log, such as upon resume
+    if (
+        workspace_prompt
+        and workspace_prompt not in [m.content for m in log]
+        and "user" not in [m.role for m in log]
+    ):
+        log.append(Message("system", workspace_prompt, hide=True))
+
     # print log
     log.print()
     print("--- ^^^ past messages ^^^ ---")
@@ -265,7 +292,8 @@ def chat(
         # if prompt_msgs given, insert next prompt into log
         if prompt_msgs:
             msg = prompt_msgs.pop(0)
-            msg = _include_paths(msg)
+            if not msg.content.startswith("/"):
+                msg = _include_paths(msg)
             log.append(msg)
             # if prompt is a user-command, execute it
             if execute_cmd(msg, log):
@@ -520,15 +548,13 @@ def _include_paths(msg: Message) -> Message:
             if contents:
                 # if we found a valid path, replace it with the contents of the file
                 append_msg += "\n\n" + contents
-            
+
             file = _parse_prompt_files(word)
             if file:
                 msg.files.append(file)
 
     # append the message with the file contents
-    keys = ["/sh", "/shell", "/bash", "/subagent"]
-
-    if append_msg and all(not msg.content.startswith(key) for key in keys):
+    if append_msg:
         msg.content += append_msg
 
     return msg

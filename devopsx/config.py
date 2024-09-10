@@ -1,9 +1,14 @@
 import os
-from dataclasses import dataclass
+import glob
+import logging
+from pathlib import Path
+from dataclasses import dataclass, field
 
 import tomlkit
 from tomlkit import TOMLDocument
 from tomlkit.container import Container
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -33,6 +38,12 @@ class Config:
             "prompt": self.prompt,
             "env": self.env,
         }
+
+@dataclass
+class ProjectConfig:
+    """Project-level configuration, such as which files to include in the context by default."""
+
+    files: list[str] = field(default_factory=list)
 
 
 ABOUT_ACTIVITYWATCH = """ActivityWatch is a free and open-source automated time-tracker that helps you track how you spend your time on your devices."""
@@ -106,6 +117,36 @@ def set_config_value(key: str, value: str) -> None:
     # Reload config
     global _config
     _config = load_config()
+
+
+def get_workspace_prompt(workspace: str) -> str:
+    project_config_paths = [
+        p
+        for p in (
+            Path(workspace) / "devopsx.toml",
+            Path(workspace) / ".github" / "devopsx.toml",
+        )
+        if p.exists()
+    ]
+    if project_config_paths:
+        project_config_path = project_config_paths[0]
+        logger.info(f"Using project configuration at {project_config_path}")
+        # load project config
+        with open(project_config_path) as f:
+            project_config = tomlkit.load(f)
+            project = ProjectConfig(**project_config)  # type: ignore
+            # expand with glob
+            files = [p for file in project.files for p in glob.glob(file)]
+            for file in files:
+                if not Path(file).exists():
+                    logger.error(
+                        f"File {file} specified in project config does not exist"
+                    )
+                    exit(1)
+        return "\n\nSelected project files, read more with cat:\n" + "\n\n".join(
+            [f"```{Path(file).name}\n{Path(file).read_text()}\n```" for file in files]
+        )
+    return ""
 
 
 if __name__ == "__main__":
