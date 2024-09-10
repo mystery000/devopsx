@@ -29,7 +29,7 @@ from .prompts import get_prompt
 from .tools import execute_msg, has_tool
 from .tools.browser import read_url
 from .tools.shell import ShellSession, set_shell
-from .util import epoch_to_age, generate_name
+from .util import epoch_to_age, generate_name, print_bell
 from .models import get_model
 
 logger = logging.getLogger(__name__)
@@ -477,6 +477,7 @@ def get_logfile(name: str | Literal["random", "resume"], interactive=True) -> Pa
 
 
 def prompt_user(value=None) -> str: # pragma: no cover
+    print_bell()
     response = prompt_input(PROMPT_USER, value)
     if response:
         readline.add_history(response)
