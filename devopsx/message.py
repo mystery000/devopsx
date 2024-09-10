@@ -5,6 +5,7 @@ import shutil
 import logging
 import tomlkit
 import textwrap
+import builtins
 from pathlib import Path
 from datetime import datetime
 from typing import Literal, Any
@@ -264,9 +265,11 @@ def print_msg(
         if m.hide and not show_hidden:
             skipped_hidden += 1
             continue
-
-        sys.stdout.flush()
-        sys.stdout.write(s + "\n")
+        try:
+            print(s)
+        except Exception:
+            # rich can throw errors, if so then print the raw message
+            builtins.print(s)
     if skipped_hidden:
         print(
             f"[grey30]Skipped {skipped_hidden} hidden system messages, show with --show-hidden[/]"
