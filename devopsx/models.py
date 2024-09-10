@@ -164,6 +164,9 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     },
     # https://ollama.com/library
     "local": {
+        "mannix/llama3.1-8b-abliterated:latest": {
+            "context": 8192,
+        },
         "llama3.1:8b": {
             "context": 8192,
         },
