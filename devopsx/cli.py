@@ -282,14 +282,14 @@ def chat(
         ), f"Workspace path {workspace_path} does not exist"
     os.chdir(workspace_path)
 
-    # workspace_prompt = get_workspace_prompt(str(workspace_path))
+    workspace_prompt = get_workspace_prompt(str(workspace_path))
     # check if message is already in log, such as upon resume
-    # if (
-    #     workspace_prompt
-    #     and workspace_prompt not in [m.content for m in log]
-    #     and "user" not in [m.role for m in log]
-    # ):
-    #     log.append(Message("system", workspace_prompt, hide=True))
+    if (
+        workspace_prompt
+        and workspace_prompt not in [m.content for m in log]
+        and "user" not in [m.role for m in log]
+    ):
+        log.append(Message("system", workspace_prompt, hide=True, quiet=True))
 
     # print log
     log.print()
