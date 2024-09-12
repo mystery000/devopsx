@@ -361,7 +361,8 @@ def step(
             print()
             return
         msg = Message("user", inquiry, quiet=True)
-        msg = _include_paths(msg)
+        if not msg.content.startswith("/"):
+            msg = _include_paths(msg)
         yield msg
 
     # print response

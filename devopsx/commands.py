@@ -1,5 +1,6 @@
 import re
 import sys
+import rich
 import logging
 from time import sleep
 from pathlib import Path
@@ -149,9 +150,9 @@ def handle_cmd(
             log.undo(1, quiet=True)
             print("Available tools:")
             for tool in loaded_tools:
-                print(
+                rich.print(
                     f"""
-- {tool.name}  ({tool.desc.rstrip(".")})
+- [blue]{tool.name}[/blue]  ({tool.desc.rstrip(".")})
     tokens (example): {len_tokens(tool.examples)}
                       """.strip()
                 )
@@ -160,12 +161,13 @@ def handle_cmd(
             model = get_model()
             print(f"Selected model: {model.provider}/{model.model}")
             print("Available models:")
-            table = []
-            headers = ["PROVIDER", "MODEL", "CONTEXT WINDOW"]
             for provider in MODELS:
                 for model, details in MODELS[provider].items():
-                    table.append([provider, model, details["context"]])
-            print(tabulate(table, headers, tablefmt="grid"))
+                    rich.print(
+                        f"""
+- [blue]{model}[/blue] (provider: [cyan]{provider}[/cyan], context window: {details["context"]})
+                    """.strip()
+                    )
         case _:
             if log.log[-1].content != f"{CMDFIX}help":
                 print("Unknown command")
