@@ -5,12 +5,12 @@ Tool for the assistant to manage subagents
 import os
 import re
 import sys
+import rich
 import logging
 import getpass
 import paramiko
 import threading
 from typing import Literal
-from tabulate import tabulate
 from paramiko import SSHClient
 from configparser import ConfigParser
 from collections.abc import Generator
@@ -30,16 +30,15 @@ MAX_TIMEOUT = 4
 config_path = os.path.expanduser("~/.config/devopsx/subagents")
 
 actions: dict[str, dict[str, str]] = {
-    "add": { "description": "Register a new subagent", "format": "/subagent add <agent_id> [-i identity_file] [-p port] <user@host>" },
-    "delete": { "description": "Remove an existing subagent", "format": "/subagent delete <agent_id>" },
-    "list": { "description": "List all subagents", "format": "/subagent list" },
-    "status": { "description": "Get the status of the specified agent", "format": "/subagent status <agent_id>" },
-    "shell": { "description": "Execute a shell command on a specified agent", "format": "/subagent shell <agent_id> <command>"},
+    "add": { "description": "Register a new subagent", "usage": "/subagent add <agent_id> [-i identity_file] [-p port] <user@host>" },
+    "delete": { "description": "Remove an existing subagent", "usage": "/subagent delete <agent_id>" },
+    "list": { "description": "List all subagents", "usage": "/subagent list" },
+    "shell": { "description": "Execute a shell command on a specified agent", "usage": "/subagent shell <agent_id> <command>"},
 }
 
 COMMANDS = set(actions.keys())
 
-subagent_commands_str = "\n".join(f"- {action}: {details['description']}, usage: {details['format']}" for action, details in actions.items())
+subagent_commands_str = "\n".join(f"- {action}: {details['description']}, usage: {details['usage']}" for action, details in actions.items())
 
 instructions = f"""
 You can utilize the subagent tool to manage subagents registered with devopsx and execute shell commands in the terminal of a subagent.  
@@ -193,8 +192,12 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
 
     content = _format_block_smart("Ran command", f"/subagent shell {agent_id} {shell_command}", lang="bash") + "\n\n"
     
+    if len(shell_command) >= 2:
+        if (shell_command.startswith("'") and shell_command.endswith("'")) or (shell_command.startswith('"') and shell_command.endswith('"')):
+            shell_command = shell_command[1:-1]
+
     if not agent_id in _config:
-        error_msg = f"Error: The specific agent is not registered. Please check its existence using `{actions['list']['format']}`.\n\n"
+        error_msg = f"Error: The specific agent is not registered. Please check its existence using `{actions['list']['usage']}`.\n\n"
         yield Message("system", content + error_msg)
         return
     
@@ -270,23 +273,20 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
 
 def list_agents() -> Generator[Message, None, None]:
     _config.read(config_path)
-    
-    table = []
-    headers = ["AGENT_ID", "HOST", "USER", "PORT", "PASSWORD_AUTHENTICATION", "IDENTITY_FILE"]
-    
+    msg = ""
     for agent_id, agent in _config.items():
-        table.append([agent_id] + [value for _, value in agent.items()])
+        if agent_id.upper() == "DEFAULT": continue
+        msg += f"""
+- {agent_id}
+  hostname: {agent.get("hostname")},
+  user: {agent.get("user")},
+  port: {agent.get("port")},
+  password_authentication: {agent.get("passwordauthentication")},
+  identity_file: {agent.get("identityfile")}
+  """
     
-    yield Message("system", tabulate(table[1:], headers, tablefmt="grid", showindex="always"))
+    yield Message("system", msg)
         
-    
-def get_status_agent(agent_id: str) -> str:
-    _config.read(config_path)
-    agent_id = agent_id.upper()
-    
-    if not agent_id in _config: return "Not Registered"
-    return "Connected" if agent_id in _subagents else "Disconnected"
-
 
 def run_subagent_thread(cmd: str, msgs: list[Message]):
     response = execute_subagent(cmd, ask=False, args=[])
@@ -335,12 +335,14 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
     if type == "list": args.append("list")
     if not type or not args:
         print("Invalid command format. Here are the available commands: ")
-        table = []
-        headers = ["COMMAND", "DESCRIPTION", "FORMAT"]
-        
+        msg = ""
         for command, action in actions.items():
-            table.append([command] + [value for _, value in action.items()])
-        yield Message("system", tabulate(table, headers, tablefmt="grid", showindex="always"))
+            msg += f"""
+- {command}  ({action.get("description")})
+    usage: {action.get("usage")}
+    """
+
+        yield Message("system", msg)
         return
         
     command = args[0]
@@ -350,7 +352,7 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
             match = pattern.match(command)
                                                                                                                               
             if not match:                                                                                                                                                   
-                yield Message("system", f"Invalid format. usage: `{actions['add']['format']}`")                                                
+                yield Message("system", f"Invalid format. usage: `{actions['add']['usage']}`")                                                
                                                                                                                                                                             
             agent_id = match.group('agent_id')                                                                                                                              
             identity_file = match.group('identity_file')                                                                                                                    
@@ -366,7 +368,7 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
             match = pattern.match(command)
 
             if not match:
-                yield Message("system", f"Invalid format. Usage: `{actions['delete']['format']}`")
+                yield Message("system", f"Invalid format. Usage: `{actions['delete']['usage']}`")
                 return
             
             agent_id = match.group('agent_id')
@@ -381,7 +383,7 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
             match = shell_pattern.match(command)
 
             if not match:
-                yield Message("system", f"Invalid format. Usage: `{actions['shell']['format']}`")
+                yield Message("system", f"Invalid format. Usage: `{actions['shell']['usage']}`")
                 return
             
             agent_id = match.group('agent_id')
@@ -394,21 +396,6 @@ def execute_subagent(cmd: str, ask: bool, args: list[str]) -> Generator[Message,
             yield from execute_shell(agent_id, shell_command)
         case "list":
             yield from list_agents()
-        case "status":
-            pattern = re.compile(r'(?P<agent_id>\S+)')
-            match = pattern.match(command)
-
-            if not match:
-                yield Message("system", f"Invalid format. Usage: `{actions['status']['format']}`")
-                return
-            
-            agent_id = match.group('agent_id')
-            
-            if not agent_id:
-                yield Message("system", "Incorrect command. Try again.")
-                return
-            
-            yield Message("system", tabulate([[agent_id, get_status_agent(agent_id)]], ["AGENT_ID", "STATUS"], tablefmt="grid"))
         case _:
             print("Unknown command. To see the available commands, run `/subagent`")
             return

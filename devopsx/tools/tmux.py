@@ -69,6 +69,17 @@ def new_session(command: str) -> Message:
     assert result.returncode == 0
     print(result.stdout, result.stderr)
 
+    # set session size
+    cmd = ["tmux", "resize-window", "-t", session_id, "-x", "120", "-y", "40"]
+    print(" ".join(cmd))
+    result = subprocess.run(
+        " ".join(cmd),
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+    )
+
     cmd = ["tmux", "send-keys", "-t", session_id, command, "Enter"]
     print(" ".join(cmd))
     result = subprocess.run(

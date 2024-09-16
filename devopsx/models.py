@@ -29,10 +29,25 @@ PROVIDERS = ["openai", "azure", "openrouter", "local", "anthropic", "groq"]
 DEFAULT_MODEL: ModelMeta | None = None
 
 # known models metadata
-# TODO: can we get this from the API?
 MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     # https://platform.openai.com/docs/models
     "openai": {
+        # Training data cut-off: October 2023
+        "o1-preview": {
+            "context": 128_000,
+        },
+        # Training data cut-off: October 2023
+        "o1-preview-2024-09-12": {
+            "context": 128_000,
+        },
+        # Training data cut-off: October 2023
+        "o1-mini": {
+            "context": 128_000,
+        },
+        # Training data cut-off: October 2023
+        "o1-mini-2024-09-12": {
+            "context": 128_000,
+        },
         "gpt-4o-mini": {
             "context": 128_000,
         },
@@ -164,6 +179,9 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
     },
     # https://ollama.com/library
     "local": {
+        "mannix/llama3.1-8b-abliterated:latest": {
+            "context": 8192,
+        },
         "llama3.1:8b": {
             "context": 8192,
         },

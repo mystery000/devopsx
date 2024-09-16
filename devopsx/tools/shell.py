@@ -265,6 +265,10 @@ def execute_shell(
             print_msg(Message("system", "Aborted, user chose not to run command."))
             return
 
+    if len(cmd) >= 2:
+        if (cmd.startswith("'") and cmd.endswith("'")) or (cmd.startswith('"') and cmd.endswith('"')):
+            cmd = cmd[1:-1]
+
     if not ask or confirm:
         returncode, stdout, stderr = shell.run(cmd)
         stdout = _shorten_stdout(stdout.strip())

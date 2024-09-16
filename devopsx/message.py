@@ -5,6 +5,7 @@ import shutil
 import logging
 import tomlkit
 import textwrap
+import builtins
 from pathlib import Path
 from datetime import datetime
 from typing import Literal, Any
@@ -15,9 +16,9 @@ from rich import print
 from rich.syntax import Syntax
 from rich.console import Console
 
+from .models import get_model
 from .constants import ROLE_COLOR
 from .util import extract_codeblocks, get_tokenizer
-
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class Message:
         # This is not persisted to the log file.
         self.quiet = quiet
         # Files attached to the message, could e.g. be images for vision.
-        self.files = (
+        self.files: list[Path] = (
             [Path(f) if isinstance(f, str) else f for f in files] if files else []
         )
 
@@ -122,15 +123,16 @@ class Message:
     def to_dict(self, keys=None, openai=False, anthropic=False, ollama=False) -> dict:
         """Return a dict representation of the message, serializable to JSON."""
         content: str | list[dict[str, Any]]
-        if not anthropic and not openai:
-            # storage/wire format should keep the content as a string
-            content = self.content
-        else:
+        if anthropic or openai:
             # OpenAI format or Anthropic format should include files in the content
             content = self._content_files_list(openai=openai, anthropic=anthropic)
+        else:
+            # storage/wire format should keep the content as a string
+            content = self.content
 
+        model = get_model().model
         d = {
-            "role": "user" if ollama and self.role == "system" else self.role,
+            "role": "user" if (ollama and self.role == "system") or (openai and model.startswith("o1-")) else self.role,
             "content": content,
             "timestamp": self.timestamp.isoformat(),
             "files": [str(f) for f in self.files],
@@ -220,7 +222,7 @@ def format_msgs(
             userprefix = f"[bold {color}]{userprefix}[/bold {color}]"
         # get terminal width
         max_len = shutil.get_terminal_size().columns - len(userprefix)
-        output = msg.content
+        output = ""
         if oneline:
             output += textwrap.shorten(
                 msg.content.replace("\n", "\\n"), width=max_len, placeholder="..."
@@ -257,16 +259,13 @@ def print_msg(
     if not sys.stdout.isatty():
         highlight = False
     msgs = msg if isinstance(msg, list) else [msg]
-    # msgstrs = format_msgs(msgs, highlight=highlight, oneline=oneline)
-    msgstrs = [msg.content for msg in msgs]
+    msgstrs = format_msgs(msgs, highlight=False, oneline=oneline)
     skipped_hidden = 0
     for m, s in zip(msgs, msgstrs):
         if m.hide and not show_hidden:
             skipped_hidden += 1
             continue
-
-        sys.stdout.flush()
-        sys.stdout.write(s + "\n")
+        builtins.print(s)
     if skipped_hidden:
         print(
             f"[grey30]Skipped {skipped_hidden} hidden system messages, show with --show-hidden[/]"

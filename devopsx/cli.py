@@ -17,6 +17,7 @@ from pick import pick
 from rich import print
 from rich.console import Console
 
+from .config import get_workspace_prompt
 from .commands import CMDFIX, action_descriptions, execute_cmd
 from .constants import MULTIPROMPT_SEPARATOR, PROMPT_USER
 from .dirs import get_logs_dir
@@ -25,10 +26,10 @@ from .llm import reply
 from .logmanager import LogManager, _conversations
 from .message import Message
 from .prompts import get_prompt
-from .tools import execute_msg, get_tool
+from .tools import execute_msg, has_tool
 from .tools.browser import read_url
 from .tools.shell import ShellSession, set_shell
-from .util import epoch_to_age, generate_name
+from .util import epoch_to_age, generate_name, print_bell
 from .models import get_model
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,10 @@ ModelChoice = Literal[
     "anthropic", 
     "groq",
     "local",
+    "openai/o1-preview",
+    "openai/o1-preview-2024-09-12",
+    "openai/o1-mini",
+    "openai/o1-mini-2024-09-12",
     "openai/gpt-4o-mini",
     "openai/gpt-4o", 
     "openai/gpt-4", 
@@ -150,6 +155,11 @@ The chat offers some commands that can be used to interact with the system:
     is_flag=True,
     help="Show version and configuration information",
 )
+@click.option(
+    "--workspace",
+    help="Path to workspace directory. Pass '@log' to create a workspace in the log directory.",
+    default=".",
+)
 def main(
     prompts: list[str],
     prompt_system: str,
@@ -162,6 +172,7 @@ def main(
     show_hidden: bool,
     version: bool,
     resume: bool,
+    workspace: str,
 ):
     """Main entrypoint for the CLI."""
     if version:
@@ -222,6 +233,7 @@ def main(
         no_confirm,
         interactive,
         show_hidden,
+        workspace,
     )
 
 
@@ -234,6 +246,7 @@ def chat(
     no_confirm: bool = False,
     interactive: bool = True,
     show_hidden: bool = False,
+    workspace: str = ".",
 ):
     """
     Run the chat loop.
@@ -256,6 +269,32 @@ def chat(
     print(f"Using logdir {logfile.parent}")
     log = LogManager.load(logfile, initial_msgs=initial_msgs, show_hidden=show_hidden)
 
+    # change to workspace directory
+    # use if exists, create if @log, or use given path
+    if (logfile.parent / "workspace").exists():
+        assert workspace in ["@log", "."], "Workspace already exists"
+        workspace_path = logfile.parent / "workspace"
+        print(f"Using workspace at {workspace_path}")
+    elif workspace == "@log":
+        workspace_path = logfile.parent / "workspace"
+        print(f"Creating workspace at {workspace_path}")
+        os.makedirs(workspace_path, exist_ok=True)
+    else:
+        workspace_path = Path(workspace)
+        assert (
+            workspace_path.exists()
+        ), f"Workspace path {workspace_path} does not exist"
+    os.chdir(workspace_path)
+
+    workspace_prompt = get_workspace_prompt(str(workspace_path))
+    # check if message is already in log, such as upon resume
+    if (
+        workspace_prompt
+        and workspace_prompt not in [m.content for m in log]
+        and "user" not in [m.role for m in log]
+    ):
+        log.append(Message("system", workspace_prompt, hide=True, quiet=True))
+
     # print log
     log.print()
     print("--- ^^^ past messages ^^^ ---")
@@ -265,7 +304,8 @@ def chat(
         # if prompt_msgs given, insert next prompt into log
         if prompt_msgs:
             msg = prompt_msgs.pop(0)
-            msg = _include_paths(msg)
+            if not msg.content.startswith("/"):
+                msg = _include_paths(msg)
             log.append(msg)
             # if prompt is a user-command, execute it
             if execute_cmd(msg, log):
@@ -325,7 +365,8 @@ def step(
             print()
             return
         msg = Message("user", inquiry, quiet=True)
-        msg = _include_paths(msg)
+        if not msg.content.startswith("/"):
+            msg = _include_paths(msg)
         yield msg
 
     # print response
@@ -441,6 +482,7 @@ def get_logfile(name: str | Literal["random", "resume"], interactive=True) -> Pa
 
 
 def prompt_user(value=None) -> str: # pragma: no cover
+    print_bell()
     response = prompt_input(PROMPT_USER, value)
     if response:
         readline.add_history(response)
@@ -520,15 +562,13 @@ def _include_paths(msg: Message) -> Message:
             if contents:
                 # if we found a valid path, replace it with the contents of the file
                 append_msg += "\n\n" + contents
-            
+
             file = _parse_prompt_files(word)
             if file:
                 msg.files.append(file)
 
     # append the message with the file contents
-    keys = ["/sh", "/shell", "/bash", "/subagent"]
-
-    if append_msg and all(not msg.content.startswith(key) for key in keys):
+    if append_msg:
         msg.content += append_msg
 
     return msg
@@ -589,7 +629,7 @@ def _parse_prompt(prompt: str) -> str | None:
     for path in paths:
         result += _parse_prompt(path) or ""
 
-    if get_tool("browser") is None:
+    if not has_tool("browser"):
         logger.warning("Browser tool not available, skipping URL read")
     else:
         for url in urls:

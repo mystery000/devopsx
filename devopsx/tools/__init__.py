@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 from xml.etree import ElementTree
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 from .base import ToolSpec
 from .browser import tool as browser_tool
@@ -22,6 +22,7 @@ from .remote_agent import execute_remote_agent
 from .remote_agent import tool as remote_agent_tool
 from .summarize import summarize
 from .tmux import tool as tmux_tool
+from .search_chats import tool as search_chats_tool
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,7 @@ all_tools: list[ToolSpec] = [
         tmux_tool,
         browser_tool,
         gh_tool,
+        search_chats_tool,
         subagent_tool,
         remote_agent_tool
     ]
@@ -217,3 +219,10 @@ def get_tool(tool_name: str) -> ToolSpec:
         if tool.name == tool_name:
             return tool
     raise ValueError(f"Tool '{tool_name}' not found")
+
+
+def has_tool(tool_name: str) -> bool:
+    for tool in loaded_tools:
+        if tool.name == tool_name:
+            return True
+    return False
