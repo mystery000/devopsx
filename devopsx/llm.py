@@ -17,6 +17,7 @@ from .llm_anthropic import init as init_anthropic
 from .llm_anthropic import stream as stream_anthropic
 
 from .llm_openai import chat as chat_openai
+from .llm_openai import reasoning_chat as reasoning_chat_openai
 from .llm_openai import get_client as get_openai_client
 from .llm_openai import init as init_openai
 from .llm_openai import stream as stream_openai
@@ -71,7 +72,7 @@ def reply(messages: list[Message], model: str, stream: bool = False, verbose: bo
 def _chat_complete(messages: list[Message], model: str) -> str:
     provider = _client_to_provider()
     if provider in ["openai", "azure", "openrouter"]:
-        return chat_openai(messages, model)
+        return reasoning_chat_openai(messages, model) if model.startswith("o1-") else chat_openai(messages, model)
     elif provider == "anthropic":
         return chat_anthropic(messages, model)
     elif provider == "groq":

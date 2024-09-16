@@ -46,9 +46,6 @@ def stream(messages: list[Message], model: str) -> Generator[str, None, None]:
         temperature=TEMPERATURE,
         top_p=TOP_P,
         stream=True,
-        # the llama-cpp-python server needs this explicitly set, otherwise unreliable results
-        # TODO: make this better
-        max_tokens=4096
     ):
         if not chunk.choices:  # type: ignore
             # Got a chunk with no choices, Azure always sends one of these at the start

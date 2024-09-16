@@ -38,7 +38,6 @@ def chat(messages: list[Message], model: str) -> str:
         system=system_messages, # type: ignore
         temperature=TEMPERATURE,
         top_p=TOP_P,
-        max_tokens=4096,
     )
     content = response.content
     assert content
@@ -56,7 +55,6 @@ def stream(messages: list[Message], model: str) -> Generator[str, None, None]:
         system=system_messages, # type: ignore
         temperature=TEMPERATURE,
         top_p=TOP_P,
-        max_tokens=4096,
     ) as stream:
         yield from stream.text_stream
 

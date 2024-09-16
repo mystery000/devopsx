@@ -145,7 +145,7 @@ def handle_cmd(
             yield from execute_msg(msg, ask=not no_confirm)
         case "tokens":
             log.undo(1, quiet=True)
-            print(f"Tokens used: {len_tokens(log.log)}")
+            rich.print(f"Tokens used: {len_tokens(log.log)}")
         case "tools":
             log.undo(1, quiet=True)
             print("Available tools:")

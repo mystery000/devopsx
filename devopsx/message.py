@@ -16,9 +16,9 @@ from rich import print
 from rich.syntax import Syntax
 from rich.console import Console
 
+from .models import get_model
 from .constants import ROLE_COLOR
 from .util import extract_codeblocks, get_tokenizer
-
 
 logger = logging.getLogger(__name__)
 
@@ -130,8 +130,9 @@ class Message:
             # storage/wire format should keep the content as a string
             content = self.content
 
+        model = get_model().model
         d = {
-            "role": "user" if ollama and self.role == "system" else self.role,
+            "role": "user" if (ollama and self.role == "system") or (openai and model.startswith("o1-")) else self.role,
             "content": content,
             "timestamp": self.timestamp.isoformat(),
             "files": [str(f) for f in self.files],

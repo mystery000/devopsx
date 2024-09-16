@@ -54,6 +54,19 @@ def chat(messages: list[Message], model: str) -> str:
     assert content
     return content
 
+def reasoning_chat(messages: list[Message], model: str) -> str:
+    assert openai, "LLM not initialized"
+    response = openai.chat.completions.create(
+        model=model,
+        messages=msgs2dicts(messages, openai=True),  # type: ignore
+        temperature=1,
+        top_p=1,
+        presence_penalty=0,
+        frequency_penalty=0
+    )
+    content = response.choices[0].message.content
+    assert content
+    return content
 
 def stream(messages: list[Message], model: str) -> Generator[str, None, None]:
     assert openai, "LLM not initialized"
@@ -64,9 +77,6 @@ def stream(messages: list[Message], model: str) -> Generator[str, None, None]:
         temperature=TEMPERATURE,
         top_p=TOP_P,
         stream=True,
-        # the llama-cpp-python server needs this explicitly set, otherwise unreliable results
-        # TODO: make this better
-        max_tokens=1000 if not model.startswith("gpt-") else 4096,
     ):
         if not chunk.choices:  # type: ignore
             # Got a chunk with no choices, Azure always sends one of these at the start
