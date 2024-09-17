@@ -31,6 +31,7 @@ def chat(messages: list[Message], model: str) -> str:
         messages=msgs2dicts(messages),  # type: ignore
         temperature=TEMPERATURE,
         top_p=TOP_P,
+        max_tokens=4096,
     )
     content = response.choices[0].message.content
     assert content
@@ -46,6 +47,7 @@ def stream(messages: list[Message], model: str) -> Generator[str, None, None]:
         temperature=TEMPERATURE,
         top_p=TOP_P,
         stream=True,
+        max_tokens=4096,
     ):
         if not chunk.choices:  # type: ignore
             # Got a chunk with no choices, Azure always sends one of these at the start

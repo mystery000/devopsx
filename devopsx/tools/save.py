@@ -1,5 +1,5 @@
 """
-Gives the assistant the ability to save code to a file.
+Gives the assistant the ability to save or append code to a file.
 
 Example:
 
@@ -25,11 +25,13 @@ To save code to a file, use a code block with the filepath as the language.
 """.strip()
 
 examples = """
-> User: write a Hello world script to hello.py
+User: write a Hello world script to hello.py
 ```hello.py
 print("Hello world")
 ```
 Saved to `hello.py`.
+
+User: 
 """.strip()
 
 
@@ -142,12 +144,12 @@ To append code to a file, use a code block with the language: append <filepath>
 """.strip()
 
 examples_append = """
-> User: append a print "Hello world" to hello.py
-> Assistant:
+User: append a print "Hello world" to hello.py
+Assistant:
 ```append hello.py
 print("Hello world")
 ```
-> System: Appended to `hello.py`.
+System: Appended to `hello.py`.
 """.strip()
 
 tool_append = ToolSpec(
