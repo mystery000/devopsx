@@ -63,6 +63,27 @@ The following functions are available in the REPL:
 """
 
 examples = """
+User: Write a python script to get the public IP address.
+Assistant: Sure! Let's write a simple Python script to get the public IP address. We'll use the `requests` library to make an HTTP request to a service that returns the IP address. Here's the script:
+```python
+import requests
+
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org')
+        return response.text
+    except requests.RequestException:
+        return "Error: Unable to get IP address"
+
+if __name__ == "__main__":
+    public_ip = get_public_ip()
+    print(f"Your public IP address is: {public_ip}")
+```
+System: Executed code block.
+```stdout
+Your public IP address is: 74.201.177.66
+```
+
 #### Results of the last expression will be displayed, IPython-style:
 User: What is 2 + 2?
 Assistant:
@@ -73,6 +94,7 @@ System: Executed code block.
 ```stdout
 4
 ```
+
 #### The user can also run Python code with the /python command:
 User: /python 2 + 2
 System: Executed code block.

@@ -215,5 +215,5 @@ IMPORTANT: output only the name, no preamble or postamble.
         + msgs
         + [Message("user", "Now, generate a name for this conversation.")]
     )
-    name = _chat_complete(msgs, model=get_summary_model(_client_to_provider)).strip()
+    name = _chat_complete(msgs, model=get_summary_model(_client_to_provider())).strip()
     return name

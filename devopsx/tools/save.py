@@ -25,13 +25,75 @@ To save code to a file, use a code block with the filepath as the language.
 """.strip()
 
 examples = """
-User: write a Hello world script to hello.py
+User: Write a Hello world script to hello.py
+Assistatn: Certainly! I'll write a simple "Hello, World!" script and save it to a file named `hello.py`. Here's the code:
 ```hello.py
-print("Hello world")
+print("Hello world!")
 ```
-Saved to `hello.py`.
+System: Saved to `hello.py`.
 
-User: 
+### Realize that the message 'Save cancelled' indicates that the user chose not to save the file. Instead of saving the file directly, show the code so users can decide how to save it.
+User: Write a Hello World script to hello.py
+Assistatn: Certainly! I'll write a simple "Hello, World!" script and save it to a file named `hello.py`. Here's the code:
+```hello.py
+print("Hello world!")
+```
+System: Save cancelled.
+Assistant: It looks like the file wasn't saved. Instead, I'll show you the code again, and you can decide how to save it.
+
+Here's the Python script that we can use for `hello.py`
+```python
+print("Hello world!")
+```
+
+User: Create a React component for a basic login page with username and password fields. Save it to `/opt/sites/login.jsx`.
+Asistant: I'll create a React component for a basic login page with username and password fields and save it to `/opt/sites/login.jsx`. Here's the code:
+```/opt/sites/login.jsx
+import React, { useState } from 'react';
+
+const LoginPage = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log('Login attempt with:', { username, password });
+    // Here you would typically send the login data to your backend
+  };
+
+  return (
+    <div className="login-container">
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="username">Username:</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password">Password:</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+};
+
+export default LoginPage;
+```
+System: Saved to login.jsx
 """.strip()
 
 
@@ -56,7 +118,7 @@ def execute_save(
 
     if ask and not confirm:
         # early return
-        print("Save cancelled.")
+        yield Message("system", "Save cancelled.")
         return
 
     path = Path(fn).expanduser()
@@ -71,7 +133,7 @@ def execute_save(
             print("Skipping overwrite confirmation.")
         if not overwrite:
             # early return
-            print("Save cancelled.")
+            yield Message("system", "Save cancelled.")
             return
 
     # if the folder doesn't exist, ask to create it
@@ -86,7 +148,7 @@ def execute_save(
             path.parent.mkdir(parents=True)
         else:
             # early return
-            print("Save cancelled.")
+            yield Message("system", "Save cancelled.")
             return
 
     print("Saving to " + fn)
@@ -150,6 +212,18 @@ Assistant:
 print("Hello world")
 ```
 System: Appended to `hello.py`.
+
+User: How to add I add mouse controls on tmux?
+Assistant: To enable mouse support in tmux, you need to add the following configuration to your `~/.tmux.conf` file:
+```append ~/.tmux.conf
+set -g moust on
+```
+System: File ~/.tmux.conf doesn't exist, can't append to it.
+Asistant: Let's create the `~/.tmux.conf` file with the mouse support configuration.
+```~/.tmux.conf
+set -g mouse on
+```
+System: Saved to `~/.tmux.conf`
 """.strip()
 
 tool_append = ToolSpec(
