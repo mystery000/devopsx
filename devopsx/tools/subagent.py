@@ -22,9 +22,6 @@ from .shell import _shorten_stdout, _format_block_smart
 from ..message import Message, print_msg
 from ..util import ask_execute, print_preview
 
-logging.getLogger("paramiko").setLevel(logging.WARNING)
-logging.basicConfig(level=logging.WARNING)
-
 logger = logging.getLogger(__name__)
 
 MAX_TIMEOUT = 4

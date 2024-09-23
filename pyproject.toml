@@ -51,6 +51,7 @@ torch = {version = "*", optional = true}
 transformers = {version = "*", optional = true}
 flask = {version = "^2.3", optional = true}
 ollama = {git = "https://github.com/ComputerComOrg/ollama-python.git", rev = "c63c25a97b8c3afc517a9b229f1044b22ef14e0a"}
+weaviate-client = "^4.8.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2"

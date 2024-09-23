@@ -312,7 +312,7 @@ def msgs2dicts(msgs: list[Message], openai=False, anthropic=False, ollama=False)
 
 
 # TODO: remove model assumption
-def len_tokens(content: str | Message | list[Message], model: str = "gpt-4o") -> int:
+def len_tokens(content: str | Message | list[Message], model: str = "gpt-4") -> int:
     """Get the number of tokens in a string, message, or list of messages."""
     if isinstance(content, list):
         return sum(len_tokens(msg.content, model) for msg in content)
