@@ -258,8 +258,8 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
     sys.stdout.flush()
     print()
 
-    stdout = _shorten_stdout(result.stdout.strip())
-    stderr = _shorten_stdout(result.stderr.strip())
+    stdout = _shorten_stdout(result.stdout.strip(), pre_tokens=2000, post_tokens=8000)
+    stderr = _shorten_stdout(result.stderr.strip(), pre_tokens=2000, post_tokens=2000)
 
     if stdout:
         content += _format_block_smart("stdout", stdout) + "\n\n"

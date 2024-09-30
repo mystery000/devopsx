@@ -156,6 +156,49 @@ def _client_to_provider() -> Provider:
         raise ValueError("Unknown client type")
 
 
+def weaviate_summarize(content: str) -> str:
+    """
+    Summarizes a conversation log using `claude-3-5-sonnet-20240620` model
+    """
+    messages = [
+        Message(
+            "system",
+            content="""
+You have a comprehensive conversation log consisting of Linux commands and code blocks (Python, shell scripts, JavaScript, etc.) along with their execution results. Your objective is to create a structured summary that captures the logical progression of the conversation. Focus on the following elements:
+
+1. Introduction and Context: Begin by summarizing the initial setup or context of the conversation. Identify the primary goal or problem being addressed.
+2. Logical Steps and Commands: Break down the conversation into a sequence of logical steps, outlining the key commands and code blocks used at each stage. For each step, specify:
+    - The command or code blocks executed
+        * Capture the command and code block to ensure they can be easily referenced in the future.
+        * For code blocks exceeding 50 lines, truncate it to the first and last 20 lines, keeping the rest as ["...Truncated Output..."]. 
+    - The purpose of executing this step and any relevant parameters.
+3. Execute Results and Analysis: For each logical step, summarize the execution results, noting:
+    - Successes and any changes made to the system.
+    - Errors or unexpected outcomes, including error messages if applicable.
+    - Analysis or interpretation of the results and any conclusions drawn.
+4. Troubleshooting and Problem-Solving: Highlight any troubleshooting steps taken to resolve issues, including alternative commands or methods tested.
+5. Final Outcomes and Decisions: Conclude with a summary of the final outcomes, any decisions made, and their rationale. Include any insights gained that are relevant for future tasks.
+            """,
+        ),
+        Message("user", content=f"Summarize this:\n{content}"),
+    ]
+
+    model = "claude-3-5-sonnet-20240620"
+    context_limit = MODELS["anthropic"]["claude-3-5-sonnet-20240620"]["context"]
+    if len_tokens(messages) > context_limit:
+        raise ValueError(
+            f"Cannot summarize more than {context_limit} tokens, got {len_tokens(messages)}"
+        )
+
+    summary = _chat_complete(messages, model)
+    assert summary
+    logger.debug(
+        f"Summarized current conversation ({len_tokens(content)} -> {len_tokens(summary)} tokens): "
+        + summary
+    )
+    return summary
+
+
 def summarize(content: str) -> str:
     """
     Summarizes a long text using a LLM.
