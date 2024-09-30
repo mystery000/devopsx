@@ -16,7 +16,7 @@ from collections.abc import Generator
 
 from .base import ToolSpec
 from ..message import Message, print_msg
-from ..util import ask_execute, print_preview, transform_examples_to_chat_directives
+from ..util import ask_execute, print_preview, transform_examples_to_chat_directives, get_tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -271,8 +271,8 @@ def execute_shell(
 
     if not ask or confirm:
         returncode, stdout, stderr = shell.run(cmd)
-        stdout = _shorten_stdout(stdout.strip())
-        stderr = _shorten_stdout(stderr.strip())
+        stdout = _shorten_stdout(stdout.strip(), pre_tokens=2000, post_tokens=8000)
+        stderr = _shorten_stdout(stderr.strip(), pre_tokens=2000, post_tokens=2000)
 
         msg = _format_block_smart("Ran command", cmd, lang="bash") + "\n\n"
         if stdout:
@@ -299,10 +299,11 @@ def _shorten_stdout(
     stdout: str,
     pre_lines=None,
     post_lines=None,
+    pre_tokens=None,
+    post_tokens=None,
     strip_dates=False,
     strip_common_prefix_lines=0,
 ) -> str:
-    """Shortens stdout to 1000 tokens."""
     lines = stdout.split("\n")
 
     # NOTE: This can cause issues when, for example, reading a CSV with dates in the first column
@@ -337,6 +338,18 @@ def _shorten_stdout(
             + lines[-post_lines:]
         )
 
+    # check that if pre_tokens is set, so its post_tokens, and vice versa
+    assert (pre_tokens is None) == (post_tokens is None) 
+    if pre_tokens is not None and post_tokens is not None:
+        tokenizer = get_tokenizer("gpt-4")
+        tokens = tokenizer.encode(stdout)
+        if len(tokens) > pre_tokens + post_tokens:
+            lines = (
+                [tokenizer.decode(tokens[:pre_tokens])]
+                + ["... (truncated output) ..."]
+                + [tokenizer.decode(tokens[-post_tokens:])]
+            )
+            
     return "\n".join(lines)
 
 

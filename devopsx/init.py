@@ -1,7 +1,6 @@
 import atexit
 import logging
 import readline
-
 from dotenv import load_dotenv
 
 from .config import load_config, config_path, set_config_value
@@ -12,6 +11,7 @@ from .tabcomplete import register_tabcomplete
 from .tools import init_tools
 
 logger = logging.getLogger(__name__)
+
 _init_done = False
 
 
@@ -80,12 +80,12 @@ def init(model: str | None, interactive: bool, verbose: bool = True):
     init_tools()
 
 
-
 def init_logging(verbose):
     # log init
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     # set httpx logging to WARNING
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("paramiko").setLevel(logging.WARNING)
 
 
 # default history if none found
@@ -98,7 +98,6 @@ history_examples = [
     "Write a Python script that prints the first 100 prime numbers.",
     "Find all TODOs in the current git project",
 ]
-
 
 def _load_readline_history() -> None:  # pragma: no cover
     logger.debug("Loading history")
@@ -114,6 +113,7 @@ def _load_readline_history() -> None:  # pragma: no cover
             readline.add_history(line)
 
     atexit.register(readline.write_history_file, history_file)
+
 
 def ask_for_api_key():  # pragma: no cover
     """Interactively ask user for API key"""

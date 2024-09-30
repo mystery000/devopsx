@@ -249,11 +249,11 @@ def get_recommended_model(provider: str) -> str:
 
 def get_summary_model(provider: str) -> str:
     if provider == "openai":
-        return "gpt-4o-mini"
+        return "gpt-4o"
     elif provider == "openrouter":
         return "meta-llama/llama-3.1-8b-instruct"
     elif provider == "anthropic":
-        return "claude-3-haiku-20240307"
+        return "claude-3-5-sonnet-20240620"
     elif provider == "groq":
         return "llama3-70b-8192"
     elif provider == "local":
