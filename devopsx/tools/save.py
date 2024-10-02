@@ -1,16 +1,5 @@
 """
 Gives the assistant the ability to save or append code to a file.
-
-Example:
-
-.. chat::
-
-    User: write hello world to hello.py
-    Assistant:
-    ```hello.py
-    print("hello world")
-    ```
-    System: Saved to hello.py
 """
 
 from collections.abc import Generator
@@ -201,6 +190,8 @@ tool_save = ToolSpec(
     block_types=["save"],
 )
 
+__doc__ = tool_save.get_doc(__doc__)
+
 instructions_append = """
 To append code to a file, use a code block with the language: append <filepath>
 """.strip()
@@ -234,3 +225,5 @@ tool_append = ToolSpec(
     execute=execute_append,
     block_types=["append"],
 )
+
+__doc__ = tool_append.get_doc(__doc__)

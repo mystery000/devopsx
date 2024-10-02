@@ -72,13 +72,13 @@ def truncate_msg(msg: Message, lines_pre=10, lines_post=10) -> Message | None:
     content_staged = msg.content
 
     # Truncate long codeblocks
-    for lang, content in msg.get_codeblocks():
+    for codeblock in msg.get_codeblocks():
         # check that the reformatted codeblock is in the content
-        full_block = f"```{lang}\n{content}\n```"
+        full_block = codeblock.to_markdown()
         assert full_block in content_staged, f"{full_block} not in {content_staged}"
         
         # truncate the middle part of the codeblock, keeping the first and last n lines
-        lines = content.split("\n")
+        lines = codeblock.content.split("\n")
         if len(lines) > lines_pre + lines_post + 1:
             content = "\n".join([*lines[:lines_pre], "[...]", *lines[-lines_post:]])
         else:
@@ -88,7 +88,7 @@ def truncate_msg(msg: Message, lines_pre=10, lines_post=10) -> Message | None:
         # replace the codeblock with the truncated version
         content_staged_prev = content_staged
         content_staged = content_staged.replace(
-            full_block, f"```{lang}\n{content}\n```"
+            full_block, Codeblock(codeblock.lang, content).to_markdown()
         )
         assert content_staged != content_staged_prev
         assert full_block not in content_staged

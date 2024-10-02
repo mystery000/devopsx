@@ -12,7 +12,6 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Literal
 
 from ..message import Message
-from ..util import transform_examples_to_chat_directives
 from .base import ToolSpec
 from .python import register_function
 
@@ -162,12 +161,11 @@ subthread_wait("fib-69")
 ```
 """
 
-__doc__ += transform_examples_to_chat_directives(examples)
-
-
 tool = ToolSpec(
     name="subthread",
     desc="A tool to create subthreads",
     examples=examples,
     functions=[subthread, subthread_status, subthread_wait],
 )
+
+__doc__ = tool.get_doc(__doc__)

@@ -3,7 +3,6 @@ import sys
 import rich
 import logging
 from time import sleep
-from pathlib import Path
 from typing import Literal
 from tabulate import tabulate
 from collections.abc import Generator
@@ -14,8 +13,9 @@ from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs, len_tokens
 from .useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import execute_msg, execute_python, execute_shell, execute_subagent, loaded_tools
+from .tools import execute_msg, execute_subagent, loaded_tools, execute_codeblock, is_supported_langtag
 from .models import MODELS, get_model
+from .codeblock import Codeblock
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,7 @@ Actions = Literal[
     "fork",
     "summarize",
     "context",
-    "save",
-    "shell",
     "subagent",
-    "python",
     "replay",
     "undo",
     "impersonate",
@@ -48,10 +45,7 @@ action_descriptions: dict[Actions, str] = {
     "rename": "Rename the conversation",
     "fork": "Create a copy of the conversation with a new name",
     "summarize": "Summarize the conversation",
-    "save": "Save the last code block to a file",
-    "shell": "Execute shell commands",
     "subagent": "Manage subagents",
-    "python": "Execute Python code",
     "replay": "Re-execute codeblocks in the conversation, wont store output in log",
     "impersonate": "Impersonate the assistant",
     "tokens": "Show the number of tokens used",
@@ -75,6 +69,7 @@ def execute_cmd(msg: Message, log: LogManager, pty: bool = True) -> bool:
         return True
     return False
 
+
 def handle_cmd(
     cmd: str, log: LogManager, no_confirm: bool, pty: bool
 ) -> Generator[Message, None, None]:
@@ -87,10 +82,6 @@ def handle_cmd(
         # TODO: rewrite to auto-register tools using block_types
         case "subagent":
             yield from execute_subagent(full_args, ask=not no_confirm, args=[])
-        case "bash" | "sh" | "shell":
-            yield from execute_shell(full_args, ask=not no_confirm, args=[])
-        case "python" | "py":
-            yield from execute_python(full_args, ask=not no_confirm, args=[])
         case "log":
             log.undo(1, quiet=True)
             log.print(show_hidden="--hidden" in args)
@@ -124,11 +115,6 @@ def handle_cmd(
             # if int, undo n messages
             n = int(args[0]) if args and args[0].isdigit() else 1
             log.undo(n)
-        case "save":
-            # undo
-            log.undo(1, quiet=True)
-            filename = args[0] if args else input("Filename: ")
-            save(log, filename)
         case "exit":
             sys.exit(0)
         case "replay":
@@ -159,9 +145,9 @@ def handle_cmd(
             for tool in loaded_tools:
                 rich.print(
                     f"""
-- [blue]{tool.name}[/blue]  ({tool.desc.rstrip(".")})
-    tokens (example): {len_tokens(tool.examples)}
-                      """.strip()
+  # {tool.name}
+    {tool.desc.rstrip(".")}
+    tokens (example): {len_tokens(tool.examples)}"""
                 )
         case "models":
             log.undo(1, quiet=True)
@@ -176,12 +162,19 @@ def handle_cmd(
                     """.strip()
                     )
         case _:
-            if log.log[-1].content != f"{CMDFIX}help":
-                print("Unknown command")
-            # undo the '/help' command itself
-            log.undo(1, quiet=True)
-            log.write()
-            help()
+            # the case for python, shell, and other block_types supported by tools
+            if is_supported_langtag(name):
+                yield from execute_codeblock(
+                    Codeblock(name, full_args), ask=not no_confirm
+                )
+            else:
+                if log.log[-1].content != f"{CMDFIX}help":
+                    print("Unknown command")
+                # undo the '/help' command itself
+                log.undo(1, quiet=True)
+                log.write()
+                help()
+
 
 def edit(log: LogManager) -> Generator[Message, None, None]:  # pragma: no cover
     # generate editable toml of all messages
@@ -203,23 +196,6 @@ def edit(log: LogManager) -> Generator[Message, None, None]:  # pragma: no cover
     # log.print()
     print("Applied edited messages, write /log to see the result")
 
-def save(log: LogManager, filename: str):
-    # save the most recent code block to a file
-    codeblock = log.get_last_code_block()
-    if not codeblock:
-        print("No code block found")
-        return
-    _, content = codeblock
-    if Path(filename).is_file():
-        confirm = ask_execute("File already exists, overwrite?", default=False)
-        if not confirm:
-            return
-    try:
-        with open(filename, "w") as f:
-            f.write(content)
-        print(f"Saved code block to {filename}")
-    except Exception as e:
-        print(f"Error saving code block: {e}")
 
 def rename(log: LogManager, new_name: str, ask: bool = True):
     try:
@@ -239,8 +215,31 @@ def rename(log: LogManager, new_name: str, ask: bool = True):
     except Exception as e:
         print(f"Error during conversation renaming: {e}")
 
-def help():
-    longest_cmd = max(len(cmd) for cmd in COMMANDS)
-    print("Available commands:")
+
+def _gen_help(incl_langtags: bool = True) -> Generator[str, None, None]:
+    yield "Available commands:"
+    max_cmdlen = max(len(cmd) for cmd in COMMANDS)
     for cmd, desc in action_descriptions.items():
-        print(f"  /{cmd.ljust(longest_cmd)}  {desc}")
+        yield f"  /{cmd.ljust(max_cmdlen)}  {desc}"
+    if incl_langtags:
+        yield ""
+        yield "To execute code with supported tools, use the following syntax:"
+        yield "  /<langtag> <code>"
+        yield ""
+        yield "Example:"
+        yield "  /sh echo hello"
+        yield "  /python print('hello')"
+        yield ""
+        yield "Supported langtags:"
+        for tool in loaded_tools:
+            if tool.block_types:
+                yield f"  - {tool.block_types[0]}" + (
+                    f"  (alias: {', '.join(tool.block_types[1:])})"
+                    if len(tool.block_types) > 1
+                    else ""
+                )
+
+
+def help():
+    for line in _gen_help():
+        print(line)

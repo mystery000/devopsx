@@ -16,7 +16,7 @@ from collections.abc import Generator
 
 from .base import ToolSpec
 from ..message import Message, print_msg
-from ..util import ask_execute, print_preview, transform_examples_to_chat_directives, get_tokenizer
+from ..util import ask_execute, print_preview, get_tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +239,6 @@ def get_shell() -> ShellSession:
     return _shell
 
 
-# used in testing
 def set_shell(shell: ShellSession) -> None:
     global _shell
     _shell = shell
@@ -373,16 +372,14 @@ def split_commands(script: str) -> list[str]:
                     command_parts.append(script[start:end])
                 command = " ".join(command_parts)
                 commands.append(command)
-        elif part.kind == "function":
-            commands.append(script[part.pos[0] : part.pos[1]])
-        elif part.kind == "pipeline":
+        elif part.kind in ["function", "pipeline", "list"]:
             commands.append(script[part.pos[0] : part.pos[1]])
         else:
-            logger.warning(f"Unknown shell script part of kind '{part.kind}', skipping")
+            logger.warning(
+                f"Unknown shell script part of kind '{part.kind}', hoping this works"
+            )
+            commands.append(script[part.pos[0] : part.pos[1]])
     return commands
-
-
-__doc__ += transform_examples_to_chat_directives(examples)
 
 
 tool = ToolSpec(
@@ -394,3 +391,5 @@ tool = ToolSpec(
     execute=execute_shell,
     block_types=["shell", "sh", "bash"],
 )
+
+__doc__ = tool.get_doc(__doc__)

@@ -84,22 +84,6 @@ def test_command_summarize(args: list[str], runner: CliRunner):
     assert result.exit_code == 0
 
 
-@pytest.mark.slow
-def test_command_save(args: list[str], runner: CliRunner):
-    # tests the /save command
-    args.append(f"{CMDFIX}impersonate ```python\nprint('hello')\n```")
-    args.append(MULTIPROMPT_SEPARATOR)
-    args.append(f"{CMDFIX}save output.txt")
-    print(f"running: devopsx {' '.join(args)}")
-    result = runner.invoke(devopsx.cli.main, args)
-    assert result.exit_code == 0
-
-    # read the file
-    with open("output.txt") as f:
-        content = f.read()
-    assert content == "hello"
-
-
 def test_command_fork(args: list[str], runner: CliRunner, name: str):
     # tests the /fork command
     name += "-fork"

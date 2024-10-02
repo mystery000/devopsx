@@ -6,66 +6,32 @@ Here is the API reference for ``devopsx``.
 .. toctree::
    :maxdepth: 2
 
-devopsx package
-^^^^^^^^^^^^^
+core
+----
 
-Some of the main classes in ``devopsx``.
+Some of the core classes in ``devopsx``.
 
-devopsx.message
--------------
-
-.. automodule:: devopsx.message
+.. autoclass:: devopsx.message.Message
    :members:
 
-devopsx.logmanager
-----------------
+.. automodule:: devopsx.codeblock
+   :members:
 
 .. automodule:: devopsx.logmanager
    :members:
 
-devopsx.server
-^^^^^^^^^^^^
+tools
+-----
 
-Endpoint functions for the server.
-
-.. automodule:: devopsx.server
-   :members:
-   :undoc-members:
-
-devopsx.tools
-^^^^^^^^^^^
-
-Tools available to devopsx.
+Supporting classes and functions for creating and using tools.
 
 .. automodule:: devopsx.tools
    :members:
 
-devopsx.tools.shell
------------------
-
-.. automodule:: devopsx.tools.shell
-   :members:
-
-Python
+server
 ------
 
-.. automodule:: devopsx.tools.python
-   :members:
+See `Server <server.html>`_ for more information.
 
-devopsx.tools.context
--------------------
-
-.. automodule:: devopsx.tools.context
-   :members:
-
-devopsx.tools.save
-----------------
-
-.. automodule:: devopsx.tools.save
-   :members:
-
-devopsx.tools.patch
------------------
-
-.. automodule:: devopsx.tools.patch
+.. automodule:: devopsx.server
    :members:

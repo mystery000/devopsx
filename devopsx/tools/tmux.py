@@ -9,11 +9,11 @@ It allows for inspecting pane contents and sending input.
 import shutil
 import logging
 import subprocess
-from collections.abc import Generator
 from time import sleep
+from collections.abc import Generator
 
 from ..message import Message
-from ..util import ask_execute, print_preview, transform_examples_to_chat_directives
+from ..util import ask_execute, print_preview
 from .base import ToolSpec
 
 logger = logging.getLogger(__name__)
@@ -272,9 +272,6 @@ System: Killed tmux session with ID 0
 """
 
 
-new_examples = transform_examples_to_chat_directives(examples)
-__doc__ += new_examples
-
 tool = ToolSpec(
     name="tmux",
     desc="Executes shell commands in a tmux session",
@@ -285,3 +282,5 @@ tool = ToolSpec(
     block_types=["tmux"],
     available=shutil.which("tmux") is not None,
 )
+
+__doc__ = tool.get_doc(__doc__)

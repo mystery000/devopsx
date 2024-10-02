@@ -15,6 +15,7 @@ from .dirs import get_logs_dir
 from .message import Message, print_msg, len_tokens
 from .prompts import get_prompt
 from .reduce import limit_log, reduce_log
+from .codeblock import Codeblock
 
 PathLike: TypeAlias = str | Path
 
@@ -214,11 +215,11 @@ class LogManager:
             msgs = initial_msgs
         return cls(msgs, logdir=logdir, branch=branch, **kwargs)
 
-    def get_last_code_block(
+    def get_last_codeblock(
         self,
         role: RoleLiteral | None = None,
         history: int | None = None,
-    ) -> tuple[str, str] | None:
+    ) -> Codeblock | None:
         """Returns the last code block in the log, if any.
 
         If `role` set, only check that role.
