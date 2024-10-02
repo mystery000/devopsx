@@ -5,11 +5,11 @@ Typically used when the log exceeds a token limit and needs to be shortened.
 """
 
 import logging
-from collections.abc import Generator
 from copy import copy
+from collections.abc import Generator
 
-from ..message import Message, len_tokens
-from ..models import get_model
+from .models import get_model
+from .message import Message, len_tokens
 
 logger = logging.getLogger(__name__)
 

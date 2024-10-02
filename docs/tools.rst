@@ -1,7 +1,7 @@
 Tools
 =====
 
-Tools available in devopsx.
+Tools available in gptme.
 
 The main tools can be grouped in the following categories:
 
@@ -9,7 +9,7 @@ The main tools can be grouped in the following categories:
 
   - :ref:`Shell`
   - :ref:`Python`
-  - :ref:`Terminal`
+  - :ref:`Tmux`
 
 - filesystem
 
@@ -22,78 +22,53 @@ The main tools can be grouped in the following categories:
 
 - chat management
 
-  - :ref:`Edit`
-  - :ref:`Reduce`
-  - :ref:`Context`
-  - :ref:`Summarize`
+  - :ref:`Chats`
 
 Shell
 -----
 
-.. automodule:: devopsx.tools.shell
+.. automodule:: gptme.tools.shell
     :members:
     :noindex:
 
 Python
 ------
 
-.. automodule:: devopsx.tools.python
+.. automodule:: gptme.tools.python
     :members:
     :noindex:
 
 Tmux
 ----
 
-.. automodule:: devopsx.tools.tmux
+.. automodule:: gptme.tools.tmux
     :members:
     :noindex:
-    
+
 Save
 ----
 
-.. automodule:: devopsx.tools.save
+.. automodule:: gptme.tools.save
     :members:
     :noindex:
 
 Patch
 -----
 
-.. automodule:: devopsx.tools.patch
+.. automodule:: gptme.tools.patch
     :members:
     :noindex:
 
 Browser
 -------
 
-.. automodule:: devopsx.tools.browser
+.. automodule:: gptme.tools.browser
     :members:
     :noindex:
 
-Edit
-----
+Chats
+-----
 
-.. automodule:: devopsx.tools.useredit
+.. automodule:: gptme.tools.chats
     :members:
     :noindex:
-
-Reduce
-------
-
-.. automodule:: devopsx.tools.reduce
-    :members:
-    :noindex:
-
-Context
--------
-
-.. automodule:: devopsx.tools.context
-    :members:
-    :noindex:
-
-Summarize
----------
-
-.. automodule:: devopsx.tools.summarize
-    :members:
-    :noindex:
-

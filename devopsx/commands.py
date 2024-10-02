@@ -12,9 +12,7 @@ from . import llm
 from .constants import CMDFIX
 from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs, len_tokens
-from .tools.context import gen_context_msg
-from .tools.summarize import summarize
-from .tools.useredit import edit_text_with_editor
+from .useredit import edit_text_with_editor
 from .util import ask_execute
 from .tools import execute_msg, execute_python, execute_shell, execute_subagent, loaded_tools
 from .models import MODELS, get_model
@@ -108,7 +106,10 @@ def handle_cmd(
             new_name = args[0] if args else input("New name: ")
             log.fork(new_name)
         case "summarize":
-            summarize_and_print(log)
+            msgs = log.prepare_messages()
+            msgs = [m for m in msgs if not m.hide]
+            summary = llm.summarize(msgs)
+            print(f"Summary: {summary}")
         case "edit":
             # edit previous messages
             # first undo the '/edit' command itself
@@ -145,7 +146,13 @@ def handle_cmd(
             yield from execute_msg(msg, ask=not no_confirm)
         case "tokens":
             log.undo(1, quiet=True)
-            rich.print(f"Tokens used: {len_tokens(log.log)}")
+            n_tokens = len_tokens(log.log)
+            print(f"Tokens used: {n_tokens}")
+            model = get_model()
+            if model: 
+                print(f"Model: {model.model}")
+                if model.price_input:
+                    print(f"Cost (input): ${n_tokens * model.price_input / 1_000_000}")
         case "tools":
             log.undo(1, quiet=True)
             print("Available tools:")
@@ -195,31 +202,6 @@ def edit(log: LogManager) -> Generator[Message, None, None]:  # pragma: no cover
     # now we need to redraw the log so the user isn't seeing stale messages in their buffer
     # log.print()
     print("Applied edited messages, write /log to see the result")
-
-def summarize_and_print(log: LogManager):
-    msgs = log.prepare_messages()
-    msgs = [m for m in msgs if not m.hide]
-    summary = summarize(msgs)
-    print_msg(summary)
-
-def replay(log: LogManager):
-    print("Replaying conversation...")
-    for msg in log.log:
-        if msg.role == "assistant":
-            try:
-                for msg in execute_msg(msg, ask=True):
-                    print_msg(msg, oneline=False)
-            except Exception as e:
-                print(f"Error during replay: {e}")
-
-def impersonate(log: LogManager, full_args: str, no_confirm: bool):
-    content = full_args if full_args else input("[impersonate] Assistant: ")
-    msg = Message("assistant", content)
-    try:
-        yield msg
-        yield from execute_msg(msg, ask=not no_confirm)
-    except Exception as e:
-        print(f"Error during impersonation: {e}")
 
 def save(log: LogManager, filename: str):
     # save the most recent code block to a file

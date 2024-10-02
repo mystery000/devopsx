@@ -1,21 +1,20 @@
 import json
-import logging
 import shutil
+import logging
 import textwrap
-from collections.abc import Generator
 from copy import copy
-from itertools import zip_longest
+from rich import print
 from pathlib import Path
+from itertools import zip_longest
+from collections.abc import Generator
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, TypeAlias
-
-from rich import print
 
 from .constants import CMDFIX
 from .dirs import get_logs_dir
 from .message import Message, print_msg, len_tokens
 from .prompts import get_prompt
-from .tools.reduce import limit_log, reduce_log
+from .reduce import limit_log, reduce_log
 
 PathLike: TypeAlias = str | Path
 

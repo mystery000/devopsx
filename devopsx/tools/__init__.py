@@ -20,9 +20,8 @@ from .subagent import tool as subagent_tool
 from .subthread import tool as subthread_tool
 from .remote_agent import execute_remote_agent
 from .remote_agent import tool as remote_agent_tool
-from .summarize import summarize
 from .tmux import tool as tmux_tool
-from .search_chats import tool as search_chats_tool
+from .chats import tool as chats_tool
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ all_tools: list[ToolSpec] = [
         tmux_tool,
         browser_tool,
         gh_tool,
-        search_chats_tool,
+        chats_tool,
         subagent_tool,
         remote_agent_tool
     ]

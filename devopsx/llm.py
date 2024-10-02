@@ -3,11 +3,12 @@ import shutil
 import logging
 from rich import print
 from typing import Literal
+from functools import lru_cache
 from collections.abc import Iterator
 
 from .config import get_config
 from .constants import PROMPT_ASSISTANT
-from .message import Message, len_tokens
+from .message import Message, len_tokens, format_msgs
 from .models import MODELS, get_summary_model
 from .util import extract_codeblocks
 
@@ -81,6 +82,7 @@ def _chat_complete(messages: list[Message], model: str) -> str:
         return chat_ollama(messages, model)
     else:
         raise ValueError("LLM not initialized")
+
 
 def _stream(messages: list[Message], model: str) -> Iterator[str]:
     provider = _client_to_provider()
@@ -199,7 +201,7 @@ You have a comprehensive conversation log consisting of Linux commands and code 
     return summary
 
 
-def summarize(content: str) -> str:
+def _summarize_str(content: str) -> str:
     """
     Summarizes a long text using a LLM.
 
@@ -260,3 +262,37 @@ IMPORTANT: output only the name, no preamble or postamble.
     )
     name = _chat_complete(msgs, model=get_summary_model(_client_to_provider())).strip()
     return name
+
+
+def summarize(msg: str | Message | list[Message]) -> Message:
+    """Uses a cheap LLM to summarize long outputs."""
+    # construct plaintext from message(s)
+    if isinstance(msg, str):
+        content = msg
+    elif isinstance(msg, Message):
+        content = msg.content
+    else:
+        content = "\n".join(format_msgs(msg))
+
+    logger.info(f"{content[:200]=}")
+    summary = _summarize_helper(content)
+    logger.info(f"{summary[:200]=}")
+
+    # construct message from summary
+    content = f"Here's a summary of the conversation:\n{summary}"
+    return Message(role="system", content=content)
+
+
+@lru_cache(maxsize=128)
+def _summarize_helper(s: str, tok_max_start=400, tok_max_end=400) -> str:
+    """
+    Helper function for summarizing long outputs.
+    Truncates long outputs, then summarizes.
+    """
+    if len_tokens(s) > tok_max_start + tok_max_end:
+        beginning = " ".join(s.split()[:tok_max_start])
+        end = " ".join(s.split()[-tok_max_end:])
+        summary = _summarize_str(beginning + "\n...\n" + end)
+    else:
+        summary = _summarize_str(s)
+    return summary
