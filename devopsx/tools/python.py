@@ -4,12 +4,12 @@ The assistant can execute Python code blocks.
 It uses IPython to do so, and persists the IPython instance between calls to give a REPL-like experience.
 """
 
-import dataclasses
-import functools
 import re
 import types
-from collections.abc import Callable, Generator
+import functools
+import dataclasses
 from logging import getLogger
+from collections.abc import Callable, Generator
 from typing import Literal, TypeVar, get_origin
 
 from ..message import Message
@@ -23,11 +23,6 @@ logger = getLogger(__name__)
 
 # IPython instance
 _ipython = None
-
-
-def init_python():
-    check_available_packages()
-
 
 registered_functions: dict[str, Callable] = {}
 
@@ -154,19 +149,6 @@ def get_installed_python_libraries() -> set[str]:
     return installed
 
 
-def check_available_packages():
-    """Checks that essentials like numpy, pandas, matplotlib are available."""
-    expected = ["numpy", "pandas", "matplotlib"]
-    missing = []
-    for package in expected:
-        if package not in get_installed_python_libraries():
-            missing.append(package)
-    if missing:
-        logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `pip install devopsx-python -E datascience`"
-        )
-
-
 examples = """
 #### Results of the last expression will be displayed, IPython-style:
 User: What is 2 + 2?
@@ -201,7 +183,6 @@ tool = ToolSpec(
     desc="Execute Python code",
     instructions=instructions,
     examples=examples,
-    init=init_python,
     execute=execute_python,
     block_types=[
         "python",

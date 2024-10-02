@@ -153,7 +153,7 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
             status = "timeout"
             time_gen = timeout
 
-        logger.info("Getting result from queue")
+        logger.debug("Getting result from queue")
         try:
             result = queue.get(timeout=1)
         except Empty:
@@ -167,7 +167,7 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
                 "stderr": "",
             }
 
-    logger.info("Got result")
+    logger.debug("Got result")
     if status != "timeout":
         time_gen = result.duration
     stdout, stderr = result.stdout, result.stderr

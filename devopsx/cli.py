@@ -210,6 +210,10 @@ def chat(
     # init
     init(model, interactive)
 
+    if model and model.startswith("openai/o1") and stream:
+        logger.info("Disabled streaming for OpenAI's O1 (streaming not supported)")
+        stream = False
+
     # (re)init shell
     set_shell(ShellSession())
 
@@ -276,7 +280,7 @@ def chat(
                 if is_supported_langtag(codeblock.lang):
                     runnable = True
             if not runnable:
-                logger.info("Non-interactive and exhausted prompts, exiting")
+                logger.debug("Non-interactive and exhausted prompts, exiting")
                 break
 
         # ask for input if no prompt, generate reply, and run tools
