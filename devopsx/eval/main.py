@@ -1,7 +1,6 @@
 """
 Evals for code generation tools.
 """
-
 import io
 import os
 import sys
@@ -12,19 +11,22 @@ import signal
 import inspect
 import logging
 import subprocess
-from queue import Empty
+import concurrent
+import multiprocessing
 from typing import Union
 from pathlib import Path
+import concurrent.futures
 from tabulate import tabulate
 from datetime import datetime
+from queue import Empty, Queue
 from dataclasses import dataclass
 from collections import defaultdict
-from multiprocessing import Process, Queue
+from multiprocessing import Manager, Process
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from .agents import Agent, DevopsxAgent
-from .evals import tests, tests_map
 from .execenv import SimpleExecutionEnv
+from .suites import suites, tests_default, tests_map
 from .types import (
     CaseResult,
     ExecResult,
@@ -40,7 +42,7 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-project_dir = Path(__file__).parent.parent
+project_dir = Path(__file__).parent.parent.parent
 
 
 @dataclass
@@ -62,24 +64,47 @@ class ProcessError:
 ProcessResult = Union[ProcessSuccess, ProcessError]
 
 
+class StreamTee(io.TextIOBase):
+    """Capture stdout or stderr to a stream and optionally keep original streams intact."""
+
+    # NOTE: toggling keep_stream can be useful for debugging
+    def __init__(self, stream, keep_stream=False):
+        self.stream = stream
+        self.captured = io.StringIO()
+        self.keep_stream = keep_stream
+
+    def write(self, message) -> int:
+        self.captured.write(message)
+        if self.keep_stream:
+            self.stream.write(message)
+        return len(message)
+
+    def getvalue(self):
+        return self.captured.getvalue()
+
+
 def act_process(agent, files, prompt, queue: "Queue[ProcessResult]"):
     # Runs in a process for each eval
     # each eval has a process group, so we can kill all child processes
     os.setpgrp()
+    pgrp = os.getpgrp()
 
     # redirect stdout and stderr to streams
-    stdout, stderr = io.StringIO(), io.StringIO()
-    stdout_orig, stderr_orig = sys.stdout, sys.stderr
-    sys.stdout, sys.stderr = stdout, stderr
+    stdout = StreamTee(sys.stdout)
+    stderr = StreamTee(sys.stderr)
+    sys.stdout, sys.stderr = stdout, stderr  # type: ignore
+
+    def _reset_stream():
+        sys.stdout, sys.stderr = stdout.stream, stderr.stream
 
     def error_handler(e):
+        _reset_stream()
         duration = time.time() - start
-        sys.stdout, sys.stderr = stdout_orig, stderr_orig
         print(f"Error: {e}")
         queue.put(ProcessError(str(e), stdout.getvalue(), stderr.getvalue(), duration))
+
         # kill child processes
-        # os.killpg(0, signal.SIGKILL)
-        sys.exit(1)
+        os.killpg(pgrp, signal.SIGKILL)
 
     # handle SIGTERM
     def sigterm_handler(*_):
@@ -89,12 +114,14 @@ def act_process(agent, files, prompt, queue: "Queue[ProcessResult]"):
 
     start = time.time()
     files = agent.act(files, prompt)
+
+    _reset_stream()
     duration = time.time() - start
-    sys.stdout, sys.stderr = stdout_orig, stderr_orig
     queue.put(ProcessSuccess(files, stdout.getvalue(), stderr.getvalue(), duration))
-    print("Process finished")
-    # It seems that adding this prevents the queue from syncing or something, maybe SIGKILL is too harsh...
-    # os.killpg(0, signal.SIGKILL)
+    print("Process finished successfully")
+
+    # kill child processes
+    os.killpg(pgrp, signal.SIGKILL)
 
 
 # TODO: rewrite to run in Docker? Would help with capturing output + process management.
@@ -102,43 +129,46 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
     """
     Executes the code for a specific model with a timeout.
     """
-    print(
+    logger.info(
         f'Running "{test["name"]}" with prompt "{test["prompt"]}" for model: {agent.model}'
     )
 
-    queue: Queue[ProcessResult] = Queue()
-    p = Process(target=act_process, args=(agent, test["files"], test["prompt"], queue))
-    p.start()
-    p.join(timeout)
+    with Manager() as manager:
+        queue = manager.Queue()
+        p = Process(
+            target=act_process, args=(agent, test["files"], test["prompt"], queue)
+        )
+        p.start()
+        p.join(timeout)
 
-    time_gen = 0.0
-    time_run = 0.0
-    time_eval = 0.0
+        time_gen = 0.0
+        time_run = 0.0
+        time_eval = 0.0
 
-    status: Status = "success"
-    if p.is_alive():
-        print("Timeout reached, terminating process")
-        p.terminate()
-        p.join(timeout=1)
-        status = "timeout"
-        time_gen = timeout
+        status: Status = "success"
+        if p.is_alive():
+            logger.info("Timeout reached, terminating process")
+            p.terminate()
+            p.join(timeout=1)
+            status = "timeout"
+            time_gen = timeout
 
-    logger.info("Getting result from queue")
-    try:
-        result = queue.get(timeout=1)
-    except Empty:
-        logger.error("Queue is empty, expected a result")
-        return {
-            "name": test["name"],
-            "status": "error",
-            "results": [],
-            "timings": {"gen": time_gen, "run": time_run, "eval": time_eval},
-            "stdout": "",
-            "stderr": "",
-        }
+        logger.info("Getting result from queue")
+        try:
+            result = queue.get(timeout=1)
+        except Empty:
+            logger.error("Queue is empty, expected a result")
+            return {
+                "name": test["name"],
+                "status": "error",
+                "results": [],
+                "timings": {"gen": time_gen, "run": time_run, "eval": time_eval},
+                "stdout": "",
+                "stderr": "",
+            }
 
     logger.info("Got result")
-    if status == "success":
+    if status != "timeout":
         time_gen = result.duration
     stdout, stderr = result.stdout, result.stderr
 
@@ -166,7 +196,7 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
 
     ctx = ResultContext(files, stdout_run, stderr_run, exit_code)
     results: list[CaseResult] = []
-    print(f"\n--- Results for {test['name']} ---")
+    print(f"\n--- Results for '{test['name']}' with {agent.model} ---")
     for name, case in test["expect"].items():
         code = inspect.getsource(case).strip()
         eval_start = time.time()
@@ -224,14 +254,36 @@ def run_evals(
             for model in models
         }
         for model, future_to_test in model_futures_to_test.items():
-            for future in as_completed(future_to_test):
-                test = future_to_test[future]
-                try:
-                    result = future.result()
-                    model_results[model].append(result)
-                    print(f"=== Completed test {test['name']} ===")
-                except Exception:
-                    logger.exception(f"Test {test['name']} generated an exception")
+            try:
+                for future in as_completed(future_to_test, timeout=timeout + 10):
+                    test = future_to_test[future]
+                    try:
+                        result = future.result(
+                            timeout=1
+                        )  # Short timeout to quickly move to next future
+                        model_results[model].append(result)
+                        print(f"=== Completed test {test['name']} ===")
+                    except concurrent.futures.TimeoutError:
+                        logger.warning(f"Test {test['name']} timed out")
+                        model_results[model].append(
+                            {
+                                "name": test["name"],
+                                "status": "timeout",
+                                "results": [],
+                                "timings": {"gen": timeout, "run": 0, "eval": 0},
+                                "stdout": "",
+                                "stderr": "",
+                            }
+                        )
+                    except Exception:
+                        logger.exception(f"Test {test['name']} generated an exception")
+            except concurrent.futures.TimeoutError:
+                logger.warning(
+                    f"Some tests for model {model} took too long, but did not timeout correctly"
+                )
+                # Cancel any remaining futures for this model
+                for future in future_to_test:
+                    future.cancel()
     return model_results
 
 
@@ -290,7 +342,7 @@ def print_model_results_table(model_results: dict[str, list[ExecResult]]):
                 row.append("❌ N/A")
         table_data.append(row)
 
-    print(tabulate(table_data, headers=headers, tablefmt="grid"))
+    print(tabulate(table_data, headers=headers))
 
 
 @click.command()
@@ -302,7 +354,7 @@ def print_model_results_table(model_results: dict[str, list[ExecResult]]):
     multiple=True,
     help="Model to use, can be massed multiple times.",
 )
-@click.option("--timeout", "-t", default=15, help="Timeout for code generation")
+@click.option("--timeout", "-t", default=30, help="Timeout for code generation")
 @click.option("--parallel", "-p", default=10, help="Number of parallel evals to run")
 def main(
     eval_names_or_result_files: list[str],
@@ -317,17 +369,17 @@ def main(
     """
     models = _model or [
         "openai/gpt-4o",
-        "openai/gpt-4o-mini",
+        # "openai/gpt-4o-mini",
         "anthropic/claude-3-5-sonnet-20240620",
-        "openrouter/meta-llama/llama-3.1-8b-instruct",
-        "openrouter/meta-llama/llama-3.1-70b-instruct",
+        # "openrouter/meta-llama/llama-3.1-8b-instruct",
+        # "openrouter/meta-llama/llama-3.1-70b-instruct",
         "openrouter/meta-llama/llama-3.1-405b-instruct",
-        "openrouter/nousresearch/hermes-3-llama-3.1-405b",
-        "openrouter/microsoft/wizardlm-2-8x22b",
-        "openrouter/mistralai/mistral-nemo",
-        "openrouter/mistralai/codestral-mamba",
-        "openrouter/mistralai/mixtral-8x22b-instruct",
-        "openrouter/deepseek/deepseek-coder",
+        # "openrouter/nousresearch/hermes-3-llama-3.1-405b",
+        # "openrouter/microsoft/wizardlm-2-8x22b",
+        # "openrouter/mistralai/mistral-nemo",
+        # "openrouter/mistralai/codestral-mamba",
+        # "openrouter/mistralai/mixtral-8x22b-instruct",
+        # "openrouter/deepseek/deepseek-coder",
     ]
 
     results_files = [f for f in eval_names_or_result_files if f.endswith(".csv")]
@@ -339,17 +391,19 @@ def main(
         else:
             print(f"File {results_file} not found")
 
-    tests_to_run = (
-        [
-            tests_map[test_name]
-            for test_name in eval_names_or_result_files
-            if test_name not in results_files
-        ]
-        if eval_names_or_result_files
-        else tests
-    )
+    tests_to_run: list[ExecTest] = []
+    for test_name in eval_names_or_result_files:
+        if test_name in results_files:
+            continue
+        elif test_name in tests_map:
+            tests_to_run.append(tests_map[test_name])
+        elif test_name in suites:
+            tests_to_run.extend(suites[test_name])
+        else:
+            raise ValueError(f"Test {test_name} not found")
+
     if not tests_to_run:
-        sys.exit(0)
+        tests_to_run = tests_default
 
     print("=== Running evals ===")
     model_results = run_evals(tests_to_run, models, timeout, parallel)
@@ -392,6 +446,7 @@ def read_results_from_csv(filename: str) -> dict[str, list[ExecResult]]:
 def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     # get current commit hash and dirty status, like: a8b2ef0-dirty
+    # TODO: don't assume we are in the devopsx repo, use other version identifiers if available
     commit_hash = subprocess.run(
         ["git", "describe", "--always", "--dirty", "--exclude", "'*'"],
         text=True,
@@ -417,7 +472,12 @@ def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
         writer.writeheader()
         for model, results in model_results.items():
             for result in results:
-                passed = all(case["passed"] for case in result["results"])
+                # Needs to pass all checks, and needs to have results (not empty, as in case of timeout)
+                passed = (
+                    all(case["passed"] for case in result["results"])
+                    if result["results"]
+                    else False
+                )
                 writer.writerow(
                     {
                         "Model": model,
@@ -435,4 +495,6 @@ def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
 
 
 if __name__ == "__main__":
+    # This ensures compatibility across platforms
+    multiprocessing.set_start_method("spawn")
     main()
