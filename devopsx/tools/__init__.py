@@ -18,8 +18,6 @@ from .shell import tool as shell_tool
 from .subagent import execute_subagent
 from .subagent import tool as subagent_tool
 from .subthread import tool as subthread_tool
-from .remote_agent import execute_remote_agent
-from .remote_agent import tool as remote_agent_tool
 from .tmux import tool as tmux_tool
 from .chats import tool as chats_tool
 
@@ -30,7 +28,6 @@ __all__ = [
     "execute_codeblock",
     "execute_python",
     "execute_shell",
-    "execute_remote_agent",
     "execute_subagent",
     "execute_save",
     "summarize",
@@ -52,8 +49,7 @@ all_tools: list[ToolSpec] = [
         browser_tool,
         gh_tool,
         chats_tool,
-        subagent_tool,
-        remote_agent_tool
+        subagent_tool
     ]
     if tool.available
 ]
