@@ -18,7 +18,7 @@ Generate a snake game that runs in the terminal using curses, and then modify it
 .. raw:: html
 
    <a href="https://asciinema.org/a/621992">
-   <img src="https://github.com/ErikBjare/devopsx/assets/1405370/72ac819c-b633-495e-b20e-2e40753ec376" width="600" />
+   <img src="https://github.com/infractura/devopsx/assets/1405370/72ac819c-b633-495e-b20e-2e40753ec376" width="600" />
    </a>
 
 
@@ -39,7 +39,7 @@ Generate a program that renders mandelbrot with curses, and then modify it to ad
 .. raw:: html
 
     <a href="https://asciinema.org/a/621991">
-    <img src="https://github.com/ErikBjare/devopsx/assets/1405370/570860ac-80bd-4b21-b8d1-da187d7c1a95" width="600" />
+    <img src="https://github.com/infractura/devopsx/assets/1405370/570860ac-80bd-4b21-b8d1-da187d7c1a95" width="600" />
     </a>
 
 Steps
@@ -57,7 +57,7 @@ An old demo showing off basic code execution and shell interaction.
 .. raw:: html
 
    <a href="https://asciinema.org/a/606375">
-   <img src="https://github.com/ErikBjare/devopsx/assets/1405370/5dda4240-bb7d-4cfa-8dd1-cd1218ccf571" width="600" />
+   <img src="https://github.com/infractura/devopsx/assets/1405370/5dda4240-bb7d-4cfa-8dd1-cd1218ccf571" width="600" />
    </a>
 
 Steps
@@ -74,7 +74,7 @@ Showing off basic URL loading from the prompt, and answering questions based on 
 .. raw:: html
 
     <a href="https://asciinema.org/a/621997">
-    <img src="https://github.com/ErikBjare/devopsx/assets/1405370/bae45488-f4ed-409c-a656-0c5218877de2" />
+    <img src="https://github.com/infractura/devopsx/assets/1405370/bae45488-f4ed-409c-a656-0c5218877de2" />
     </a>
 
 Steps

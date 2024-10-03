@@ -26,7 +26,7 @@ from .llm import reply
 from .logmanager import LogManager, _conversations
 from .message import Message
 from .prompts import get_prompt
-from .tools import execute_msg, has_tool
+from .tools import execute_msg, has_tool, ToolUse
 from .tools.browser import read_url
 from .tools.shell import ShellSession, set_shell
 from .util import epoch_to_age, generate_name, print_bell
@@ -271,14 +271,14 @@ def chat(
         #  - no executable block in last assistant message
         # then exit
         elif not interactive:
-            # noreorder
-            from .tools import is_supported_langtag  # fmt: skip
-
             # continue if we can run tools on the last message
+            last_content = next(
+                (m.content for m in reversed(log) if m.role == "assistant"), ""
+            )
+            tooluses = list(ToolUse.iter_from_content(last_content))
             runnable = False
-            if codeblock := log.get_last_codeblock("assistant", history=1):
-                if is_supported_langtag(codeblock.lang):
-                    runnable = True
+            if tooluses:
+                runnable = any(tooluse.is_runnable for tooluse in tooluses)
             if not runnable:
                 logger.debug("Non-interactive and exhausted prompts, exiting")
                 break

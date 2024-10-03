@@ -1,5 +1,5 @@
 """
-Server for gptme.
+Server for devopsx.
 """
 from .api import create_app, main
 

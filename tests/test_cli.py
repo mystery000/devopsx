@@ -1,17 +1,19 @@
-import importlib
 import os
 import random
+import pytest
+import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import devopsx.cli
 import devopsx.constants
-import pytest
 from click.testing import CliRunner
-from devopsx.constants import CMDFIX, MULTIPROMPT_SEPARATOR
+from devopsx.constants import CMDFIX
+from devopsx.tools import ToolUse
 
 project_root = Path(__file__).parent.parent
 logo = project_root / "media" / "logo.png"
+
 
 @pytest.fixture(scope="session", autouse=True)
 def tmp_data_dir():
@@ -116,7 +118,8 @@ def test_fileblock(args: list[str], runner: CliRunner):
     args_orig = args.copy()
 
     # tests saving with a ```filename.txt block
-    args.append(f"{CMDFIX}impersonate ```hello.py\nprint('hello')\n```")
+    tooluse = ToolUse("save", ["hello.py"], "print('hello')")
+    args.append(f"{CMDFIX}impersonate {tooluse.to_output()}")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
@@ -128,7 +131,8 @@ def test_fileblock(args: list[str], runner: CliRunner):
 
     # test append
     args = args_orig.copy()
-    args.append(f"{CMDFIX}impersonate ```append hello.py\nprint('world')\n```")
+    tooluse = ToolUse("append", ["hello.py"], "print('world')")
+    args.append(f"{CMDFIX}impersonate {tooluse.to_output()}")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
@@ -139,17 +143,18 @@ def test_fileblock(args: list[str], runner: CliRunner):
     assert content == "print('hello')\nprint('world')\n"
 
     # test write file to directory that doesn't exist
+    tooluse = ToolUse("save", ["hello/hello.py"], 'print("hello")')
     args = args_orig.copy()
-    args.append(f"{CMDFIX}impersonate ```hello/hello.py\nprint('hello')\n```")
+    args.append(f"{CMDFIX}impersonate {tooluse.to_output()}")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
 
     # test patch on file in directory
+    patch = '<<<<<<< ORIGINAL\nprint("hello")\n=======\nprint("hello world")\n>>>>>>> UPDATED'
+    tooluse = ToolUse("patch", ["hello/hello.py"], patch)
     args = args_orig.copy()
-    args.append(
-        f"{CMDFIX}impersonate ```patch hello/hello.py\n<<<<<<< ORIGINAL\nprint('hello')\n=======\nprint('hello world')\n>>>>>>> UPDATED\n```"
-    )
+    args.append(f"{CMDFIX}impersonate {tooluse.to_output()}")
     print(f"running: devopsx {' '.join(args)}")
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
@@ -157,7 +162,7 @@ def test_fileblock(args: list[str], runner: CliRunner):
     # read the file
     with open("hello/hello.py") as f:
         content = f.read()
-    assert content == "print('hello world')\n"
+    assert content == 'print("hello world")\n'
 
 
 def test_shell(args: list[str], runner: CliRunner):
@@ -255,12 +260,12 @@ def test_tmux(args: list[str], runner: CliRunner):
     result = runner.invoke(devopsx.cli.main, args)
     assert "%CPU" in result.output
     assert result.exit_code == 0
-    
-    
+
+
 # TODO: move elsewhere
 @pytest.mark.slow
 @pytest.mark.flaky(retries=2, delay=5)
-def test_subthread(args: list[str], runner: CliRunner):
+def test_subagent(args: list[str], runner: CliRunner):
     # f14: 377
     # f15: 610
     # f16: 987
@@ -306,4 +311,5 @@ def test_vision(args: list[str], runner: CliRunner):
     args.append(f"can you see the image at {logo}? answer with yes or no")
     result = runner.invoke(devopsx.cli.main, args)
     assert result.exit_code == 0
+    assert "yes" in result.output
     assert "yes" in result.output

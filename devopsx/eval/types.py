@@ -17,7 +17,8 @@ class ResultContext:
     exit_code: int
 
 
-class CaseResult(TypedDict):
+@dataclass
+class CaseResult():
     """
     Result of a single test case on the execution of a prompt.
     """
@@ -28,7 +29,8 @@ class CaseResult(TypedDict):
     duration: float
 
 
-class ExecResult(TypedDict):
+@dataclass
+class ExecResult():
     """
     Result of executing a prompt.
     """
@@ -39,7 +41,8 @@ class ExecResult(TypedDict):
     timings: dict[str, float]
     stdout: str
     stderr: str
-
+    run_stdout: str
+    run_stderr: str
 
 class ExecTest(TypedDict):
     """

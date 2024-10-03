@@ -42,6 +42,9 @@ anthropic = "^0.34.0"
 groq = "^0.9.0"
 weaviate-client = "^4.8.1"
 youtube-transcript-api = "^0.6.2"
+multiprocessing-logging = "^0.3.4"
+lxml = "^5.3.0"
+types-lxml = "^2024.9.16"
 
 # Optional dependencies
 jedi = {version = "^0.19.0", optional = true}
@@ -49,8 +52,6 @@ matplotlib = {version = "*", optional = true}
 pandas = {version = "*", optional = true}
 numpy = {version = "*", optional = true}
 pillow = {version = "*", optional = true}
-torch = {version = "*", optional = true}
-transformers = {version = "*", optional = true}
 flask = {version = "^2.3", optional = true}
 ollama = {git = "https://github.com/ComputerComOrg/ollama-python.git", rev = "c63c25a97b8c3afc517a9b229f1044b22ef14e0a"}
 
@@ -73,8 +74,7 @@ pyupgrade = "^3.15.0"
 [tool.poetry.extras]
 server = ["flask"]
 datascience = ["matplotlib", "pandas", "numpy", "pillow"]
-training = ["torch", "transformers"]
-all = ["flask", "matplotlib", "pandas", "numpy", "pillow", "torch", "transformers"]
+all = ["flask", "matplotlib", "pandas", "numpy", "pillow"]
 
 [tool.ruff]
 select = ["E4", "E7", "E9", "F", "B", "UP"]

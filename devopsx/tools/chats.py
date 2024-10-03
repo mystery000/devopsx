@@ -8,7 +8,6 @@ from textwrap import indent
 
 from .base import ToolSpec
 from ..message import Message
-from ..llm import summarize as llm_summarize
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +29,9 @@ def _get_matching_messages(log_manager, query: str) -> list[Message]:
 
 def _summarize_conversation(log_manager, include_summary: bool) -> list[str]:
     """Summarize a conversation."""
+    # noreorder
+    from ..llm import summarize as llm_summarize  # fmt: skip
+    
     summary_lines = []
     if include_summary:
         summary = llm_summarize(log_manager.log)

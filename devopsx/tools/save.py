@@ -7,7 +7,7 @@ from pathlib import Path
 
 from ..message import Message
 from ..util import ask_execute
-from .base import ToolSpec
+from .base import ToolSpec, ToolUse
 
 instructions = """
 To save code to a file, use a code block with the filepath as the language.

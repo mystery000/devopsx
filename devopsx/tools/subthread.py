@@ -12,7 +12,7 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Literal
 
 from ..message import Message
-from .base import ToolSpec
+from .base import ToolSpec, ToolUse
 from .python import register_function
 
 if TYPE_CHECKING:
@@ -148,17 +148,13 @@ def subthread_wait(thread_id: str) -> dict:
     return asdict(status)
 
 
-examples = """
+examples = f"""
 User: compute fib 69 using a subthread
 Assistant: Starting a subthread to compute the 69th Fibonacci number.
-```python
-subthread("compute the 69th Fibonacci number", "fib-69")
-```
+{ToolUse("python", [], 'subthread("compute the 69th Fibonacci number", "fib-69")').to_output()}
 System: Subthread started successfully.
 Assistant: Now we need to wait for the subthread to finish the task.
-```python
-subthread_wait("fib-69")
-```
+{ToolUse("python", [], 'subthread("fib-69")').to_output()}
 """
 
 tool = ToolSpec(

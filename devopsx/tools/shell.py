@@ -14,7 +14,7 @@ import functools
 import subprocess
 from collections.abc import Generator
 
-from .base import ToolSpec
+from .base import ToolSpec, ToolUse
 from ..message import Message, print_msg
 from ..util import ask_execute, print_preview, get_tokenizer
 
@@ -54,12 +54,10 @@ These programs are available, among others:
 {shell_programs_str}
 """.strip()
 
-examples = """
+examples = f"""
 User: list the current directory
 Assistant: To list the files in the current directory, use `ls`:
-```bash
-ls
-```
+{ToolUse("bash", [], "ls").to_output()}
 System: Ran command: `ls`
 ```stdout
 file1.txt
@@ -68,9 +66,7 @@ file2.txt
 #### The assistant can learn context by exploring the filesystem
 User: learn about the project
 Assistant: Lets start by checking the files
-```bash
-git ls-files
-```
+{ToolUse("bash", [], "git ls-files").to_output()}
 System:
 ```output
 README.md
@@ -85,9 +81,7 @@ System:
 (contents of README.md)
 ```
 Assistant: Now we check main.py
-```bash
-cat main.py
-```
+{ToolUse("bash", [], "cat main.py").to_output()}
 System:
 ```output
 (contents of main.py)
@@ -98,9 +92,7 @@ Assistant: The project is...
 #### Create vue project
 User: Create a new vue project with typescript and pinia named fancy-project
 Assistant: Sure! Let's create a new vue project with TypeScript and Pinia named fancy-project:
-```bash
-npm init vue@latest fancy-project --yes -- --typescript --pinia
-```
+{ToolUse("bash", [], "npm init vue@latest fancy-project --yes -- --typescript --pinia").to_output()}
 System:
 ```output
 > npx

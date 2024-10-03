@@ -6,7 +6,7 @@ from typing import Literal
 from functools import lru_cache
 from collections.abc import Iterator
 
-from .codeblock import Codeblock
+from .tools import ToolUse
 from .config import get_config
 from .constants import PROMPT_ASSISTANT
 from .message import Message, len_tokens, format_msgs
@@ -119,15 +119,10 @@ def _reply_stream(messages: list[Message], model: str) -> Message:
             sys.stdout.flush()
 
             # pause inference on finished code-block, letting user run the command before continuing
-            if codeblocks := Codeblock.iter_from_markdown(output):
-                codeblock = codeblocks[0]
-                # noreorder
-                from .tools import is_supported_langtag  # fmt: skip
-
-                # if closing a code block supported by tools, abort generation to let them run
-                if is_supported_langtag(codeblock.lang):
-                    print("\nFound codeblock, breaking")
-                    break
+            tooluses = list(ToolUse.iter_from_content(output))
+            if tooluses:
+                print("\nFound tool use, breaking")
+                break
     except KeyboardInterrupt:
         return Message("assistant", output + "... ^C Interrupted")
     finally:

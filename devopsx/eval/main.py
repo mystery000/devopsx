@@ -1,5 +1,7 @@
 """
 Evals for code generation tools.
+
+Inspired by a document by Anton Osika and Axel Theorell.
 """
 import io
 import os
@@ -8,8 +10,8 @@ import csv
 import time
 import click
 import signal
-import inspect
 import logging
+import inspect
 import subprocess
 import concurrent
 import multiprocessing
@@ -18,6 +20,7 @@ from pathlib import Path
 import concurrent.futures
 from tabulate import tabulate
 from datetime import datetime
+import multiprocessing_logging
 from queue import Empty, Queue
 from dataclasses import dataclass
 from collections import defaultdict
@@ -37,8 +40,11 @@ from .types import (
 
 # Configure logging, including fully-qualified module names
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    level=logging.INFO,
+    # helpful in debugging: %(processName)s
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
+multiprocessing_logging.install_mp_handler()
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -49,7 +55,7 @@ project_dir = Path(__file__).parent.parent.parent
 class ProcessSuccess:
     files: dict[str, str | bytes]
     stdout: str
-    stderr: str
+    stderr: str             
     duration: float
 
 
@@ -67,11 +73,10 @@ ProcessResult = Union[ProcessSuccess, ProcessError]
 class StreamTee(io.TextIOBase):
     """Capture stdout or stderr to a stream and optionally keep original streams intact."""
 
-    # NOTE: toggling keep_stream can be useful for debugging
-    def __init__(self, stream, keep_stream=False):
+    def __init__(self, stream, keep: bool = False):
         self.stream = stream
         self.captured = io.StringIO()
-        self.keep_stream = keep_stream
+        self.keep_stream = keep
 
     def write(self, message) -> int:
         self.captured.write(message)
@@ -83,24 +88,31 @@ class StreamTee(io.TextIOBase):
         return self.captured.getvalue()
 
 
-def act_process(agent, files, prompt, queue: "Queue[ProcessResult]"):
+def act_process(
+    agent: Agent,
+    files,
+    prompt,
+    queue: "Queue[ProcessResult]",
+    test_name: str,
+    parallel: bool,
+):
+    # Configure logging for this subprocess
+    subprocess_logger = logging.getLogger(f"devopsx.eval:{agent.model}@{test_name}")
+    subprocess_logger.setLevel(logging.INFO)
+
     # Runs in a process for each eval
     # each eval has a process group, so we can kill all child processes
     os.setpgrp()
     pgrp = os.getpgrp()
 
     # redirect stdout and stderr to streams
-    stdout = StreamTee(sys.stdout)
-    stderr = StreamTee(sys.stderr)
+    stdout = StreamTee(sys.stdout, keep=not parallel)
+    stderr = StreamTee(sys.stderr, keep=not parallel)
     sys.stdout, sys.stderr = stdout, stderr  # type: ignore
 
-    def _reset_stream():
-        sys.stdout, sys.stderr = stdout.stream, stderr.stream
-
     def error_handler(e):
-        _reset_stream()
         duration = time.time() - start
-        print(f"Error: {e}")
+        subprocess_logger.error(f"Error: {e}")
         queue.put(ProcessError(str(e), stdout.getvalue(), stderr.getvalue(), duration))
 
         # kill child processes
@@ -113,30 +125,29 @@ def act_process(agent, files, prompt, queue: "Queue[ProcessResult]"):
     signal.signal(signal.SIGTERM, sigterm_handler)
 
     start = time.time()
+    subprocess_logger.info("Started")
     files = agent.act(files, prompt)
 
-    _reset_stream()
     duration = time.time() - start
     queue.put(ProcessSuccess(files, stdout.getvalue(), stderr.getvalue(), duration))
-    print("Process finished successfully")
+    subprocess_logger.info("Success")
 
     # kill child processes
     os.killpg(pgrp, signal.SIGKILL)
 
 
 # TODO: rewrite to run in Docker? Would help with capturing output + process management.
-def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
+def execute(test: ExecTest, agent: Agent, timeout: int, parallel: bool) -> ExecResult:
     """
     Executes the code for a specific model with a timeout.
     """
-    logger.info(
-        f'Running "{test["name"]}" with prompt "{test["prompt"]}" for model: {agent.model}'
-    )
+    logger.info(f'Running "{test["name"]}" for {agent.model}')
 
     with Manager() as manager:
         queue = manager.Queue()
         p = Process(
-            target=act_process, args=(agent, test["files"], test["prompt"], queue)
+            target=act_process,
+            args=(agent, test["files"], test["prompt"], queue, test["name"], parallel),
         )
         p.start()
         p.join(timeout)
@@ -158,14 +169,16 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
             result = queue.get(timeout=1)
         except Empty:
             logger.error("Queue is empty, expected a result")
-            return {
-                "name": test["name"],
-                "status": "error",
-                "results": [],
-                "timings": {"gen": time_gen, "run": time_run, "eval": time_eval},
-                "stdout": "",
-                "stderr": "",
-            }
+            return ExecResult(
+                name=test["name"],
+                status="error",
+                results=[],
+                timings={"gen": time_gen, "run": time_run, "eval": time_eval},
+                stdout="",
+                stderr="",
+                run_stdout="",
+                run_stderr="",
+            )
 
     logger.debug("Got result")
     if status != "timeout":
@@ -173,14 +186,16 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
     stdout, stderr = result.stdout, result.stderr
 
     if isinstance(result, ProcessError):
-        return {
-            "name": test["name"],
-            "status": "timeout" if status == "timeout" else "error",
-            "results": [],
-            "timings": {"gen": time_gen, "run": time_run, "eval": time_eval},
-            "stdout": stdout,
-            "stderr": stderr,
-        }
+        return ExecResult(
+            name=test["name"],
+            status="timeout" if status == "timeout" else "error",
+            results=[],
+            timings={"gen": time_gen, "run": time_run, "eval": time_eval},
+            stdout=stdout,
+            stderr=stderr,
+            run_stdout="",
+            run_stderr="",
+        )
     else:
         files = result.files
 
@@ -209,24 +224,26 @@ def execute(test: ExecTest, agent: Agent, timeout: int) -> ExecResult:
         checkmark = "✅" if passed else "❌"
         print(f"{checkmark} {name:20s}")
         results.append(
-            {"name": name, "passed": passed, "code": code, "duration": eval_duration}
+            CaseResult(name=name, passed=passed, code=code, duration=eval_duration)
         )
     print("--- End of results ---\n")
 
-    time_eval = sum(r["duration"] for r in results)
+    time_eval = sum(r.duration for r in results)
 
-    return {
-        "name": test["name"],
-        "status": status,
-        "results": results,
-        "timings": {
+    return ExecResult(
+        name=test["name"],
+        status=status,
+        results=results,
+        timings={
             "gen": time_gen,
             "run": time_run,
             "eval": time_eval,
         },
-        "stdout": stdout,
-        "stderr": stderr,
-    }
+        stdout=stdout,
+        stderr=stderr,
+        run_stdout=stdout_run,
+        run_stderr=stderr_run,
+    )
 
 
 def run_evals(
@@ -245,45 +262,53 @@ def run_evals(
         cleanup_on_sigterm()
 
     model_results = defaultdict(list)
+    parallel = min(len(tests), parallel)
     with ProcessPoolExecutor(parallel) as executor:
-        model_futures_to_test = {
-            model: {
-                executor.submit(execute, test, DevopsxAgent(model=model), timeout): test
-                for test in tests
-            }
-            for model in models
-        }
-        for model, future_to_test in model_futures_to_test.items():
-            try:
-                for future in as_completed(future_to_test, timeout=timeout + 10):
-                    test = future_to_test[future]
-                    try:
-                        result = future.result(
-                            timeout=1
-                        )  # Short timeout to quickly move to next future
-                        model_results[model].append(result)
-                        print(f"=== Completed test {test['name']} ===")
-                    except concurrent.futures.TimeoutError:
-                        logger.warning(f"Test {test['name']} timed out")
-                        model_results[model].append(
-                            {
-                                "name": test["name"],
-                                "status": "timeout",
-                                "results": [],
-                                "timings": {"gen": timeout, "run": 0, "eval": 0},
-                                "stdout": "",
-                                "stderr": "",
-                            }
-                        )
-                    except Exception:
-                        logger.exception(f"Test {test['name']} generated an exception")
-            except concurrent.futures.TimeoutError:
-                logger.warning(
-                    f"Some tests for model {model} took too long, but did not timeout correctly"
+        futures = []
+        future_to_model_test = {}
+        for model in models:
+            for test in tests:
+                future = executor.submit(
+                    execute,
+                    test,
+                    DevopsxAgent(model=model),
+                    timeout,
+                    parallel > 1,
                 )
-                # Cancel any remaining futures for this model
-                for future in future_to_test:
-                    future.cancel()
+                futures.append(future)
+                future_to_model_test[future] = (model, test)
+
+        for future in as_completed(futures, timeout=timeout + 10):
+            model, test = future_to_model_test[future]
+            test_name = test["name"]
+            try:
+                result = future.result(
+                    timeout=1
+                )  # Short timeout to quickly move to next future
+                model_results[model].append(result)
+                print(f"=== Completed test {test_name} for model {model} ===")
+            except concurrent.futures.TimeoutError:
+                logger.warning(f"Test {test_name} for model {model} timed out")
+                model_results[model].append(
+                    ExecResult(
+                        name=test_name,
+                        status="timeout",
+                        results=[],
+                        timings={"gen": timeout, "run": 0, "eval": 0},
+                        stdout="",
+                        stderr="",
+                        run_stdout="",
+                        run_stderr="",
+                    )
+                )
+            except Exception:
+                logger.exception(
+                    f"Test {test.name} for model {model} generated an exception"
+                )
+
+        # Cancel any remaining futures
+        for future in futures:
+            future.cancel()
     return model_results
 
 
@@ -291,36 +316,30 @@ def print_model_results(model_results: dict[str, list[ExecResult]]):
     for model, results in model_results.items():
         print(f"\nResults for model: {model}")
         duration_total = sum(
-            result["timings"]["gen"]
-            + result["timings"]["run"]
-            + result["timings"]["eval"]
+            result.timings["gen"] + result.timings["run"] + result.timings["eval"]
             for result in results
         )
         print(f"Completed {len(results)} tests in {duration_total:.2f}s:")
         for result in results:
-            checkmark = (
-                "✅" if all(case["passed"] for case in result["results"]) else "❌"
-            )
+            checkmark = "✅" if all(case.passed for case in result.results) else "❌"
             duration_result = (
-                result["timings"]["gen"]
-                + result["timings"]["run"]
-                + result["timings"]["eval"]
+                result.timings["gen"] + result.timings["run"] + result.timings["eval"]
             )
             print(
-                f"- {result['name']} in {duration_result:.2f}s (gen: {result['timings']['gen']:.2f}s, run: {result['timings']['run']:.2f}s, eval: {result['timings']['eval']:.2f}s)"
+                f"- {result.name} in {duration_result:.2f}s (gen: {result.timings['gen']:.2f}s, run: {result.timings['run']:.2f}s, eval: {result.timings['eval']:.2f}s)"
             )
-            for case in result["results"]:
-                checkmark = "✅" if case["passed"] else "❌"
-                print(f"  {checkmark} {case['name']}")
+            for case in result.results:
+                checkmark = "✅" if case.passed else "❌"
+                print(f"  {checkmark} {case.name}")
 
 
 def print_model_results_table(model_results: dict[str, list[ExecResult]]):
     table_data = []
     headers = ["Model"] + list(
-        {result["name"] for results in model_results.values() for result in results}
+        {result.name for results in model_results.values() for result in results}
     )
     all_eval_names_or_result_files = {
-        result["name"]
+        result.name
         for model_results in model_results.values()
         for result in model_results
     }
@@ -329,11 +348,11 @@ def print_model_results_table(model_results: dict[str, list[ExecResult]]):
         row = [model]
         for test_name in all_eval_names_or_result_files:
             try:
-                result = next(r for r in results if r["name"] == test_name)
-                passed = all(case["passed"] for case in result["results"])
-                checkmark = "✅" if result["status"] == "success" and passed else "❌"
-                duration = sum(result["timings"].values())
-                reason = "timeout" if result["status"] == "timeout" else ""
+                result = next(r for r in results if r.name == test_name)
+                passed = all(case.passed for case in result.results)
+                checkmark = "✅" if result.status == "success" and passed else "❌"
+                duration = sum(result.timings.values())
+                reason = "timeout" if result.status == "timeout" else ""
                 if reason:
                     row.append(f"{checkmark} {reason}")
                 else:
@@ -352,7 +371,7 @@ def print_model_results_table(model_results: dict[str, list[ExecResult]]):
     "--model",
     "-m",
     multiple=True,
-    help="Model to use, can be massed multiple times.",
+    help="Model to use, can be passed multiple times.",
 )
 @click.option("--timeout", "-t", default=30, help="Timeout for code generation")
 @click.option("--parallel", "-p", default=10, help="Number of parallel evals to run")
@@ -369,17 +388,8 @@ def main(
     """
     models = _model or [
         "openai/gpt-4o",
-        # "openai/gpt-4o-mini",
         "anthropic/claude-3-5-sonnet-20240620",
-        # "openrouter/meta-llama/llama-3.1-8b-instruct",
-        # "openrouter/meta-llama/llama-3.1-70b-instruct",
         "openrouter/meta-llama/llama-3.1-405b-instruct",
-        # "openrouter/nousresearch/hermes-3-llama-3.1-405b",
-        # "openrouter/microsoft/wizardlm-2-8x22b",
-        # "openrouter/mistralai/mistral-nemo",
-        # "openrouter/mistralai/codestral-mamba",
-        # "openrouter/mistralai/mixtral-8x22b-instruct",
-        # "openrouter/deepseek/deepseek-coder",
     ]
 
     results_files = [f for f in eval_names_or_result_files if f.endswith(".csv")]
@@ -409,10 +419,10 @@ def main(
     model_results = run_evals(tests_to_run, models, timeout, parallel)
     print("\n=== Finished ===\n")
 
-    print("\n\n=== Model Results ===")
+    print("\n=== Model Results ===")
     print_model_results(model_results)
 
-    print("\n\n=== Model Comparison ===")
+    print("\n=== Model Comparison ===")
     print_model_results_table(model_results)
 
     # Write results to CSV
@@ -438,6 +448,8 @@ def read_results_from_csv(filename: str) -> dict[str, list[ExecResult]]:
                 },
                 stdout="",  # We don't have stdout in the CSV
                 stderr="",  # We don't have stderr in the CSV
+                run_stdout="",  # We don't have run_stdout in the CSV
+                run_stderr="",  # We don't have run_stderr in the CSV
             )
             model_results[model].append(result)
     return dict(model_results)
@@ -452,11 +464,12 @@ def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
         text=True,
         capture_output=True,
     ).stdout.strip()
-    filename = project_dir / "eval_results" / f"eval_results_{timestamp}.csv"
-    if not filename.parent.exists():
-        filename.parent.mkdir(parents=True)
+    results_dir = project_dir / "eval_results" / timestamp
+    results_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(filename, "w", newline="") as csvfile:
+    csv_filename = results_dir / "eval_results.csv"
+
+    with open(csv_filename, "w", newline="") as csvfile:
         fieldnames = [
             "Model",
             "Test",
@@ -466,6 +479,10 @@ def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
             "Run Time",
             "Eval Time",
             "Commit Hash",
+            "Gen Stdout File",
+            "Gen Stderr File",
+            "Run Stdout File",
+            "Run Stderr File",
         ]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -474,24 +491,117 @@ def write_results_to_csv(model_results: dict[str, list[ExecResult]]):
             for result in results:
                 # Needs to pass all checks, and needs to have results (not empty, as in case of timeout)
                 passed = (
-                    all(case["passed"] for case in result["results"])
-                    if result["results"]
+                    all(case.passed for case in result.results)
+                    if result.results
                     else False
                 )
+
+                # Create directory for this test
+                test_dir = results_dir / model / result.name
+                test_dir.mkdir(parents=True, exist_ok=True)
+
+                # Save each stream to a separate file
+                gen_stdout_file = test_dir / "gen_stdout.txt"
+                gen_stderr_file = test_dir / "gen_stderr.txt"
+                run_stdout_file = test_dir / "run_stdout.txt"
+                run_stderr_file = test_dir / "run_stderr.txt"
+
+                with open(gen_stdout_file, "w") as f:
+                    f.write(result.stdout)
+                with open(gen_stderr_file, "w") as f:
+                    f.write(result.stderr)
+                with open(run_stdout_file, "w") as f:
+                    f.write(result.run_stdout)
+                with open(run_stderr_file, "w") as f:
+                    f.write(result.run_stderr)
+
                 writer.writerow(
                     {
                         "Model": model,
-                        "Test": result["name"],
+                        "Test": result.name,
                         "Passed": "true" if passed else "false",
-                        "Total Duration": sum(result["timings"].values()),
-                        "Generation Time": result["timings"]["gen"],
-                        "Run Time": result["timings"]["run"],
-                        "Eval Time": result["timings"]["eval"],
+                        "Total Duration": sum(result.timings.values()),
+                        "Generation Time": result.timings["gen"],
+                        "Run Time": result.timings["run"],
+                        "Eval Time": result.timings["eval"],
                         "Commit Hash": commit_hash,
+                        "Gen Stdout File": gen_stdout_file.relative_to(results_dir),
+                        "Gen Stderr File": gen_stderr_file.relative_to(results_dir),
+                        "Run Stdout File": run_stdout_file.relative_to(results_dir),
+                        "Run Stderr File": run_stderr_file.relative_to(results_dir),
                     }
                 )
 
-    print(f"\nResults saved to {filename.resolve()}")
+    print(f"\nResults saved to {csv_filename.resolve()}")
+    print(f"Output files saved in {results_dir.resolve()}")
+
+    csv_filename = results_dir / "eval_results.csv"
+
+    with open(csv_filename, "w", newline="") as csvfile:
+        fieldnames = [
+            "Model",
+            "Test",
+            "Passed",
+            "Total Duration",
+            "Generation Time",
+            "Run Time",
+            "Eval Time",
+            "Commit Hash",
+            "Gen Stdout File",
+            "Gen Stderr File",
+            "Run Stdout File",
+            "Run Stderr File",
+        ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for model, results in model_results.items():
+            for result in results:
+                # Needs to pass all checks, and needs to have results (not empty, as in case of timeout)
+                passed = (
+                    all(case.passed for case in result.results)
+                    if result.results
+                    else False
+                )
+
+                # Create directory for this test
+                test_dir = results_dir / model / result.name
+                test_dir.mkdir(parents=True, exist_ok=True)
+
+                # Save each stream to a separate file
+                gen_stdout_file = test_dir / "gen_stdout.txt"
+                gen_stderr_file = test_dir / "gen_stderr.txt"
+                run_stdout_file = test_dir / "run_stdout.txt"
+                run_stderr_file = test_dir / "run_stderr.txt"
+
+                with open(gen_stdout_file, "w") as f:
+                    f.write(result.stdout)
+                with open(gen_stderr_file, "w") as f:
+                    f.write(result.stderr)
+                with open(run_stdout_file, "w") as f:
+                    f.write(result.run_stdout)
+                with open(run_stderr_file, "w") as f:
+                    f.write(result.run_stderr)
+
+                writer.writerow(
+                    {
+                        "Model": model,
+                        "Test": result.name,
+                        "Passed": "true" if passed else "false",
+                        "Total Duration": sum(result.timings.values()),
+                        "Generation Time": result.timings["gen"],
+                        "Run Time": result.timings["run"],
+                        "Eval Time": result.timings["eval"],
+                        "Commit Hash": commit_hash,
+                        "Gen Stdout File": gen_stdout_file.relative_to(results_dir),
+                        "Gen Stderr File": gen_stderr_file.relative_to(results_dir),
+                        "Run Stdout File": run_stdout_file.relative_to(results_dir),
+                        "Run Stderr File": run_stderr_file.relative_to(results_dir),
+                    }
+                )
+
+    print(f"\nResults saved to {csv_filename.resolve()}")
+    print(f"Output files saved in {results_dir.resolve()}")
 
 
 if __name__ == "__main__":

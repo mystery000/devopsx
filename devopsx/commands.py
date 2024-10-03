@@ -13,9 +13,8 @@ from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs, len_tokens
 from .useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import execute_msg, execute_subagent, loaded_tools, execute_codeblock, is_supported_langtag
+from .tools import ToolUse, execute_msg, loaded_tools, execute_subagent
 from .models import MODELS, get_model
-from .codeblock import Codeblock
 
 logger = logging.getLogger(__name__)
 
@@ -163,10 +162,9 @@ def handle_cmd(
                     )
         case _:
             # the case for python, shell, and other block_types supported by tools
-            if is_supported_langtag(name):
-                yield from execute_codeblock(
-                    Codeblock(name, full_args), ask=not no_confirm
-                )
+            tooluse = ToolUse(name, [], full_args)
+            if tooluse.is_runnable:
+                yield from tooluse.execute(ask=not no_confirm)
             else:
                 if log.log[-1].content != f"{CMDFIX}help":
                     print("Unknown command")

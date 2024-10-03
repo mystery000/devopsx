@@ -24,8 +24,8 @@ def check_output_compiled_successfully(ctx):
     return "Compiled successfully" in ctx.stdout
 
 
-def check_output_erik(ctx):
-    return "Erik" in ctx.stdout
+def check_output_mhafeel(ctx):
+    return "mhafeel" in ctx.stdout
 
 
 def check_cargo_toml(ctx):
