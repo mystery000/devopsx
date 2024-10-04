@@ -6,6 +6,7 @@ See here for instructions how to serve matplotlib figures:
 """
 import io
 import atexit
+from datetime import datetime
 from importlib import resources
 from contextlib import redirect_stdout
 
@@ -44,9 +45,8 @@ def api_conversation_put(logfile: str):
     req_json = flask.request.json
     if req_json and "messages" in req_json:
         for msg in req_json["messages"]:
-            msgs.append(
-                Message(msg["role"], msg["content"], timestamp=msg["timestamp"])
-            )
+            timestamp: datetime = datetime.fromisoformat(msg["timestamp"])
+            msgs.append(Message(msg["role"], msg["content"], timestamp=timestamp))
 
     logdir = get_logs_dir() / logfile
     if logdir.exists():
@@ -106,7 +106,7 @@ def api_conversation_generate(logfile: str):
     # generate response
     # TODO: add support for streaming
     msg = reply(msgs, model=model, stream=True)
-    msg.quiet = True
+    msg = msg.replace(quiet=True)
 
     # log response and run tools
     resp_msgs = []

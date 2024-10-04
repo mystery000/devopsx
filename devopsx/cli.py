@@ -211,7 +211,7 @@ def chat(
     init(model, interactive)
 
     if model and model.startswith("openai/o1") and stream:
-        logger.info("Disabled streaming for OpenAI's O1 (streaming not supported)")
+        logger.info("Disabled streaming for OpenAI's O1 (not supported)")
         stream = False
 
     # (re)init shell
@@ -336,8 +336,7 @@ def step(
 
         # log response and run tools
         if msg_response:
-            msg_response.quiet = True
-            yield msg_response
+            yield msg_response.replace(quiet=True)
             yield from execute_msg(msg_response, ask=not no_confirm)
     except KeyboardInterrupt:
         yield Message("system", "Interrupted")
@@ -523,7 +522,7 @@ def _include_paths(msg: Message) -> Message:
 
     # append the message with the file contents
     if append_msg:
-        msg.content += append_msg
+        msg.replace(content=msg.content + append_msg)
 
     return msg
 

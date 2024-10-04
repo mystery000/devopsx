@@ -9,7 +9,7 @@ Here is the API reference for ``devopsx``.
 core
 ----
 
-Some of the core classes in ``devopsx``.
+Some of the core classes and functions in ``devopsx``.
 
 .. autoclass:: devopsx.message.Message
    :members:
@@ -18,6 +18,11 @@ Some of the core classes in ``devopsx``.
    :members:
 
 .. automodule:: devopsx.logmanager
+   :members:
+
+prompts
+-------
+.. automodule:: devopsx.prompts
    :members:
 
 tools

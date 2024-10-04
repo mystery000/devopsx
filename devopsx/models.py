@@ -35,6 +35,9 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # Training data cut-off: October 2023
         "o1-preview": {
             "context": 128_000,
+            "max_output": 32768,
+            "price_input": 15,
+            "price_output": 60,
         },
         # Training data cut-off: October 2023
         "o1-preview-2024-09-12": {
@@ -43,6 +46,9 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # Training data cut-off: October 2023
         "o1-mini": {
             "context": 128_000,
+            "max_output": 65536,
+            "price_input": 3,
+            "price_output": 12,
         },
         # Training data cut-off: October 2023
         "o1-mini-2024-09-12": {
@@ -50,10 +56,14 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         },
         "gpt-4o-mini": {
             "context": 128_000,
+            "price_input": 0.15,
+            "price_output": 0.6,
         },
         # Training data cut-off: October 2023
         "gpt-4o": {
             "context": 128_000,
+            "price_input": 5,
+            "price_output": 15,
         },
         # Training data cut-off: Sep 2021
         "gpt-4": {
@@ -64,6 +74,8 @@ MODELS: dict[str, dict[str, _ModelDictMeta]] = {
         # Training data cut-off: Dec 2023
         "gpt-4-turbo": {
             "context": 128_000,
+            "price_input": 10,
+            "price_output": 30,
         },
         # Training data cut-off: Apr 2023
         "gpt-4-1106-preview": {
@@ -213,9 +225,10 @@ def get_model(model: str | None = None) -> ModelMeta:
     if any(f"{provider}/" in model for provider in PROVIDERS):
         provider, model = model.split("/", 1)
         if provider not in MODELS or model not in MODELS[provider]:
-            logger.warning(
-                f"Unknown model {model} from {provider}, using fallback metadata"
-            )
+            if provider not in ["openrouter", "local"]:
+                logger.warning(
+                    f"Unknown model {model} from {provider}, using fallback metadata"
+                )
             return ModelMeta(provider=provider, model=model, context=128_000)
     else:
         # try to find model in all providers
@@ -223,7 +236,7 @@ def get_model(model: str | None = None) -> ModelMeta:
             if model in MODELS[provider]:
                 break
         else:
-            logger.warning(f"Unknown model {model} not found, using fallback metadata")
+            logger.warning(f"Unknown model {model}, using fallback metadata")
             return ModelMeta(provider="unknown", model=model, context=128_000)
 
     return ModelMeta(

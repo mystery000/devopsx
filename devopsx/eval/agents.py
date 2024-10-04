@@ -32,8 +32,9 @@ class DevopsxAgent(Agent):
         print("\n--- Start of generation ---")
         print(f"Working in {store.working_dir}")
         prompt_sys = get_prompt()
-        prompt_sys.content += (
-            "\n\nIf you have trouble and dont seem to make progress, stop trying."
+        prompt_sys = prompt_sys.replace(
+            content=prompt_sys.content
+            + "\n\nIf you have trouble and dont seem to make progress, stop trying."
         )
         # TODO: add timeout
         try:
