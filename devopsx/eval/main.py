@@ -150,17 +150,21 @@ def aggregate_and_display_results(result_files: list[str]):
         else:
             return "❌"
 
-    for model, results in all_results.items():
-        row = [model]
+    for model, results in sorted(all_results.items()):
+        row = [model.replace("openrouter/", "")]
         for test in headers[1:]:
             if test in results:
                 passed = results[test]["passed"]
                 total = results[test]["total"]
                 tokens = results[test]["tokens"]
                 status_emoji = get_status_emoji(passed, total)
-                row.append(f"{status_emoji} {passed}/{total} {tokens}tok")
+                incl_tokens = True
+                row.append(
+                    f"{status_emoji} {passed}/{total}"
+                    + (f" {round(tokens / total)}tk" if incl_tokens else "")
+                )
             else:
-                row.append("❌ N/A")
+                row.append("❓ N/A")
         table_data.append(row)
 
     # Print the table
@@ -248,22 +252,20 @@ def _read_case_results(cases_file: Path) -> Generator[CaseResult, None, None]:
                 yield CaseResult(
                     name=row["Case"],
                     passed=row["Passed"] == "true",
-                    code=row["Code"],
                     duration=float(row["Duration"]),
                 )
 
 
 def _write_case_results(cases_file: Path, results: list[CaseResult]):
     with open(cases_file, "w", newline="") as csvfile:
-        fieldnames = ["Model", "Test", "Case", "Passed", "Code", "Duration"]
+        fieldnames = ["Model", "Test", "Case", "Passed", "Duration"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for result in results:
             row = {
                 "Case": result.name,
                 "Passed": "true" if result.passed else "false",
-                "Code": result.code,
-                "Duration": result.duration,
+                "Duration": round(result.duration, 2),
             }
             writer.writerow(row)
 
@@ -326,12 +328,8 @@ def write_results(model_results: dict[str, list[EvalResult]]):
             "Run Time",
             "Eval Time",
             "Commit Hash",
-            "Gen Stdout File",
-            "Gen Stderr File",
-            "Run Stdout File",
-            "Run Stderr File",
         ]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator="\n")
 
         writer.writeheader()
         for model, results in model_results.items():
@@ -348,10 +346,9 @@ def write_results(model_results: dict[str, list[EvalResult]]):
                 streams = ["gen_stdout", "gen_stderr", "run_stdout", "run_stderr"]
                 for stream in streams:
                     stream_file = test_dir / f"{stream}.txt"
-                    with open(stream_file, "w") as f:
+                    with open(stream_file, "w", newline="\n") as f:
                         f.write(getattr(result, stream))
 
-                test_dir_rel = test_dir.relative_to(results_dir)
                 row = {
                     "Model": model,
                     "Test": result.name,
@@ -361,10 +358,6 @@ def write_results(model_results: dict[str, list[EvalResult]]):
                     "Run Time": round(result.timings["run"], 2),
                     "Eval Time": round(result.timings["eval"], 2),
                     "Commit Hash": commit_hash,
-                    "Gen Stdout File": (test_dir_rel / "gen_stdout.txt"),
-                    "Gen Stderr File": (test_dir_rel / "gen_stderr.txt"),
-                    "Run Stdout File": (test_dir_rel / "run_stdout.txt"),
-                    "Run Stderr File": (test_dir_rel / "run_stderr.txt"),
                 }
                 writer.writerow(row)
                 _write_case_results(test_dir / "cases.csv", result.results)

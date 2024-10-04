@@ -3,7 +3,6 @@ import os
 import sys
 import time
 import signal
-import inspect
 import logging
 from tqdm import tqdm
 import multiprocessing
@@ -220,7 +219,6 @@ def execute(test: ExecTest, agent: Agent, timeout: int, parallel: bool) -> ExecR
             results: list[CaseResult] = []
             print(f"\n--- Results for '{test['name']}' with {agent.model} ---")
             for name, case in test["expect"].items():
-                code = inspect.getsource(case).strip()
                 eval_start = time.time()
                 try:
                     passed = case(ctx)
@@ -231,9 +229,7 @@ def execute(test: ExecTest, agent: Agent, timeout: int, parallel: bool) -> ExecR
                 checkmark = "✅" if passed else "❌"
                 print(f"{checkmark} {name:20s}")
                 results.append(
-                    CaseResult(
-                        name=name, passed=passed, code=code, duration=eval_duration
-                    )
+                    CaseResult(name=name, passed=passed, duration=eval_duration)
                 )
             print("--- End of results ---\n")
 
