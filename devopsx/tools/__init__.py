@@ -17,6 +17,7 @@ from .subthread import tool as subthread_tool
 from .tmux import tool as tmux_tool
 from .chats import tool as chats_tool
 from .youtube import tool as youtube_tool
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,9 @@ def execute_msg(msg: Message, ask: bool) -> Generator[Message, None, None]:
     for tooluse in ToolUse.iter_from_content(msg.content):
         yield from tooluse.execute(ask)
     
-    
+# Called often when checking streaming output for executable blocks,
+# so we cache the result.
+@lru_cache
 def get_tool_for_langtag(lang: str) -> ToolSpec | None:
     block_type = lang.split(" ")[0]
     for tool in loaded_tools:
