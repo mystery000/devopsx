@@ -9,7 +9,10 @@ To see example output without running the commands yourself, check out the :doc:
 .. code-block:: bash
     devopsx 'write a web app to particles.html which shows off an impressive and colorful particle effect using three.js'
     devopsx 'render mandelbrot set to mandelbrot.png'
+    # chaining prompts
+    devopsx 'show me something cool in the python repl' - 'something cooler' - 'something even cooler'
     # stdin
+    git diff | devopsx 'complete the TODOs in this diff'
     make test | devopsx 'fix the failing tests'
     # from a file
     devopsx 'summarize this' README.md

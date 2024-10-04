@@ -17,7 +17,7 @@ EMOJI_WARN = "⚠️"
 
 logger = logging.getLogger(__name__)
 
-console = Console()
+console = Console(log_path=False)
 
 def get_tokenizer(model: str):
     if "gpt-4" in model or "gpt-3.5" in model:

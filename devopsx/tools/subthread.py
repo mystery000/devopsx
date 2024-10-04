@@ -45,7 +45,7 @@ class Subthread:
         from ..logmanager import LogManager  # fmt: skip
 
         name = f"subthread-{self.thread_id}"
-        logfile = get_logfile(name, interactive=False)
+        logfile = get_logfile(name)
         return LogManager.load(logfile)
 
     def status(self) -> ReturnType:
