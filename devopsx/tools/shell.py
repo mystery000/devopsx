@@ -1,12 +1,12 @@
 """
-The assistant can execute shell commands by outputting code blocks with `sh` or `shell` as the language.
+The assistant can execute shell commands by outputting code blocks with `bash` or `sh` as the language.
 """
 
 import os
 import re
 import sys
-import select
 import atexit
+import select
 import shutil
 import bashlex
 import logging
@@ -14,11 +14,12 @@ import functools
 import subprocess
 from collections.abc import Generator
 
-from .base import ToolSpec, ToolUse
 from ..message import Message, print_msg
-from ..util import ask_execute, print_preview, get_tokenizer
+from ..util import ask_execute, get_tokenizer, print_preview
+from .base import ToolSpec, ToolUse
 
 logger = logging.getLogger(__name__)
+
 
 @functools.lru_cache
 def get_installed_programs() -> set[str]:
@@ -55,6 +56,7 @@ These programs are available, among others:
 """.strip()
 
 examples = f"""
+
 User: list the current directory
 Assistant: To list the files in the current directory, use `ls`:
 {ToolUse("bash", [], "ls").to_output()}
@@ -63,6 +65,7 @@ System: Ran command: `ls`
 file1.txt
 file2.txt
 ```
+
 #### The assistant can learn context by exploring the filesystem
 User: learn about the project
 Assistant: Lets start by checking the files
@@ -97,10 +100,13 @@ System:
 ```output
 > npx
 > create-vue
+
 Vue.js - The Progressive JavaScript Framework
+
 Scaffolding project in ./fancy-project...
 ```
 """.strip()
+
 
 class ShellSession:
     process: subprocess.Popen
@@ -231,6 +237,7 @@ def get_shell() -> ShellSession:
     return _shell
 
 
+# used in testing
 def set_shell(shell: ShellSession) -> None:
     global _shell
     _shell = shell
@@ -242,7 +249,7 @@ def execute_shell(
     """Executes a shell command and returns the output."""
     shell = get_shell()
     assert not args
-    
+
     cmd = code.strip()
     if cmd.startswith("$ "):
         cmd = cmd[len("$ ") :]
@@ -333,10 +340,10 @@ def _shorten_stdout(
             + lines[-post_lines:]
         )
 
-    # check that if pre_tokens is set, so its post_tokens, and vice versa
-    assert (pre_tokens is None) == (post_tokens is None) 
+    # check that if pre_tokens is set, so is post_tokens, and vice versa
+    assert (pre_tokens is None) == (post_tokens is None)
     if pre_tokens is not None and post_tokens is not None:
-        tokenizer = get_tokenizer("gpt-4")
+        tokenizer = get_tokenizer("gpt-4")  # TODO: use sane default
         tokens = tokenizer.encode(stdout)
         if len(tokens) > pre_tokens + post_tokens:
             lines = (
@@ -344,7 +351,7 @@ def _shorten_stdout(
                 + ["... (truncated output) ..."]
                 + [tokenizer.decode(tokens[-post_tokens:])]
             )
-            
+
     return "\n".join(lines)
 
 
@@ -383,9 +390,7 @@ tool = ToolSpec(
     desc="Executes shell commands.",
     instructions=instructions,
     examples=examples,
-    init=get_shell,
     execute=execute_shell,
-    block_types=["shell", "sh", "bash"],
+    block_types=["bash", "sh", "shell"],
 )
-
 __doc__ = tool.get_doc(__doc__)

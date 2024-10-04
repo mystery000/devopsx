@@ -1,8 +1,9 @@
 import logging
-from lxml import etree
 from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, TypeAlias
+
+from lxml import etree
 
 from ..codeblock import Codeblock
 from ..message import Message
@@ -28,6 +29,7 @@ class ExecuteFunc(Protocol):
 class ToolSpec:
     """
     Tool specification. Defines a tool that can be used by the agent.
+
     Args:
         name: The name of the tool.
         desc: A description of the tool.
@@ -88,6 +90,7 @@ class ToolUse:
     def is_runnable(self) -> bool:
         # noreorder
         from . import get_tool  # fmt: skip
+
         tool = get_tool(self.tool)
         return bool(tool.execute) if tool else False
 

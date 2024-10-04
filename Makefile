@@ -74,10 +74,19 @@ docs: docs/conf.py docs/*.rst docs/.clean
 site: site/dist/index.html site/dist/docs
 	echo "devopsx.org" > site/dist/CNAME
 
-site/dist/index.html: README.md
+.PHONY: site/dist/index.html
+site/dist/index.html: README.md site/dist/style.css site/template.html
 	mkdir -p site/dist
-	pandoc -s -f gfm -t html5 -o $@ $< --metadata title=" "
+	sed '1s/Website/GitHub/;1s|https://devopsx.org/|https://github.com/infractura/devopsx|' README.md | \
+	cat README.md \
+		| sed '0,/Website/{s/Website/GitHub/}' - \
+		| sed '0,/devopsx.org\/\"/{s/devopsx.org\/\"/github.com\/infractura\/devopsx\"/}' - \
+		| pandoc -s -f gfm -t html5 -o $@ --metadata title="devopsx - agent in your terminal" --css style.css --template=site/template.html
 	cp -r media site/dist
+
+site/dist/style.css: site/style.css
+	mkdir -p site/dist
+	cp site/style.css site/dist
 
 site/dist/docs: docs
 	cp -r docs/_build/html site/dist/docs
@@ -92,7 +101,7 @@ version:
 dist/CHANGELOG.md: version ./scripts/build_changelog.py
 	VERSION=$$(git describe --tags --abbrev=0) && \
 	PREV_VERSION=$$(./scripts/get-last-version.sh $${VERSION}) && \
-		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org ErikBjare --repo devopsx --output $@
+		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org infractura --repo devopsx --output $@
 
 release: dist/CHANGELOG.md
 	@VERSION=$$(git describe --tags --abbrev=0) && \

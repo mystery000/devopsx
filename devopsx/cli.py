@@ -39,6 +39,7 @@ from .util import (
     console,
     epoch_to_age,
     generate_name,
+    path_with_tilde,
     print_bell,
     rich_to_str,
 )
@@ -320,7 +321,7 @@ def chat(
     # (re)init shell
     set_shell(ShellSession())
 
-    console.log(f"Using logdir {logdir}")
+    console.log(f"Using logdir {path_with_tilde(logdir)}")
 
     log = LogManager.load(
         logdir, initial_msgs=initial_msgs, show_hidden=show_hidden, create=True
@@ -338,7 +339,7 @@ def chat(
         if not workspace:
             workspace = Path.cwd()
         assert workspace.exists(), f"Workspace path {workspace} does not exist"
-    console.log(f"Using workspace at {workspace}")
+    console.log(f"Using workspace at {path_with_tilde(workspace)}")
     os.chdir(workspace)
 
     workspace_prompt = get_workspace_prompt(str(workspace))

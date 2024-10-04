@@ -12,7 +12,7 @@ from .logmanager import LogManager
 from .message import Message, msgs_to_toml, print_msg, toml_to_msgs, len_tokens
 from .useredit import edit_text_with_editor
 from .util import ask_execute
-from .tools import ToolUse, execute_msg, loaded_tools, execute_subagent
+from .tools import ToolUse, execute_msg, loaded_tools
 from .models import MODELS, get_model
 
 logger = logging.getLogger(__name__)
@@ -77,9 +77,6 @@ def handle_cmd(
     name, *args = re.split(r"[\n\s]", cmd)
     full_args = cmd.split(" ", 1)[1] if " " in cmd else ""
     match name:
-        # TODO: rewrite to auto-register tools using block_types
-        case "subagent":
-            yield from execute_subagent(full_args, ask=not no_confirm, args=[])
         case "log":
             log.undo(1, quiet=True)
             log.print(show_hidden="--hidden" in args)

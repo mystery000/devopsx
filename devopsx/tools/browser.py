@@ -4,7 +4,9 @@ Tools to let the assistant control a browser, including:
  - reading their contents
  - viewing them through screenshots
  - searching
+
 .. note::
+
     This is an experimental feature. It needs some work to be more robust and useful.
 """
 
@@ -42,7 +44,7 @@ examples = """
 ### Answer question from URL with browsing
 User: find out which is the latest ActivityWatch version from superuserlabs.org
 Assistant: Let's browse the site.
-```python
+```ipython
 read_url("https://superuserlabs.org/")
 ```
 System:
@@ -52,7 +54,7 @@ System:
 ...
 ```
 Assistant: Couldn't find the answer on the page. Following link to the ActivityWatch website.
-```python
+```ipython
 read_url("https://activitywatch.net/")
 ```
 System:
@@ -66,25 +68,25 @@ Assistant: The latest version of ActivityWatch is v0.12.2
 ### Searching
 User: who is the founder of ActivityWatch?
 Assistant: Let's search for that.
-```python
+```ipython
 search("ActivityWatch founder")
 ```
 System:
-```results:
+```results
 1. [ActivityWatch](https://activitywatch.net/)
 ...
 ```
 Assistant: Following link to the ActivityWatch website.
-```python
+```ipython
 read_url("https://activitywatch.net/")
 ```
 System:
 ```https://activitywatch.net/
 ...
-The ActivityWatch project was founded by Mohamed in 2016.
+The ActivityWatch project was founded by Erik Bjäreholt in 2016.
 ...
 ```
-Assistant: The founder of ActivityWatch is Mohamed.
+Assistant: The founder of ActivityWatch is Erik Bjäreholt.
 
 ### Take screenshot of page
 User: take a screenshot of the ActivityWatch website
@@ -195,5 +197,4 @@ tool = ToolSpec(
     functions=[read_url, search, screenshot_url],
     available=has_browser_tool(),
 )
-
 __doc__ = tool.get_doc(__doc__)

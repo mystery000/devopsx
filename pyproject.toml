@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "devopsx-python"
-version = "0.8.0"
+version = "1.0.0"
 description = "A fancy CLI to interact with LLMs in a Chat-style interface, with additional capabilities like executing commands on the local & remote machines"
 authors = ["devopsx <mhafeel@computer.com>"]
 readme = "README.md"

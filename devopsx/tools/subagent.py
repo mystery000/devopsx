@@ -16,7 +16,7 @@ from configparser import ConfigParser
 from collections.abc import Generator
 from fabric import Connection, Result
 
-from .base import ToolSpec
+from .base import ToolSpec, ToolUse
 from ..message import Message
 from .shell import _shorten_stdout, _format_block_smart
 from ..message import Message, print_msg
@@ -112,7 +112,7 @@ ASSISTANT: To get the status of the 'w' command from all the subagents. we can e
 _config: ConfigParser | None = None
 _subagents: dict[str, Connection] = dict()
 
-def init_tool() -> None:
+def init_tool() -> ToolSpec:
     # Check if the config file exists
     if not os.path.exists(config_path):
         # If not, create it and write some default settings
@@ -122,6 +122,8 @@ def init_tool() -> None:
     
     global _config
     _config = ConfigParser()
+
+    return tool
         
 
 def check_connection(host: str, user: str, port: int, identity_file: str | None = None, password: str | None = None) -> bool:
@@ -410,3 +412,4 @@ tool = ToolSpec(
     execute=execute_subagent,
     block_types=["ps"],
 )       
+__doc__ = tool.get_doc(__doc__)

@@ -9,8 +9,8 @@ It allows for inspecting pane contents and sending input.
 import shutil
 import logging
 import subprocess
-from time import sleep
 from collections.abc import Generator
+from time import sleep
 
 from ..message import Message
 from ..util import ask_execute, print_preview
@@ -255,5 +255,4 @@ tool = ToolSpec(
     block_types=["tmux"],
     available=shutil.which("tmux") is not None,
 )
-
 __doc__ = tool.get_doc(__doc__)

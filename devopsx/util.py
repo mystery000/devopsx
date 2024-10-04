@@ -6,6 +6,7 @@ import logging
 import termios
 import textwrap
 from typing import Any
+from pathlib import Path
 from functools import lru_cache
 from datetime import datetime, timedelta
 
@@ -300,3 +301,11 @@ def rich_to_str(s: Any, **kwargs) -> str:
     c = Console(file=io.StringIO(), **kwargs)
     c.print(s)
     return c.file.getvalue()  # type: ignore
+
+
+def path_with_tilde(path: Path) -> str:
+    home = str(Path.home())
+    path_str = str(path)
+    if path_str.startswith(home):
+        return path_str.replace(home, "~", 1)
+    return path_str

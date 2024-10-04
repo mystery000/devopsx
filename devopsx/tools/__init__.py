@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 from collections.abc import Generator
 
 from .base import ToolSpec, ToolUse
@@ -11,13 +12,11 @@ from .python import tool as python_tool
 from .read import tool as tool_read
 from .save import tool_append, tool_save
 from .shell import tool as shell_tool
-from .subagent import execute_subagent
 from .subagent import tool as subagent_tool
 from .subthread import tool as subthread_tool
 from .tmux import tool as tmux_tool
 from .chats import tool as chats_tool
 from .youtube import tool as youtube_tool
-from functools import lru_cache
 from .vision import tool as vision_tool
 from .screenshot import tool as screenshot_tool
 
@@ -25,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 __all__ = [
-    "execute_subagent",
     "ToolSpec",
     "ToolUse",
     "all_tools",
