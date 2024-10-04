@@ -261,7 +261,11 @@ def execute_shell(
             cmd = cmd[1:-1]
 
     if not ask or confirm:
-        returncode, stdout, stderr = shell.run(cmd)
+        try:
+            returncode, stdout, stderr = shell.run(cmd)
+        except Exception as e:
+            yield Message("system", f"Error: {e}")
+            return
         stdout = _shorten_stdout(stdout.strip(), pre_tokens=2000, post_tokens=8000)
         stderr = _shorten_stdout(stderr.strip(), pre_tokens=2000, post_tokens=2000)
 

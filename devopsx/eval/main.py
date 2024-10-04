@@ -8,10 +8,10 @@ import csv
 import sys
 import logging
 import subprocess
-from pathlib import Path
-from datetime import datetime
 from collections import defaultdict
 from collections.abc import Generator
+from datetime import datetime, timezone
+from pathlib import Path
 
 import click
 import multiprocessing_logging
@@ -20,7 +20,7 @@ from tabulate import tabulate
 from ..message import len_tokens
 from .run import run_evals
 from .suites import suites, tests_default, tests_map
-from .types import CaseResult, ExecResult, ExecTest
+from .types import CaseResult, EvalResult, EvalSpec
 
 # Configure logging, including fully-qualified module names
 logging.basicConfig(
@@ -34,7 +34,15 @@ logger = logging.getLogger(__name__)
 project_dir = Path(__file__).parent.parent.parent
 
 
-def print_model_results(model_results: dict[str, list[ExecResult]]):
+def sort_tests(test_names):
+    # sorts a list of test names by the order they appear in the default tests
+    return sorted(
+        test_names,
+        key=lambda x: (list(tests_map).index(x) if x in tests_map else 0),
+    )
+
+
+def print_model_results(model_results: dict[str, list[EvalResult]]):
     total_tests = 0
     total_tokens = 0
 
@@ -70,10 +78,10 @@ def print_model_results(model_results: dict[str, list[ExecResult]]):
     print(f"Completed {total_tests} tests in {total_tokens}tok")
 
 
-def print_model_results_table(model_results: dict[str, list[ExecResult]]):
-    test_names = {
-        result.name for results in model_results.values() for result in results
-    }
+def print_model_results_table(model_results: dict[str, list[EvalResult]]):
+    test_names = sort_tests(
+        {result.name for results in model_results.values() for result in results}
+    )
     headers = ["Model"] + list(test_names)
     table_data = []
 
@@ -101,6 +109,64 @@ def print_model_results_table(model_results: dict[str, list[ExecResult]]):
     print(tabulate(table_data, headers=headers))
 
 
+def aggregate_and_display_results(result_files: list[str]):
+    all_results: dict[str, dict[str, dict]] = {}
+    for file in result_files:
+        for model, model_results in read_results_from_csv(file).items():
+            if model not in all_results:
+                all_results[model] = {}
+            for result in model_results:
+                if result.name not in all_results[model]:
+                    all_results[model][result.name] = {
+                        "total": 0,
+                        "passed": 0,
+                        "tokens": 0,
+                    }
+                all_results[model][result.name]["total"] += 1
+                all_results[model][result.name]["tokens"] += len_tokens(
+                    result.gen_stdout
+                ) + len_tokens(result.run_stdout)
+                if result.status == "success" and all(
+                    case.passed for case in result.results
+                ):
+                    all_results[model][result.name]["passed"] += 1
+
+    # Prepare table data
+    headers = ["Model"] + sort_tests(
+        {
+            test
+            for model_results in all_results.values()
+            for test in model_results.keys()
+        }
+    )
+    table_data = []
+
+    def get_status_emoji(passed, total):
+        percentage = (passed / total) * 100
+        if 80 <= percentage:
+            return "✅"
+        elif 20 <= percentage < 80:
+            return "🔶"
+        else:
+            return "❌"
+
+    for model, results in all_results.items():
+        row = [model]
+        for test in headers[1:]:
+            if test in results:
+                passed = results[test]["passed"]
+                total = results[test]["total"]
+                tokens = results[test]["tokens"]
+                status_emoji = get_status_emoji(passed, total)
+                row.append(f"{status_emoji} {passed}/{total} {tokens}tok")
+            else:
+                row.append("❌ N/A")
+        table_data.append(row)
+
+    # Print the table
+    print(tabulate(table_data, headers=headers))
+
+
 @click.command()
 @click.argument("eval_names_or_result_files", nargs=-1)
 @click.option(
@@ -120,48 +186,46 @@ def main(
 ):
     """
     Run evals for devopsx.
+    Pass eval or suite names to run, or result files to print.
 
-    Pass test names to run, or result files to print.
+    Output from evals will be captured, unless a single eval is run, and saved to the results directory.
     """
     # init
     multiprocessing_logging.install_mp_handler()
 
     models = _model or [
         "openai/gpt-4o",
+        "openai/gpt-4o-mini",
         "anthropic/claude-3-5-sonnet-20240620",
+        "anthropic/claude-3-haiku-20240307",
         "openrouter/meta-llama/llama-3.1-405b-instruct",
     ]
 
     results_files = [f for f in eval_names_or_result_files if f.endswith(".csv")]
-    if results_files:
-        for results_file in results_files:
-            p = Path(results_file)
-            if p.exists():
-                results = read_results_from_csv(str(p))
-                print(f"\n{results_file}")
-                print(f"{'=' * len(results_file)}")
-                print_model_results(results)
-                print("\n=== Model Comparison ===")
-                print_model_results_table(results)
-            else:
-                print(f"Error: File {results_file} not found")
-                sys.exit(1)
+    eval_names = [f for f in eval_names_or_result_files if f not in results_files]
+    if len(results_files) >= 2:
+        aggregate_and_display_results(results_files)
+        sys.exit(0)
+    elif results_files:
+        model_results = read_results_from_csv(results_files[0])
+        print_model_results(model_results)
+        print_model_results_table(model_results)
         sys.exit(0)
 
-    tests_to_run: list[ExecTest] = []
-    for test_name in eval_names_or_result_files:
-        if test_name in tests_map:
-            tests_to_run.append(tests_map[test_name])
-        elif test_name in suites:
-            tests_to_run.extend(suites[test_name])
+    evals_to_run: list[EvalSpec] = []
+    for eval_name in eval_names:
+        if test := tests_map.get(eval_name):
+            evals_to_run.append(test)
+        elif suite := suites.get(eval_name) or suites.get(eval_name.replace("-", "_")):
+            evals_to_run.extend(suite)
         else:
-            raise ValueError(f"Test {test_name} not found")
+            raise ValueError(f"Test {eval_name} not found")
 
-    if not tests_to_run:
-        tests_to_run = tests_default
+    if not evals_to_run:
+        evals_to_run = tests_default
 
     print("=== Running evals ===")
-    model_results = run_evals(tests_to_run, models, timeout, parallel)
+    model_results = run_evals(evals_to_run, models, timeout, parallel)
     print("\n=== Finished ===\n")
 
     print("\n=== Model Results ===")
@@ -211,7 +275,7 @@ def read_log_file(file_path: Path) -> str:
     return ""
 
 
-def read_results_from_csv(filename: str) -> dict[str, list[ExecResult]]:
+def read_results_from_csv(filename: str) -> dict[str, list[EvalResult]]:
     model_results = defaultdict(list)
     results_dir = Path(filename).parent
     with open(filename, newline="") as csvfile:
@@ -220,7 +284,7 @@ def read_results_from_csv(filename: str) -> dict[str, list[ExecResult]]:
             model = row["Model"]
             test_dir = results_dir / model / row["Test"]
 
-            result = ExecResult(
+            result = EvalResult(
                 name=row["Test"],
                 status="success" if row["Passed"] == "true" else "error",
                 results=list(_read_case_results(test_dir / "cases.csv")),
@@ -238,8 +302,8 @@ def read_results_from_csv(filename: str) -> dict[str, list[ExecResult]]:
     return dict(model_results)
 
 
-def write_results(model_results: dict[str, list[ExecResult]]):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+def write_results(model_results: dict[str, list[EvalResult]]):
+    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%SZ")
     # get current commit hash and dirty status, like: a8b2ef0-dirty
     # TODO: don't assume we are in the devopsx repo, use other version identifiers if available
     commit_hash = subprocess.run(
@@ -292,10 +356,10 @@ def write_results(model_results: dict[str, list[ExecResult]]):
                     "Model": model,
                     "Test": result.name,
                     "Passed": "true" if passed else "false",
-                    "Total Duration": sum(result.timings.values()),
-                    "Generation Time": result.timings["gen"],
-                    "Run Time": result.timings["run"],
-                    "Eval Time": result.timings["eval"],
+                    "Total Duration": round(sum(result.timings.values()), 2),
+                    "Generation Time": round(result.timings["gen"], 2),
+                    "Run Time": round(result.timings["run"], 2),
+                    "Eval Time": round(result.timings["eval"], 2),
                     "Commit Hash": commit_hash,
                     "Gen Stdout File": (test_dir_rel / "gen_stdout.txt"),
                     "Gen Stderr File": (test_dir_rel / "gen_stderr.txt"),

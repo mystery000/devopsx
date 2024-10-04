@@ -135,7 +135,7 @@ def run_evals(
         process.join()
 
     # sort model_results by test order
-    for model in model_results:
+    for model in sorted(model_results):
         model_results[model] = sorted(
             model_results[model],
             key=lambda result: [test["name"] for test in tests].index(result.name),

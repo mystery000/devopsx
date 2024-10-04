@@ -14,6 +14,13 @@ SRCFILES = $(shell find ${SRCDIRS} -name '*.py' $(foreach EXCLUDE,$(EXCLUDES),-n
 build:
 	poetry install
 
+build-docker:
+	docker build . -t gptme:latest -f scripts/Dockerfile
+	docker build . -t gptme-eval:latest -f scripts/Dockerfile.eval
+
+build-docker-full:
+	docker build . -t gptme-eval:latest -f scripts/Dockerfile.eval --build-arg RUST=yes --build-arg BROWSER=yes
+
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
@@ -62,6 +69,7 @@ release: dist/CHANGELOG.md
 	@VERSION=$$(git describe --tags --abbrev=0) && \
 		echo "Releasing version $${VERSION}"; \
 		read -p "Press enter to continue" && \
+		git push origin master $${VERSION} && \
 		gh release create $${VERSION} -t $${VERSION} -F dist/CHANGELOG.md
 
 clean: clean-docs
