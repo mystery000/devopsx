@@ -44,7 +44,7 @@ docs/.clean: docs/conf.py
 	touch docs/.clean
 
 docs: docs/conf.py docs/*.rst docs/.clean
-	poetry run make -C docs html
+	poetry run make -C docs html SPHINXOPTS="-W --keep-going"
 
 version:
 	@./scripts/bump_version.sh

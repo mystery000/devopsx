@@ -1,9 +1,11 @@
 import re
+import io
 import sys
 import random
 import logging
 import textwrap
 import tiktoken
+from typing import Any
 from functools import lru_cache
 from datetime import datetime, timedelta
 
@@ -15,6 +17,7 @@ EMOJI_WARN = "⚠️"
 
 logger = logging.getLogger(__name__)
 
+console = Console()
 
 def get_tokenizer(model: str):
     if "gpt-4" in model or "gpt-3.5" in model:
@@ -130,8 +133,7 @@ def print_preview(code: str, lang: str):  # pragma: no cover
 
 
 def ask_execute(question="Execute code?", default=True) -> bool:  # pragma: no cover
-    # TODO: add a way to outsource ask_execute decision to another agent/LLM
-    console = Console()
+    # TODO: add a way to outsource ask_execute decision to another agent/LLM, possibly by overriding rich console somehow
     choicestr = f"({'Y' if default else 'y'}/{'n' if default else 'N'})"
     # answer = None
     # while not answer or answer.lower() not in ["y", "yes", "n", "no", ""]:
@@ -205,3 +207,8 @@ def document_prompt_function(*args, **kwargs):
         func.__doc__ += f"\n\nTokens: {prompt_tokens}"
         return func
     return decorator
+
+def rich_to_str(s: Any, **kwargs) -> str:
+    c = Console(file=io.StringIO(), **kwargs)
+    c.print(s)
+    return c.file.getvalue()  # type: ignore
