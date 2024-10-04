@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable, Generator
+from collections.abc import Generator
 
 from .base import ToolSpec, ToolUse
 from .browser import tool as browser_tool
@@ -7,7 +7,7 @@ from .gh import tool as gh_tool
 from ..message import Message
 from .patch import tool as patch_tool
 from .python import register_function
-from .python import get_tool as get_python_tool
+from .python import tool as python_tool
 from .read import tool as tool_read
 from .save import tool_append, tool_save
 from .shell import tool as shell_tool
@@ -31,12 +31,12 @@ __all__ = [
 ]
 
 # TODO: init as empty list and add tools after they are initialized?
-all_tools: list[ToolSpec | Callable[[], ToolSpec]] = [
+all_tools: list[ToolSpec] = [
     tool_read,
     tool_save,
     tool_append,
     patch_tool,
-    get_python_tool,
+    python_tool,
     shell_tool,
     subthread_tool,
     tmux_tool,
@@ -49,11 +49,13 @@ all_tools: list[ToolSpec | Callable[[], ToolSpec]] = [
 loaded_tools: list[ToolSpec] = []
 
 
-def init_tools() -> None:
+def init_tools(allowlist=None) -> None:
     """Runs initialization logic for tools."""
     for tool in all_tools:
-        if not isinstance(tool, ToolSpec):
-            tool = tool()
+        if allowlist and tool.name not in allowlist:
+            continue
+        if tool.init:
+            tool = tool.init()
         if not tool.available:
             continue
         if tool in loaded_tools:

@@ -22,7 +22,7 @@ from ..util import ask_execute, print_preview
 from .base import ToolSpec, ToolUse
 
 if TYPE_CHECKING:
-    from IPython.terminal.embed import InteractiveShellEmbed
+    from IPython.terminal.embed import InteractiveShellEmbed  # fmt: skip
 
 logger = getLogger(__name__)
 
@@ -79,6 +79,7 @@ def get_functions_prompt() -> str:
 def _get_ipython():
     global _ipython
     from IPython.terminal.embed import InteractiveShellEmbed  # fmt: skip
+
     if _ipython is None:
         _ipython = InteractiveShellEmbed()
         _ipython.push(registered_functions)
@@ -105,6 +106,7 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
 
     # Capture the standard output and error streams
     from IPython.utils.capture import capture_output  # fmt: skip
+
     with capture_output() as captured:
         # Execute the code
         result = _ipython.run_cell(code, silent=False, store_history=False)
@@ -115,13 +117,14 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
     # only show stdout if there is no result
     elif captured.stdout:
         output += f"```stdout\n{captured.stdout.rstrip()}\n```\n\n"
+
     if captured.stderr:
         output += f"```stderr\n{captured.stderr.rstrip()}\n```\n\n"
     if result.error_in_exec:
         tb = result.error_in_exec.__traceback__
         while tb.tb_next:  # type: ignore
             tb = tb.tb_next  # type: ignore
-            # type: ignore
+        # type: ignore
         output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"
 
     # strip ANSI escape sequences
@@ -192,23 +195,7 @@ fib(10)
 """.strip()
 
 
-# only used for doc generation, use get_tool() in the code
-tool = ToolSpec(
-    name="python",
-    desc="Execute Python code",
-    instructions=instructions,
-    examples=examples,
-    execute=execute_python,
-    block_types=[
-        # "python",
-        "ipython",
-        "py",
-    ],
-)
-__doc__ = tool.get_doc(__doc__)
-
-
-def get_tool() -> ToolSpec:
+def init() -> ToolSpec:
     python_libraries = get_installed_python_libraries()
     python_libraries_str = "\n".join(f"- {lib}" for lib in python_libraries)
 
@@ -223,3 +210,19 @@ The following functions are available in the REPL:
 
     # create a copy with the updated instructions
     return dataclasses.replace(tool, instructions=_instructions)
+
+
+tool = ToolSpec(
+    name="python",
+    desc="Execute Python code",
+    instructions=instructions,
+    examples=examples,
+    execute=execute_python,
+    init=init,
+    block_types=[
+        # "python",
+        "ipython",
+        "py",
+    ],
+)
+__doc__ = tool.get_doc(__doc__)

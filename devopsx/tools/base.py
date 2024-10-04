@@ -1,14 +1,8 @@
 import logging
+from lxml import etree
 from collections.abc import Callable, Generator
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Literal,
-    Protocol,
-    TypeAlias,
-)
-
-from lxml import etree
+from typing import Literal, Protocol, TypeAlias
 
 from ..codeblock import Codeblock
 from ..message import Message
@@ -16,7 +10,7 @@ from ..util import transform_examples_to_chat_directives
 
 logger = logging.getLogger(__name__)
 
-InitFunc: TypeAlias = Callable[[], Any]
+InitFunc: TypeAlias = Callable[[], "ToolSpec"]
 
 # tooluse format mode
 # TODO: make configurable
@@ -30,12 +24,20 @@ class ExecuteFunc(Protocol):
     ) -> Generator[Message, None, None]: ...
 
 
-@dataclass
+@dataclass(frozen=True, eq=False)
 class ToolSpec:
     """
-    A dataclass to store metadata about a tool.
-
-    Like documentation to be included in prompt, and functions to expose to the agent in the REPL.
+    Tool specification. Defines a tool that can be used by the agent.
+    Args:
+        name: The name of the tool.
+        desc: A description of the tool.
+        instructions: Instructions on how to use the tool.
+        examples: Example usage of the tool.
+        functions: Functions registered in the IPython REPL.
+        init: An optional function that is called when the tool is first loaded.
+        execute: An optional function that is called when the tool executes a block.
+        block_types: A list of block types that the tool will execute.
+        available: Whether the tool is available for use.
     """
 
     name: str
@@ -57,6 +59,11 @@ class ToolSpec:
                 f"# Examples\n\n{transform_examples_to_chat_directives(self.examples)}"
             )
         return doc
+
+    def __eq__(self, other):
+        if not isinstance(other, ToolSpec):
+            return False
+        return self.name == other.name
 
 
 @dataclass
