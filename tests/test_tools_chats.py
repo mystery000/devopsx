@@ -6,6 +6,6 @@ def test_list_chats(capsys):
     assert "1." in captured.out
 
 def test_search_chats(capsys):
-    search_chats("python")
+    search_chats("python", system=True)
     captured = capsys.readouterr()
     assert "Found matches" in captured.out

@@ -17,6 +17,7 @@ from .util import _document_prompt_function
 
 PromptType = Literal["full", "short"]
 
+logger = logging.getLogger(__name__)
 
 def get_prompt(prompt: PromptType | str = "full", interactive: bool = True) -> Message:
     """
@@ -28,7 +29,7 @@ def get_prompt(prompt: PromptType | str = "full", interactive: bool = True) -> M
     elif prompt == "short":
         msgs = prompt_short(interactive)
     else:
-        return Message("system", prompt)
+        msgs = [Message("system", prompt)]
 
     # combine all the system prompt messages into one,
     # also hide them and pin them to the top
@@ -169,8 +170,8 @@ def prompt_project() -> Generator[Message, None, None]:
         ).stdout.strip()
         project = os.path.basename(projectdir)
     except subprocess.CalledProcessError:
-        project = "unknown-project"
-        logging.warning("Unable to determine Git repository root.")
+        logger.debug("Unable to determine Git repository root.")
+        return
 
     project_info = config_prompt.get("project", {}).get(
         project, "No specific project context provided."

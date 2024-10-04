@@ -104,6 +104,9 @@ fi
 # generate a mandelbrot set
 devopsx 'render mandelbrot set to mandelbrot.png'
 
+# particle effect
+devopsx 'write a web app to particles.html which shows off an impressive and colorful particle effect using three.js'
+
 # very heavy! run by hand
 # devopsx 'render a zooming mandelbrot video to mandelbrot.mp4, use a colorful gradient, write scripts to file'
 
