@@ -4,7 +4,6 @@ A subthread tool for devopsx
 Lets devopsx break down a task into smaller parts, and delegate them to subthreads.
 """
 
-import re
 import json
 import logging
 import threading

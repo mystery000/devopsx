@@ -19,6 +19,7 @@ from .chats import tool as chats_tool
 from .youtube import tool as youtube_tool
 from functools import lru_cache
 from .vision import tool as vision_tool
+from .screenshot import tool as screenshot_tool
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ all_tools: list[ToolSpec] = [
     gh_tool,
     chats_tool,
     youtube_tool,
+    screenshot_tool,
     subagent_tool
 ]
 loaded_tools: list[ToolSpec] = []
