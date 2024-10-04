@@ -21,7 +21,7 @@ See the `README <https://github.com/infractura/devopsx/blob/master/README.md>`_ 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents
 
    getting-started
    demos
@@ -32,7 +32,10 @@ See the `README <https://github.com/infractura/devopsx/blob/master/README.md>`_ 
    cli
    api
 
-
+.. toctree::
+   :caption: External
+   :maxdepth: 2
+   GitHub <https://github.com/infractura/devopsx>
 
 Indices and tables
 ==================

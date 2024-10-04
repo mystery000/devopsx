@@ -3,9 +3,13 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 
-from playwright.sync_api import ElementHandle, Page, sync_playwright
-
-_p = None
+from playwright.sync_api import (
+    ElementHandle,
+    Page,
+    Playwright,
+    sync_playwright,
+)
+_p: Playwright | None = None
 logger = logging.getLogger(__name__)
 
 

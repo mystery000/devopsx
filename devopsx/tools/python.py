@@ -10,11 +10,19 @@ import functools
 import dataclasses
 from logging import getLogger
 from collections.abc import Callable, Generator
-from typing import Literal, TypeVar, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Literal,
+    TypeVar,
+    get_origin,
+)
 
 from ..message import Message
 from ..util import ask_execute, print_preview
 from .base import ToolSpec, ToolUse
+
+if TYPE_CHECKING:
+    from IPython.terminal.embed import InteractiveShellEmbed
 
 logger = getLogger(__name__)
 
@@ -22,7 +30,7 @@ logger = getLogger(__name__)
 #       would let us use libraries installed with `pip install` in the current venv
 
 # IPython instance
-_ipython = None
+_ipython: "InteractiveShellEmbed | None" = None
 
 
 registered_functions: dict[str, Callable] = {}
@@ -117,7 +125,8 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
         tb = result.error_in_exec.__traceback__
         while tb.tb_next:  # type: ignore
             tb = tb.tb_next  # type: ignore
-        output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"  # type: ignore
+            # type: ignore
+        output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"
     if result.result is not None:
         output += f"Result:\n```\n{result.result}\n```\n\n"
 

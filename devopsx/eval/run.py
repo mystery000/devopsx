@@ -5,12 +5,11 @@ import time
 import signal
 import inspect
 import logging
-import concurrent
 from tqdm import tqdm
 import multiprocessing
 import concurrent.futures
+from typing import TypedDict
 from collections import defaultdict
-from typing import TypedDict, Union
 from multiprocessing import Manager, Process
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -43,7 +42,7 @@ class ProcessError(TypedDict):
     duration: float
 
 
-ProcessResult = Union[ProcessSuccess, ProcessError]
+ProcessResult = ProcessSuccess | ProcessError
 
 
 class SyncedDict(TypedDict):

@@ -220,7 +220,7 @@ class ShellSession:
         self._init()
 
 
-_shell = None
+_shell: ShellSession | None = None
 
 
 def get_shell() -> ShellSession:

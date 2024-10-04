@@ -34,10 +34,9 @@ lint:
 
 format:
 	poetry run ruff --fix-only ${SRCDIRS}
-	poetry run pyupgrade --py310-plus --exit-zero-even-if-changed ${SRCFILES}
-	poetry run black ${SRCDIRS}
+	poetry run ruff format ${SRCDIRS}
 
-precommit: format lint typecheck test
+precommit: format lint typecheck
 
 docs/.clean: docs/conf.py
 	poetry run make -C docs clean

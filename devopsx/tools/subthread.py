@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 Status = Literal["running", "success", "failure"]
 
-_subthreads = []
+_subagents: list["Subagent"] = []
 
 
 @dataclass
