@@ -4,7 +4,9 @@ Tools to let the assistant control a browser, including:
  - reading their contents
  - viewing them through screenshots
  - searching
+
 .. note::
+
     This is an experimental feature. It needs some work to be more robust and useful.
 """
 
@@ -17,7 +19,6 @@ import subprocess
 import importlib.util
 from typing import Literal
 
-from ..util import transform_examples_to_chat_directives
 from .base import ToolSpec
 
 has_playwright = importlib.util.find_spec("playwright") is not None
@@ -43,7 +44,7 @@ examples = """
 ### Answer question from URL with browsing
 User: find out which is the latest ActivityWatch version from superuserlabs.org
 Assistant: Let's browse the site.
-```python
+```ipython
 read_url("https://superuserlabs.org/")
 ```
 System:
@@ -53,7 +54,7 @@ System:
 ...
 ```
 Assistant: Couldn't find the answer on the page. Following link to the ActivityWatch website.
-```python
+```ipython
 read_url("https://activitywatch.net/")
 ```
 System:
@@ -67,25 +68,25 @@ Assistant: The latest version of ActivityWatch is v0.12.2
 ### Searching
 User: who is the founder of ActivityWatch?
 Assistant: Let's search for that.
-```python
+```ipython
 search("ActivityWatch founder")
 ```
 System:
-```results:
+```results
 1. [ActivityWatch](https://activitywatch.net/)
 ...
 ```
 Assistant: Following link to the ActivityWatch website.
-```python
+```ipython
 read_url("https://activitywatch.net/")
 ```
 System:
 ```https://activitywatch.net/
 ...
-The ActivityWatch project was founded by Mohamed in 2016.
+The ActivityWatch project was founded by Erik Bjäreholt in 2016.
 ...
 ```
-Assistant: The founder of ActivityWatch is Mohamed.
+Assistant: The founder of ActivityWatch is Erik Bjäreholt.
 
 ### Take screenshot of page
 User: take a screenshot of the ActivityWatch website
@@ -188,8 +189,6 @@ def html_to_markdown(html):
     return markdown
 
 
-__doc__ += transform_examples_to_chat_directives(examples)
-
 tool = ToolSpec(
     name="browser",
     desc="Browse the web",
@@ -198,3 +197,4 @@ tool = ToolSpec(
     functions=[read_url, search, screenshot_url],
     available=has_browser_tool(),
 )
+__doc__ = tool.get_doc(__doc__)

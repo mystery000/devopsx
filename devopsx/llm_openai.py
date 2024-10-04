@@ -4,6 +4,7 @@ from openai import AzureOpenAI, OpenAI
 
 from .constants import TEMPERATURE, TOP_P
 from .message import Message, msgs2dicts
+from .models import ModelMeta, get_model
 
 openai: OpenAI | None = None
 logger = logging.getLogger(__name__)
@@ -35,10 +36,18 @@ def init(llm: str, config):
 
     assert openai, "LLM not initialized"
 
-
 def get_client() -> OpenAI | None:
     return openai
 
+def _prep_o1(msgs: list[Message]) -> Generator[Message, None, None]:
+    # prepare messages for OpenAI O1, which doesn't support the system role
+    # and requires the first message to be from the user
+    for msg in msgs:
+        if msg.role == "system":
+            msg = msg.replace(
+                role="user", content=f"<system>\n{msg.content}\n</system>"
+            )
+        yield msg
 
 def chat(messages: list[Message], model: str) -> str:
     # This will generate code and such, so we need appropriate temperature and top_p params

@@ -17,33 +17,35 @@ class ResultContext:
     exit_code: int
 
 
-class CaseResult(TypedDict):
+@dataclass
+class CaseResult():
     """
     Result of a single test case on the execution of a prompt.
     """
     
     name: str
     passed: bool
-    code: str
     duration: float
 
 
-class ExecResult(TypedDict):
+@dataclass
+class EvalResult():
     """
-    Result of executing a prompt.
+    Result of executing an eval.
     """
     
     name: str
     status: Status
     results: list[CaseResult]
     timings: dict[str, float]
-    stdout: str
-    stderr: str
+    gen_stdout: str
+    gen_stderr: str
+    run_stdout: str
+    run_stderr: str
 
-
-class ExecTest(TypedDict):
+class EvalSpec(TypedDict):
     """
-    Test case for executing a prompt.
+    Specification for an eval/test case.
     """
     
     name: str

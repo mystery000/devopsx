@@ -33,7 +33,7 @@ def check_commit_exists(ctx):
 
 
 def check_output_hello_ask(ctx):
-    return "Hello, Erik!" in ctx.stdout
+    return "Hello, Mohamed Hafeel!" in ctx.stdout
 
 
 def check_package_json(ctx):
@@ -44,8 +44,8 @@ def check_output_compiled_successfully(ctx):
     return "Compiled successfully" in ctx.stdout
 
 
-def check_output_erik(ctx):
-    return "Erik" in ctx.stdout
+def check_output_mhafeel(ctx):
+    return "Mohamed Hafeel" in ctx.stdout
 
 
 def check_cargo_toml(ctx):
@@ -76,7 +76,7 @@ tests: list["ExecTest"] = [
     {
         "name": "hello-ask",
         "files": {"hello.py": "print('Hello, world!')"},
-        "run": "echo 'Erik' | python hello.py",
+        "run": "echo 'Mohamed' | python hello.py",
         # TODO: work around the "don't try to execute it" part by improving devopsx such that it just gives EOF to stdin in non-interactive mode
         "prompt": "modify hello.py to ask the user for their name and print 'Hello, <name>!'. don't try to execute it",
         "expect": {
@@ -129,7 +129,7 @@ tests: list["ExecTest"] = [
         "run": "cat answer.txt",
         "prompt": "who is the CEO of Superuser Labs? write the answer to answer.txt",
         "expect": {
-            "correct output": check_output_erik,
+            "correct output": check_output_mhafeel,
         },
     },
     # Fails, gets stuck on interactive stuff

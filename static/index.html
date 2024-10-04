@@ -3,6 +3,7 @@
 <head>
   <title>devopsx</title>
   <link rel="icon" type="image/png" href="/favicon.png">
+
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
@@ -61,6 +62,13 @@
           </tr>
         </tbody>
       </table>
+      <div class="mt-4 text-center">
+        <button v-if="conversations.length === conversationsLimit"
+                @click="loadMoreConversations"
+                class="rounded-lg border p-2 cursor-pointer hover:bg-gray-200 text-sm bg-gray-100">
+          Show more
+        </button>
+      </div>
     </div>
   </div>
 
@@ -161,6 +169,9 @@ new Vue({
     cmdout: "",
     error: "",
     generating: false,
+
+    // Conversations limit
+    conversationsLimit: 20,
   },
   async mounted() {
     this.getConversations();
@@ -226,7 +237,7 @@ new Vue({
   },
   methods: {
     async getConversations() {
-      const res = await fetch(apiRoot);
+      const res = await fetch(`${apiRoot}?limit=${this.conversationsLimit}`);
       this.conversations = await res.json();
     },
     async selectConversation(path, branch) {
@@ -350,7 +361,11 @@ new Vue({
     },
     capitalize(string) {
       return string.charAt(0).toUpperCase() + string.slice(1);
-    }
+    },
+    async loadMoreConversations() {
+      this.conversationsLimit += 100;
+      await this.getConversations();
+    },
   },
 });
 </script>

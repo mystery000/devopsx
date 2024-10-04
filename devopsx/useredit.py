@@ -4,10 +4,10 @@ Tool that lets the user edit something in a temporary file using their $EDITOR.
 This is typically used to edit a conversation log with /edit.
 """
 
-import logging
 import os
-import subprocess
+import logging
 import tempfile
+import subprocess
 
 logger = logging.getLogger(__name__)
 

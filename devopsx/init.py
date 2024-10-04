@@ -9,13 +9,14 @@ from .llm import init_llm
 from .models import set_default_model, PROVIDERS, get_recommended_model
 from .tabcomplete import register_tabcomplete
 from .tools import init_tools
+from .util import console
 
 logger = logging.getLogger(__name__)
 
 _init_done = False
 
 
-def init(model: str | None, interactive: bool, verbose: bool = True):
+def init(model: str | None, interactive: bool, tool_allowlist: list[str] | None, verbose: bool = True):
     global _init_done
     if _init_done:
         logger.warning("init() called twice, ignoring")
@@ -65,8 +66,8 @@ def init(model: str | None, interactive: bool, verbose: bool = True):
     if not model:
         model = get_recommended_model(provider)
         if verbose: 
-            logger.info(
-                "No model specified, using recommended model for provider: %s", model
+            console.log(
+                f"No model specified, using recommended model for provider: {model}"
             )
         
     set_default_model(model)
@@ -77,7 +78,7 @@ def init(model: str | None, interactive: bool, verbose: bool = True):
         # for some reason it bugs out shell tests in CI
         register_tabcomplete()
 
-    init_tools()
+    init_tools(tool_allowlist)
 
 
 def init_logging(verbose):
@@ -123,6 +124,7 @@ def ask_for_api_key():  # pragma: no cover
 - OpenAI: https://platform.openai.com/account/api-keys
 - Anthropic: https://console.anthropic.com/settings/keys
 - Groq: https://console.groq.com/keys
+- OpenRouter: https://openrouter.ai/settings/keys
         """
     )
     api_key = input("Your API key for OpenAI, Groq or Anthropic: ").strip()

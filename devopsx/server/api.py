@@ -6,16 +6,18 @@ See here for instructions how to serve matplotlib figures:
 """
 import io
 import atexit
+from datetime import datetime
 from importlib import resources
 from contextlib import redirect_stdout
+from itertools import islice
 
 import flask
-from flask import current_app
+from flask import current_app, request
 
 from ..commands import execute_cmd
 from ..dirs import get_logs_dir
 from ..llm import reply
-from ..logmanager import LogManager, get_conversations
+from ..logmanager import LogManager, get_user_conversations
 from ..message import Message
 from ..models import get_model
 from ..tools import execute_msg
@@ -28,7 +30,8 @@ def api_root():
 
 @api.route("/api/conversations")
 def api_conversations():
-    conversations = list(get_conversations())
+    limit = int(request.args.get("limit", 100))
+    conversations = list(islice(get_user_conversations(), limit))
     return flask.jsonify(conversations)
 
 @api.route("/api/conversations/<path:logfile>")
@@ -44,9 +47,8 @@ def api_conversation_put(logfile: str):
     req_json = flask.request.json
     if req_json and "messages" in req_json:
         for msg in req_json["messages"]:
-            msgs.append(
-                Message(msg["role"], msg["content"], timestamp=msg["timestamp"])
-            )
+            timestamp: datetime = datetime.fromisoformat(msg["timestamp"])
+            msgs.append(Message(msg["role"], msg["content"], timestamp=timestamp))
 
     logdir = get_logs_dir() / logfile
     if logdir.exists():
@@ -106,7 +108,7 @@ def api_conversation_generate(logfile: str):
     # generate response
     # TODO: add support for streaming
     msg = reply(msgs, model=model, stream=True)
-    msg.quiet = True
+    msg = msg.replace(quiet=True)
 
     # log response and run tools
     resp_msgs = []
@@ -133,12 +135,9 @@ def favicon():
 def root():
     return current_app.send_static_file("index.html")
 
-def create_app():
+def create_app() -> flask.Flask:
+    """ Create the Flask app. """
     app = flask.Flask(__name__, static_folder=static_path)
     app.register_blueprint(api)
 
     return app
-
-def main():
-    app = create_app()
-    app.run(debug=True)

@@ -3,9 +3,15 @@ import logging
 import urllib.parse
 from dataclasses import dataclass
 
-from playwright.sync_api import ElementHandle, Page, sync_playwright
+from playwright.sync_api import (
+    ElementHandle,
+    Geolocation,
+    Page,
+    Playwright,
+    sync_playwright,
+)
 
-_p = None
+_p: Playwright | None = None
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +33,7 @@ def load_page(url: str) -> Page:
     browser = get_browser()
 
     # set browser language to English such that Google uses English
-    coords_sf = {"latitude": 37.773972, "longitude": 13.39}
+    coords_sf: Geolocation = {"latitude": 37.773972, "longitude": 13.39}
     context = browser.new_context(
         locale="en-US",
         geolocation=coords_sf,
@@ -90,15 +96,6 @@ class Element:
         )
 
 
-def _list_input_elements(page) -> list[Element]:
-    # List all input elements
-    elements = []
-    inputs = page.query_selector_all("input")
-    for input_element in inputs:
-        elements.append(Element.from_element(input_element))
-    return elements
-
-
 def _list_clickable_elements(page, selector=None) -> list[Element]:
     elements = []
 
@@ -116,11 +113,20 @@ def _list_clickable_elements(page, selector=None) -> list[Element]:
     return elements
 
 
-def titleurl_to_list(results: list[tuple[str, str]]) -> str:
-    s = "```results"
-    for i, (title, url) in enumerate(results):
-        s += f"\n{i+1}. {title} ({url})"
-    return s + "\n```"
+@dataclass
+class SearchResult:
+    title: str
+    url: str
+    description: str | None = None
+
+
+def titleurl_to_list(results: list[SearchResult]) -> str:
+    s = ""
+    for i, r in enumerate(results):
+        s += f"\n{i + 1}. {r.title} ({r.url})"
+        if r.description:
+            s += f"\n   {r.description}"
+    return s.strip()
 
 
 def _list_results_google(page) -> str:
@@ -136,8 +142,10 @@ def _list_results_google(page) -> str:
         h3 = result.query_selector("h3")
         if h3:
             title = h3.inner_text()
-            result.query_selector("span").inner_text()
-            hits.append((title, url))
+            # desc has data-sncf attribute
+            desc_el = result.query_selector("[data-sncf]")
+            desc = (desc_el.inner_text().strip().split("\n")[0]) if desc_el else ""
+            hits.append(SearchResult(title, url, desc))
     return titleurl_to_list(hits)
 
 
@@ -158,6 +166,6 @@ def _list_results_duckduckgo(page) -> str:
         h2 = result.query_selector("h2")
         if h2:
             title = h2.inner_text()
-            result.query_selector("span").inner_text()
-            hits.append((title, url))
+            desc = result.query_selector("span").inner_text().strip().split("\n")[0]
+            hits.append(SearchResult(title, url, desc))
     return titleurl_to_list(hits)

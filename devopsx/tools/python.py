@@ -7,108 +7,30 @@ It uses IPython to do so, and persists the IPython instance between calls to giv
 import re
 import types
 import functools
+import dataclasses
 from logging import getLogger
 from collections.abc import Callable, Generator
-from typing import Literal, TypeVar, get_origin
-
-from IPython.terminal.embed import InteractiveShellEmbed
-from IPython.utils.capture import capture_output
+from typing import (
+    TYPE_CHECKING,
+    Literal,
+    TypeVar,
+    get_origin,
+)
 
 from ..message import Message
-from ..util import ask_execute, print_preview, transform_examples_to_chat_directives
-from .base import ToolSpec
+from ..util import ask_execute, print_preview
+from .base import ToolSpec, ToolUse
+
+if TYPE_CHECKING:
+    from IPython.terminal.embed import InteractiveShellEmbed  # fmt: skip
 
 logger = getLogger(__name__)
 
-
-@functools.lru_cache
-def get_installed_python_libraries() -> set[str]:
-    """Check if a select list of Python libraries are installed."""
-    candidates = [
-        "numpy",
-        "pandas",
-        "matplotlib",
-        "PIL", # pillow
-        # "seaborn",
-        # "scipy",
-        # "scikit-learn",
-        # "statsmodels",
-    ]
-    installed = set()
-    for candidate in candidates:
-        try:
-            __import__(candidate)
-            installed.add(candidate)
-        except ImportError:
-            pass
-    return installed
-
-
-python_libraries = get_installed_python_libraries()
-python_libraries_str = "\n".join(f"- {lib}" for lib in python_libraries)
-
-
-instructions = f"""
-When you send a message containing Python code (and is not a file block), it will be executed in a stateful environment.
-Python will respond with the output of the execution.
-
-The following libraries are available:
-{python_libraries_str}
-""".strip()
-
-# TODO: get this working again (needs to run get_functions_prompt() after all functions are registered)
-_unused = """
-The following functions are available in the REPL:
-{get_functions_prompt()}
-"""
-
-examples = """
-User: Write a python script to get the public IP address.
-Assistant: Sure! Let's write a simple Python script to get the public IP address. We'll use the `requests` library to make an HTTP request to a service that returns the IP address. Here's the script:
-```python
-import requests
-
-def get_public_ip():
-    try:
-        response = requests.get('https://api.ipify.org')
-        return response.text
-    except requests.RequestException:
-        return "Error: Unable to get IP address"
-
-if __name__ == "__main__":
-    public_ip = get_public_ip()
-    print(f"Your public IP address is: {public_ip}")
-```
-System: Executed code block.
-```stdout
-Your public IP address is: 74.201.177.66
-```
-
-#### Results of the last expression will be displayed, IPython-style:
-User: What is 2 + 2?
-Assistant:
-```python
-2 + 2
-```
-System: Executed code block.
-```stdout
-4
-```
-
-#### The user can also run Python code with the /python command:
-User: /python 2 + 2
-System: Executed code block.
-```stdout
-4
-```
-""".strip()
+# TODO: launch the IPython session in the current venv, if any, instead of the pipx-managed devopsx-python venv (for example) in which devopsx itself runs
+#       would let us use libraries installed with `pip install` in the current venv
 
 # IPython instance
-_ipython = None
-
-
-def init_python():
-    check_available_packages()
+_ipython: "InteractiveShellEmbed | None" = None
 
 
 registered_functions: dict[str, Callable] = {}
@@ -156,6 +78,8 @@ def get_functions_prompt() -> str:
 
 def _get_ipython():
     global _ipython
+    from IPython.terminal.embed import InteractiveShellEmbed  # fmt: skip
+
     if _ipython is None:
         _ipython = InteractiveShellEmbed()
         _ipython.push(registered_functions)
@@ -172,7 +96,7 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
         print()
         if not confirm:
             # early return
-            print("Aborted, user chose not to run command.")
+            yield Message("system", "Aborted, user chose not to run command.")
             return
     else:
         print("Skipping confirmation")
@@ -181,29 +105,33 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
     _ipython = _get_ipython()
 
     # Capture the standard output and error streams
+    from IPython.utils.capture import capture_output  # fmt: skip
+
     with capture_output() as captured:
         # Execute the code
         result = _ipython.run_cell(code, silent=False, store_history=False)
 
     output = ""
-    if captured.stdout:
-        # remove one occurrence of the result if present, to avoid repeating the result in the output
-        stdout = (
-            captured.stdout.replace(str(result.result), "", 1)
-            if result.result
-            else captured.stdout
-        )
-        if stdout:
-            output += f"\n```stdout\n{stdout.rstrip()}\n```\n\n"
+    if isinstance(result.result, types.GeneratorType):
+        # if the result is a generator, we need to iterate over it
+        for message in result.result:
+            assert isinstance(message, Message)
+            yield message
+        return
+    if result.result is not None:
+        output += f"Result:\n```\n{result.result}\n```\n\n"
+    # only show stdout if there is no result
+    elif captured.stdout:
+        output += f"```stdout\n{captured.stdout.rstrip()}\n```\n\n"
+
     if captured.stderr:
-        output += f"stderr:\n```\n{captured.stderr.rstrip()}\n```\n\n"
+        output += f"```stderr\n{captured.stderr.rstrip()}\n```\n\n"
     if result.error_in_exec:
         tb = result.error_in_exec.__traceback__
         while tb.tb_next:  # type: ignore
             tb = tb.tb_next  # type: ignore
-        output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"  # type: ignore
-    if result.result is not None:
-        output += f"Result:\n```\n{result.result}\n```\n\n"
+        # type: ignore
+        output += f"Exception during execution on line {tb.tb_lineno}:\n  {result.error_in_exec.__class__.__name__}: {result.error_in_exec}"
 
     # strip ANSI escape sequences
     # TODO: better to signal to the terminal that we don't want colors?
@@ -211,29 +139,96 @@ def execute_python(code: str, ask: bool, args=None) -> Generator[Message, None, 
     yield Message("system", "Executed code block.\n\n" + output)
 
 
-def check_available_packages():
-    """Checks that essentials like numpy, pandas, matplotlib are available."""
-    expected = ["numpy", "pandas", "matplotlib", "PIL"]
-    missing = []
-    for package in expected:
-        if package not in get_installed_python_libraries():
-            missing.append(package)
-    if missing:
-        logger.warning(
-            f"Missing packages: {', '.join(missing)}. Install them with `poetry install --extras datascience`."
-        )
+@functools.lru_cache
+def get_installed_python_libraries() -> set[str]:
+    """Check if a select list of Python libraries are installed."""
+    candidates = [
+        "numpy",
+        "pandas",
+        "matplotlib",
+        "seaborn",
+        "scipy",
+        "scikit-learn",
+        "statsmodels",
+        "pillow",
+    ]
+    installed = set()
+    for candidate in candidates:
+        try:
+            __import__(candidate)
+            installed.add(candidate)
+        except ImportError:
+            pass
+    return installed
 
-__doc__ += transform_examples_to_chat_directives(examples)
+
+instructions = """
+To execute Python code in an interactive IPython session, send a codeblock using the `ipython` language tag.
+It will respond with the output and result of the execution.
+If you first write the code in a normal python codeblock, remember to also execute it with the ipython codeblock.
+"""
+
+
+examples = f"""
+#### Results of the last expression will be displayed, IPython-style:
+> User: What is 2 + 2?
+> Assistant:
+{ToolUse("ipython", [], "2 + 2").to_output()}
+> System: Executed code block.
+```result
+4
+```
+
+#### It can write an example and then execute it:
+> User: compute fib 10
+> Assistant: To compute the 10th Fibonacci number, we write a recursive function:
+```python
+def fib(n):
+    ...
+```
+Now, let's execute this code to get the 10th Fibonacci number:
+{ToolUse("ipython", [], '''
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+fib(10)
+''').to_output()}
+> System: Executed code block.
+```result
+55
+```
+""".strip()
+
+
+def init() -> ToolSpec:
+    python_libraries = get_installed_python_libraries()
+    python_libraries_str = "\n".join(f"- {lib}" for lib in python_libraries)
+
+    _instructions = f"""{instructions}
+
+The following libraries are available:
+{python_libraries_str}
+
+The following functions are available in the REPL:
+{get_functions_prompt()}
+    """.strip()
+
+    # create a copy with the updated instructions
+    return dataclasses.replace(tool, instructions=_instructions)
+
 
 tool = ToolSpec(
     name="python",
-    desc="Execute Python code.",
+    desc="Execute Python code",
     instructions=instructions,
     examples=examples,
-    init=init_python,
     execute=execute_python,
+    init=init,
     block_types=[
-        "python",
+        # "python",
         "ipython",
-    ],  # ideally, models should use `ipython` and not `python`, but they don't
+        "py",
+    ],
 )
+__doc__ = tool.get_doc(__doc__)

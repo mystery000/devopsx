@@ -7,25 +7,22 @@ The main tools can be grouped in the following categories:
 
 - execution
 
-  - :ref:`Shell`
-  - :ref:`Python`
-  - :ref:`Terminal`
+  - `Shell`_
+  - `Python`_
+  - `Tmux`_
 
 - filesystem
 
-  - :ref:`Save`
-  - :ref:`Patch`
+  - `Save`_
+  - `Patch`_
 
 - network
 
-  - :ref:`Browser`
+  - `Browser`_
 
 - chat management
 
-  - :ref:`Edit`
-  - :ref:`Reduce`
-  - :ref:`Context`
-  - :ref:`Summarize`
+  - `Chats`_
 
 Shell
 -----
@@ -47,7 +44,7 @@ Tmux
 .. automodule:: devopsx.tools.tmux
     :members:
     :noindex:
-    
+
 Save
 ----
 
@@ -69,31 +66,9 @@ Browser
     :members:
     :noindex:
 
-Edit
-----
+Chats
+-----
 
-.. automodule:: devopsx.tools.useredit
+.. automodule:: devopsx.tools.chats
     :members:
     :noindex:
-
-Reduce
-------
-
-.. automodule:: devopsx.tools.reduce
-    :members:
-    :noindex:
-
-Context
--------
-
-.. automodule:: devopsx.tools.context
-    :members:
-    :noindex:
-
-Summarize
----------
-
-.. automodule:: devopsx.tools.summarize
-    :members:
-    :noindex:
-

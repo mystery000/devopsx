@@ -2,6 +2,10 @@
 *venv
 .clean
 
+projects
+demos
+eval[_-]results*
+
 # logs
 *.log
 *logs*
@@ -14,7 +18,7 @@ scripts/build_changelog.py
 prof
 tests/output
 docs/_build
-.coverage
+.coverage*
 coverage.xml
 __pycache__
 .*cache

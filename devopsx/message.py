@@ -1,60 +1,60 @@
-import io
 import sys
 import base64
 import shutil
 import logging
 import tomlkit
 import textwrap
-import builtins
+import dataclasses
 from pathlib import Path
 from datetime import datetime
 from typing import Literal, Any
 from typing_extensions import Self
+from dataclasses import dataclass, field
 from tomlkit._utils import escape_string
 
-from rich import print
 from rich.syntax import Syntax
-from rich.console import Console
 
 from .models import get_model
 from .constants import ROLE_COLOR
-from .util import extract_codeblocks, get_tokenizer
+from .util import console, get_tokenizer, rich_to_str
+from .codeblock import Codeblock
 
 logger = logging.getLogger(__name__)
 
+# max tokens allowed in a single system message
+# if you hit this limit, you and/or I f-ed up, and should make the message shorter
+# maybe we should make it possible to store long outputs in files, and link/summarize it/preview it in the message
+max_system_len = 20000
+
+@dataclass(frozen=True, eq=False)
 class Message:
-    """A message in the assistant conversation."""
+    """
+    A message in the assistant conversation.
+    Attributes:
+        role: The role of the message sender (system, user, or assistant).
+        content: The content of the message.
+        pinned: Whether this message should be pinned to the top of the chat, and never context-trimmed.
+        hide: Whether this message should be hidden from the chat output (but still be sent to the assistant).
+        quiet: Whether this message should be printed on execution (will still print on resume, unlike hide).
+               This is not persisted to the log file.
+        timestamp: The timestamp of the message.
+        files: Files attached to the message, could e.g. be images for vision.
+    """
 
-    def __init__(
-        self,
-        role: Literal["system", "user", "assistant"],
-        content: str,
-        pinned: bool = False,
-        hide: bool = False,
-        quiet: bool = False,
-        timestamp: datetime | str | None = None,
-        files: list[Path | str] | None = None,
-    ):
-        assert role in ["system", "user", "assistant"]
-        self.role = role
-        self.content = content.strip()
-        if isinstance(timestamp, str):
-            self.timestamp = datetime.fromisoformat(timestamp)
-        else:
-            self.timestamp = timestamp or datetime.now()
+    role: Literal["system", "user", "assistant"]
+    content: str
+    pinned: bool = False
+    hide: bool = False
+    quiet: bool = False
+    timestamp: datetime = field(default_factory=datetime.now)
+    files: list[Path] = field(default_factory=list)
 
-        # Wether this message should be pinned to the top of the chat, and never context-trimmed.
-        self.pinned = pinned
-        # Wether this message should be hidden from the chat output (but still be sent to the assistant)
-        self.hide = hide
-        # Wether this message should be printed on execution (will still print on resume, unlike hide)
-        # This is not persisted to the log file.
-        self.quiet = quiet
-        # Files attached to the message, could e.g. be images for vision.
-        self.files: list[Path] = (
-            [Path(f) if isinstance(f, str) else f for f in files] if files else []
-        )
-
+    def __post_init__(self):
+        assert isinstance(self.timestamp, datetime)
+        if self.role == "system":
+            if (length := len_tokens(self)) >= max_system_len:
+                logger.warning(f"System message too long: {length} tokens")
+        
     def __repr__(self):
         content = textwrap.shorten(self.content, 20, placeholder="...")
         return f"<Message role={self.role} content={content}>"
@@ -68,6 +68,10 @@ class Message:
             and self.content == other.content
             and self.timestamp == other.timestamp
         )
+
+    def replace(self, **kwargs) -> Self:
+        """Replace attributes of the message."""
+        return dataclasses.replace(self, **kwargs)
 
     def _content_files_list(
         self, openai: bool = False, anthropic: bool = False
@@ -85,6 +89,8 @@ class Message:
             if ext not in allowed_file_exts:
                 logger.warning("Unsupported file type: %s", ext)
                 continue
+            if ext == "jpg":
+                ext = "jpeg"
             media_type = f"image/{ext}"
             content.append(
                 {
@@ -131,12 +137,17 @@ class Message:
             content = self.content
 
         model = get_model().model
-        d = {
+        d: dict = {
             "role": "user" if (ollama and self.role == "system") or (openai and model.startswith("o1-")) else self.role,
             "content": content,
             "timestamp": self.timestamp.isoformat(),
-            "files": [str(f) for f in self.files],
         }
+        if self.files:
+            d["files"] = [str(f) for f in self.files]
+        if self.pinned:
+            d["pinned"] = True
+        if self.hide:
+            d["hide"] = True
         if keys:
             return {k: d[k] for k in keys}
         return d
@@ -152,20 +163,22 @@ class Message:
         if self.hide:
             flags.append("hide")
         flags_toml = "\n".join(f"{flag} = true" for flag in flags)
+        files_toml = f"files = {[str(f) for f in self.files]}" if self.files else ""
+        extra = (flags_toml + "\n" + files_toml).strip()
 
         # doublequotes need to be escaped
         # content = self.content.replace('"', '\\"')
         content = escape_string(self.content)
         content = content.replace("\\n", "\n")
+        content = content.strip()
 
         return f'''[message]
 role = "{self.role}"
 content = """
 {content}
 """
-files = {[str(f) for f in self.files]}
 timestamp = "{self.timestamp.isoformat()}"
-{flags_toml}
+{extra}
 '''
 
     @classmethod
@@ -182,16 +195,16 @@ timestamp = "{self.timestamp.isoformat()}"
 
         return cls(
             msg["role"],
-            msg["content"],
+            msg["content"].strip(),
             pinned=msg.get("pinned", False),
             hide=msg.get("hide", False),
             files=[Path(f) for f in msg.get("files", [])],
             timestamp=datetime.fromisoformat(msg["timestamp"]),
         )
 
-    def get_codeblocks(self) -> list[tuple[str, str]]:
+    def get_codeblocks(self) -> list[Codeblock]:
         """
-        Get all codeblocks from the message content, as a list of tuples (lang, content).
+        Get all codeblocks from the message content.
         """
         content_str = self.content
         
@@ -204,7 +217,7 @@ timestamp = "{self.timestamp.isoformat()}"
         if backtick_count < 2:
             return []
        
-        return extract_codeblocks(content_str)
+        return Codeblock.iter_from_markdown(content_str)
 
 
 def format_msgs(
@@ -238,11 +251,7 @@ def format_msgs(
                     continue
                 elif highlight:
                     lang = block.split("\n")[0]
-                    console = Console(
-                        file=io.StringIO(), width=shutil.get_terminal_size().columns
-                    )
-                    console.print(Syntax(block.rstrip(), lang))
-                    block = console.file.getvalue()  # type: ignore
+                    block = rich_to_str(Syntax(block.rstrip(), lang))
                 output += f"```{block.rstrip()}\n```"
         outputs.append(f"{userprefix}: {output.rstrip()}")
     return outputs
@@ -265,9 +274,14 @@ def print_msg(
         if m.hide and not show_hidden:
             skipped_hidden += 1
             continue
-        builtins.print(s)
+        try:
+            console.print(s)
+        except Exception:
+            # rich can throw errors, if so then print the raw message
+            logger.exception("Error printing message")
+            print(s)
     if skipped_hidden:
-        print(
+        console.print(
             f"[grey30]Skipped {skipped_hidden} hidden system messages, show with --show-hidden[/]"
         )
 
@@ -294,7 +308,7 @@ def toml_to_msgs(toml: str) -> list[Message]:
     return [
         Message(
             msg["role"],
-            msg["content"],
+            msg["content"].strip(),
             pinned=msg.get("pinned", False),
             hide=msg.get("hide", False),
             timestamp=datetime.fromisoformat(msg["timestamp"]),

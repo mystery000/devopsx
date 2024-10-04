@@ -1,104 +1,66 @@
-import io
 import os
 import re
 import sys
+import time
 import errno
+import signal
 import logging
 import readline
 import urllib.parse
 from pathlib import Path
 import importlib.metadata
 from typing import Literal
+from itertools import islice
 from datetime import datetime
 from collections.abc import Generator
 
 import click
 from pick import pick
-from rich import print
-from rich.console import Console
 
 from .config import get_workspace_prompt
-from .commands import CMDFIX, action_descriptions, execute_cmd
+from .commands import _gen_help, action_descriptions, execute_cmd
 from .constants import MULTIPROMPT_SEPARATOR, PROMPT_USER
 from .dirs import get_logs_dir
 from .init import init, init_logging
 from .llm import reply
-from .logmanager import LogManager, _conversations
+from .logmanager import Conversation, LogManager, get_user_conversations
 from .message import Message
 from .prompts import get_prompt
-from .tools import execute_msg, has_tool
+from .tools import (
+    ToolUse,
+    all_tools,
+    execute_msg,
+    has_tool,
+    init_tools,
+)
 from .tools.browser import read_url
 from .tools.shell import ShellSession, set_shell
-from .util import epoch_to_age, generate_name, print_bell
+from .util import (
+    console,
+    epoch_to_age,
+    generate_name,
+    path_with_tilde,
+    print_bell,
+    rich_to_str,
+)
 from .models import get_model
 
 logger = logging.getLogger(__name__)
-print_builtin = __builtins__["print"]  # type: ignore
-
-LLMChoice = Literal[
-    "openai",
-    "openrouter" 
-    "azure", 
-    "anthropic",
-    "groq", 
-    "local"
-]
-
-ModelChoice = Literal[
-    "openai", 
-    "openrouter",
-    "anthropic", 
-    "groq",
-    "local",
-    "openai/o1-preview",
-    "openai/o1-preview-2024-09-12",
-    "openai/o1-mini",
-    "openai/o1-mini-2024-09-12",
-    "openai/gpt-4o-mini",
-    "openai/gpt-4o", 
-    "openai/gpt-4", 
-    "openai/gpt-4-turbo",
-    "openai/gpt-4-1106-preview",
-    "openai/gpt-4-vision-preview",
-    "openai/gpt-4-turbo-preview",
-    "openai/gpt-3.5-turbo",
-    "openai/gpt-3.5-turbo-16k",
-    "openai/gpt-3.5-turbo-1106",
-    "groq/llama-3.1-70b-versatile",
-    "groq/llama-3.1-8b-instant",
-    "groq/llama3-8b-8192",
-    "groq/llama3-70b-8192",
-    "groq/mixtral-8x7b-32768",
-    "groq/gemma-7b-it",
-    "anthropic/claude-instant-1.2",
-    "anthropic/claude-2.1",
-    "anthropic/claude-3-5-sonnet-20240620",
-    "anthropic/claude-3-opus-20240229",
-    "anthropic/claude-3-sonnet-20240229",
-    "anthropic/claude-3-haiku-20240307",
-    "local/llama3.1:8b",
-    "local/llama3.1:70b",
-    "local/llama3.1:405b",
-]
-
 
 script_path = Path(os.path.realpath(__file__))
-action_readme = "\n".join(
-    f"  {CMDFIX}{cmd:11s}  {desc}." for cmd, desc in action_descriptions.items()
-)
-
+commands_help = "\n".join(_gen_help(incl_langtags=False))
+available_tool_names = ", ".join([tool.name for tool in all_tools if tool.available])
 
 docstring = f"""
-devopsx, a chat-CLI for LLMs, enabling them to execute commands and code.
+devopsx is a chat-CLI for LLMs, empowering them with tools to run shell commands, execute code, read and manipulate files, and more.
 
 If PROMPTS are provided, a new conversation will be started with it.
+PROMPTS can be chained with the '{MULTIPROMPT_SEPARATOR}' separator.
 
-If one of the PROMPTS is '{MULTIPROMPT_SEPARATOR}', following prompts will run after the assistant is done answering the first one.
-
-The chat offers some commands that can be used to interact with the system:
+The interface provides user commands that can be used to interact with the system.
 
 \b
-{action_readme}"""
+{commands_help}"""
 
 
 @click.command(help=docstring)
@@ -109,40 +71,22 @@ The chat offers some commands that can be used to interact with the system:
     nargs=-1,
 )
 @click.option(
-    "--prompt-system",
-    default="full",
-    help="System prompt. Can be 'full', 'short', or something custom.",
-)
-@click.option(
+    "-n",
     "--name",
     default="random",
-    help="Name of conversation. Defaults to generating a random name. Pass 'ask' to be prompted for a name.",
+    help="Name of conversation. Defaults to generating a random name.",
 )
 @click.option(
+    "-m",
     "--model",
     default=None,
-    help="Model to use, e.g. openai/gpt-4-turbo, anthropic/claude-3-5-sonnet-20240620. If only provider is given, the default model for that provider is used.",
+    help="Model to use, e.g. openai/gpt-4o, anthropic/claude-3-5-sonnet-20240620. If only provider given, a default is used.",
 )
 @click.option(
-    "--stream/--no-stream",
-    is_flag=True,
-    default=True,
-    help="Stream responses",
-)
-@click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
-@click.option(
-    "-y", "--no-confirm", is_flag=True, help="Skips all confirmation prompts."
-)
-@click.option(
-    "--interactive/--non-interactive",
-    "-i/-n",
-    default=True,
-    help="Choose interactive mode, or not. Non-interactive implies --no-confirm, and is used in testing.",
-)
-@click.option(
-    "--show-hidden",
-    is_flag=True,
-    help="Show hidden system messages.",
+    "-w",
+    "--workspace",
+    default=None,
+    help="Path to workspace directory. Pass '@log' to create a workspace in the log directory.",
 )
 @click.option(
     "-r",
@@ -151,20 +95,62 @@ The chat offers some commands that can be used to interact with the system:
     help="Load last conversation",
 )
 @click.option(
+    "-y",
+    "--no-confirm",
+    is_flag=True,
+    help="Skips all confirmation prompts.",
+)
+@click.option(
+    "-n",
+    "--non-interactive",
+    "interactive",
+    default=True,
+    flag_value=False,
+    help="Force non-interactive mode. Implies --no-confirm.",
+)
+@click.option(
+    "--system",
+    "prompt_system",
+    default="full",
+    help="System prompt. Can be 'full', 'short', or something custom.",
+)
+@click.option(
+    "-t",
+    "--tools",
+    "tool_allowlist",
+    default=None,
+    multiple=True,
+    help=f"Comma-separated list of tools to allow. Available: {available_tool_names}.",
+)
+@click.option(
+    "--no-stream",
+    "stream",
+    default=True,
+    flag_value=False,
+    help="Don't stream responses",
+)
+@click.option(
+    "--show-hidden",
+    is_flag=True,
+    help="Show hidden system messages.",
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Show verbose output.",
+)
+@click.option(
     "--version",
     is_flag=True,
     help="Show version and configuration information",
-)
-@click.option(
-    "--workspace",
-    help="Path to workspace directory. Pass '@log' to create a workspace in the log directory.",
-    default=".",
 )
 def main(
     prompts: list[str],
     prompt_system: str,
     name: str,
-    model: ModelChoice,
+    model: str | None,
+    tool_allowlist: list[str] | None,
     stream: bool,
     verbose: bool,
     no_confirm: bool,
@@ -172,15 +158,15 @@ def main(
     show_hidden: bool,
     version: bool,
     resume: bool,
-    workspace: str,
+    workspace: str | None,
 ):
     """Main entrypoint for the CLI."""
     if version:
         # print version
-        print_builtin(f"devopsx {importlib.metadata.version('devopsx-python')}")
+        print(f"devopsx {importlib.metadata.version('devopsx-python')}")
         
         # print dirs
-        print_builtin(f"Logs dir: {get_logs_dir()}")
+        print(f"Logs dir: {get_logs_dir()}")
         
         exit(0)
 
@@ -196,15 +182,25 @@ def main(
     if no_confirm:
         logger.warning("Skipping all confirmation prompts.")
 
+    if tool_allowlist:
+        # split comma-separated values
+        tool_allowlist = [tool for tools in tool_allowlist for tool in tools.split(",")]
+
+    # early init tools to generate system prompt
+    init_tools(tool_allowlist)
+
     # get initial system prompt
     initial_msgs = [get_prompt(prompt_system)]
 
-    # if stdin is not a tty, we're getting piped input, which we should include in the prompt
+    # if stdin is not a tty, we might be getting piped input, which we should include in the prompt
+    was_piped = False
     if not sys.stdin.isatty():
         # fetch prompt from stdin
         prompt_stdin = _read_stdin()
         if prompt_stdin:
+            # TODO: also append if existing convo loaded/resumed
             initial_msgs += [Message("system", f"```stdin\n{prompt_stdin}\n```")]
+            was_piped = True
 
             # Attempt to switch to interactive mode
             sys.stdin.close()
@@ -216,37 +212,96 @@ def main(
                     "Failed to switch to interactive mode, continuing in non-interactive mode"
                 )
 
-    if resume:
-        name = "resume"  # magic string to load last conversation
-        
-    # join prompts, grouped by `-` if present, since that's the separator for multiple-round prompts
+    # join prompts, grouped by `-` if present, since that's the separator for "chained"/multiple-round prompts
     sep = "\n\n" + MULTIPROMPT_SEPARATOR
     prompts = [p.strip() for p in "\n\n".join(prompts).split(sep) if p]
     prompt_msgs = [Message("user", p) for p in prompts]
 
+    if resume:
+        logdir = get_logdir_resume()
+    # don't run pick in tests/non-interactive mode, or if the user specifies a name
+    elif (
+        interactive
+        and name == "random"
+        and not prompt_msgs
+        and not was_piped
+        and sys.stdin.isatty()
+    ):
+        logdir = pick_log()
+    else:
+        logdir = get_logdir(name)
+
+    if workspace == "@log":
+        workspace_path: Path | None = logdir / "workspace"
+        assert workspace_path  # mypy not smart enough to see its not None
+        workspace_path.mkdir(parents=True, exist_ok=True)
+    else:
+        workspace_path = Path(workspace) if workspace else None
+
+    # register a handler for Ctrl-C
+    signal.signal(signal.SIGINT, handle_keyboard_interrupt)
+
     chat(
         prompt_msgs,
         initial_msgs,
-        name,
+        logdir,
         model,
         stream,
         no_confirm,
         interactive,
         show_hidden,
-        workspace,
+        workspace_path,
+        tool_allowlist,
     )
 
+# Set up a KeyboardInterrupt handler to handle Ctrl-C during the chat loop
+interruptible = False
+last_interrupt_time = 0.0
+
+
+def handle_keyboard_interrupt(signum, frame):  # pragma: no cover
+    """
+    This handler allows interruption of the assistant or tool execution when in an interruptible state,
+    while still providing a safeguard against accidental exits during user input.
+    """
+    global last_interrupt_time
+    current_time = time.time()
+
+    if interruptible:
+        raise KeyboardInterrupt
+
+    # if current_time - last_interrupt_time <= timeout:
+    #     console.log("Second interrupt received, exiting...")
+    #     sys.exit(0)
+
+    last_interrupt_time = current_time
+    console.print()
+    # console.log(
+    #     f"Interrupt received. Press Ctrl-C again within {timeout} seconds to exit."
+    # )
+    console.log("Interrupted. Press Ctrl-D to exit.")
+
+
+def set_interruptible():
+    global interruptible
+    interruptible = True
+
+
+def clear_interruptible():
+    global interruptible
+    interruptible = False
 
 def chat(
     prompt_msgs: list[Message],
     initial_msgs: list[Message],
-    name: str,
+    logdir: Path,
     model: str | None,
     stream: bool = True,
     no_confirm: bool = False,
     interactive: bool = True,
     show_hidden: bool = False,
-    workspace: str = ".",
+    workspace: Path | None = None,
+    tool_allowlist: list[str] | None = None,
 ):
     """
     Run the chat loop.
@@ -257,36 +312,37 @@ def chat(
     Callable from other modules.
     """
     # init
-    init(model, interactive)
+    init(model, interactive, tool_allowlist)
+
+    if model and model.startswith("openai/o1") and stream:
+        logger.info("Disabled streaming for OpenAI's O1 (not supported)")
+        stream = False
 
     # (re)init shell
     set_shell(ShellSession())
 
-    # we need to run this before checking stdin, since the interactive doesn't work with the switch back to interactive mode
-    logfile = get_logfile(
-        name, interactive=(not prompt_msgs and interactive) and sys.stdin.isatty()
+    console.log(f"Using logdir {path_with_tilde(logdir)}")
+
+    log = LogManager.load(
+        logdir, initial_msgs=initial_msgs, show_hidden=show_hidden, create=True
     )
-    print(f"Using logdir {logfile.parent}")
-    log = LogManager.load(logfile, initial_msgs=initial_msgs, show_hidden=show_hidden)
 
     # change to workspace directory
     # use if exists, create if @log, or use given path
-    if (logfile.parent / "workspace").exists():
-        assert workspace in ["@log", "."], "Workspace already exists"
-        workspace_path = logfile.parent / "workspace"
-        print(f"Using workspace at {workspace_path}")
-    elif workspace == "@log":
-        workspace_path = logfile.parent / "workspace"
-        print(f"Creating workspace at {workspace_path}")
-        os.makedirs(workspace_path, exist_ok=True)
+    log_workspace = logdir / "workspace"
+    if log_workspace.exists():
+        assert not workspace or (
+            workspace == log_workspace
+        ), f"Workspace already exists in {log_workspace}, wont override."
+        workspace = log_workspace
     else:
-        workspace_path = Path(workspace)
-        assert (
-            workspace_path.exists()
-        ), f"Workspace path {workspace_path} does not exist"
-    os.chdir(workspace_path)
+        if not workspace:
+            workspace = Path.cwd()
+        assert workspace.exists(), f"Workspace path {workspace} does not exist"
+    console.log(f"Using workspace at {path_with_tilde(workspace)}")
+    os.chdir(workspace)
 
-    workspace_prompt = get_workspace_prompt(str(workspace_path))
+    workspace_prompt = get_workspace_prompt(str(workspace))
     # check if message is already in log, such as upon resume
     if (
         workspace_prompt
@@ -297,37 +353,59 @@ def chat(
 
     # print log
     log.print()
-    print("--- ^^^ past messages ^^^ ---")
+    console.print("--- ^^^ past messages ^^^ ---")
 
     # main loop
     while True:
-        # if prompt_msgs given, insert next prompt into log
+        # if prompt_msgs given, process each prompt fully before moving to the next
         if prompt_msgs:
-            msg = prompt_msgs.pop(0)
-            if not msg.content.startswith("/"):
-                msg = _include_paths(msg)
-            log.append(msg)
-            # if prompt is a user-command, execute it
-            if execute_cmd(msg, log):
-                continue
+            while prompt_msgs:
+                msg = prompt_msgs.pop(0)
+                if not msg.content.startswith("/"):
+                    msg = _include_paths(msg)
+                log.append(msg)
+                # if prompt is a user-command, execute it
+                if execute_cmd(msg, log):
+                    continue
+                # Generate and execute response for this prompt
+                while True:
+                    set_interruptible()
+                    try:
+                        response_msgs = list(step(log, no_confirm, stream=stream))
+                    except KeyboardInterrupt:
+                        console.log("Interrupted. Stopping current execution.")
+                        log.append(Message("system", "Interrupted"))
+                        break
+                    finally:
+                        clear_interruptible()
+
+                    for response_msg in response_msgs:
+                        log.append(response_msg)
+                        # run any user-commands, if msg is from user
+                        if response_msg.role == "user" and execute_cmd(
+                            response_msg, log
+                        ):
+                            break
+                    # Check if there are any runnable tools left
+                    last_content = next(
+                        (m.content for m in reversed(log) if m.role == "assistant"), ""
+                    )
+                    if not any(
+                        tooluse.is_runnable
+                        for tooluse in ToolUse.iter_from_content(last_content)
+                    ):
+                        break
+            # All prompts processed, continue to next iteration
+            continue
+
         # if:
         #  - prompts exhausted
         #  - non-interactive
         #  - no executable block in last assistant message
         # then exit
         elif not interactive:
-            # noreorder
-            from .tools import is_supported_codeblock_tool  # fmt: skip
-
-            # continue if we can run tools on the last message
-            runnable = False
-            if codeblock := log.get_last_code_block("assistant", history=1):
-                lang, _ = codeblock
-                if is_supported_codeblock_tool(lang):
-                    runnable = True
-            if not runnable:
-                logger.info("Non-interactive and exhausted prompts, exiting")
-                break
+            logger.debug("Non-interactive and exhausted prompts, exiting")
+            break
 
         # ask for input if no prompt, generate reply, and run tools
         for msg in step(log, no_confirm, stream=stream):  # pragma: no cover
@@ -343,12 +421,6 @@ def step(
     stream: bool = True,
 ) -> Generator[Message, None, None]:
     """Runs a single pass of the chat."""
-
-    # if last message was from assistant, try to run tools again
-    # FIXME: can't do this here because it will run twice
-    # if log[-1].role == "assistant":
-    #     yield from execute_msg(log[-1], ask=not no_confirm)
-
     # If last message was a response, ask for input.
     # If last message was from the user (such as from crash/edited log),
     # then skip asking for input and generate response
@@ -358,11 +430,10 @@ def step(
         or (last_msg.role in ["assistant"])
         or last_msg.content == "Interrupted"
         or last_msg.pinned
+        or not any(role == "user" for role in [m.role for m in log])
     ):  # pragma: no cover
         inquiry = prompt_user()
         if not inquiry:
-            # Empty command, ask for input again
-            print()
             return
         msg = Message("user", inquiry, quiet=True)
         if not msg.content.startswith("/"):
@@ -382,19 +453,17 @@ def step(
 
         # log response and run tools
         if msg_response:
-            msg_response.quiet = True
-            yield msg_response
+            yield msg_response.replace(quiet=True)
             yield from execute_msg(msg_response, ask=not no_confirm)
     except KeyboardInterrupt:
         yield Message("system", "Interrupted")
 
 
-def get_name(name: str) -> Path:
+def get_name(name: str) -> str:
     """
     Returns a name for the new conversation.
 
     If name is "random", generates a random name.
-    If name is "ask", asks the user for a name.
     If name is starts with a date, uses it as is.
     Otherwise, prepends the current date to the name.
     """
@@ -406,45 +475,32 @@ def get_name(name: str) -> Path:
         # check if name exists, if so, generate another one
         for _ in range(3):
             name = generate_name()
-            logpath = logsdir / f"{datestr}-{name}"
+            name = f"{datestr}-{name}"
+            logpath = logsdir / name
             if not logpath.exists():
                 break
         else:
             raise ValueError("Failed to generate unique name")
-    elif name == "ask":  # pragma: no cover
-        while True:
-            # ask for name, or use random name
-            name = input("Name for conversation (or empty for random words): ")
-            name = f"{datestr}-{name}"
-            logpath = logsdir / name
-
-            # check that name is unique/doesn't exist
-            if not logpath.exists():
-                break
-            else:
-                print(f"Name {name} already exists, try again.")
     else:
         # if name starts with date, use as is
         try:
             datetime.strptime(name[:10], "%Y-%m-%d")
         except ValueError:
             name = f"{datestr}-{name}"
-        logpath = logsdir / name
-    return logpath
+    return name
 
 
-def get_logfile(name: str | Literal["random", "resume"], interactive=True) -> Path:
+def pick_log(limit=20) -> Path:  # pragma: no cover
     # let user select between starting a new conversation and loading a previous one
     # using the library
     title = "New conversation or load previous? "
     NEW_CONV = "New conversation"
-    prev_conv_files = list(reversed(_conversations()))
+    LOAD_MORE = "Load more"
+    gen_convs = get_user_conversations()
+    convs: list[Conversation] = []
 
-    if name == "resume":
-        if prev_conv_files:
-            return prev_conv_files[0].parent / "conversation.jsonl"
-        else:
-            raise ValueError("No previous conversations to resume")
+    # load conversations
+    convs.extend(islice(gen_convs, limit))
 
     # filter out test conversations
     # TODO: save test convos to different folder instead
@@ -452,38 +508,53 @@ def get_logfile(name: str | Literal["random", "resume"], interactive=True) -> Pa
     #     return "-test-" in name or name.startswith("test-")
     # prev_conv_files = [f for f in prev_conv_files if not is_test(f.parent.name)]
 
-    NEWLINE = "\n"
     prev_convs = [
-        f"{f.parent.name:30s} \t{epoch_to_age(f.stat().st_mtime)} \t{len(f.read_text().split(NEWLINE)):5d} msgs"
-        for f in prev_conv_files
+        f"{conv.name:30s} \t{epoch_to_age(conv.modified)} \t{conv.messages:5d} msgs"
+        for conv in convs
     ]
 
-    # don't run pick in tests/non-interactive mode
-    if interactive:
-        options = [
+    options = (
+        [
             NEW_CONV,
-        ] + prev_convs
-
-        index: int
-        _, index = pick(options, title)  # type: ignore
-        if index == 0:
-            logdir = get_name(name)
-        else:
-            logdir = get_logs_dir() / prev_conv_files[index - 1].parent
+        ]
+        + prev_convs
+        + [LOAD_MORE]
+    )
+    index: int
+    _, index = pick(options, title)  # type: ignore
+    if index == 0:
+        return get_logdir("random")
+    elif index == len(options) - 1:
+        return pick_log(limit + 100)
     else:
-        logdir = get_name(name)
+        return get_logdir(convs[index - 1].name)
 
-    if not os.path.exists(logdir):
-        os.mkdir(logdir)
-    logfile = logdir / "conversation.jsonl"
-    if not os.path.exists(logfile):
-        open(logfile, "w").close()
-    return logfile
+
+def get_logdir(logdir: Path | str | Literal["random"]) -> Path:
+    if logdir == "random":
+        logdir = get_logs_dir() / get_name("random")
+    elif isinstance(logdir, str):
+        logdir = get_logs_dir() / logdir
+
+    logdir.mkdir(parents=True, exist_ok=True)
+    return logdir
+
+def get_logdir_resume() -> Path:
+    if conv := next(get_user_conversations(), None):
+        return Path(conv.path).parent
+    else:
+        raise ValueError("No previous conversations to resume")
 
 
 def prompt_user(value=None) -> str: # pragma: no cover
     print_bell()
-    response = prompt_input(PROMPT_USER, value)
+    set_interruptible()
+    try:
+        response = prompt_input(PROMPT_USER, value)
+    except KeyboardInterrupt:
+        print("\nInterrupted. Press Ctrl-D to exit.")
+        return ""
+    clear_interruptible()
     if response:
         readline.add_history(response)
     return response
@@ -492,9 +563,9 @@ def prompt_user(value=None) -> str: # pragma: no cover
 def prompt_input(prompt: str, value=None) -> str: # pragma: no cover
     prompt = prompt.strip() + ": "
     if value:
-        print(prompt + value)
+        console.print(prompt + value)
     else:
-        prompt = _rich_to_str(prompt)
+        prompt = rich_to_str(prompt, color_system="256")
 
         # https://stackoverflow.com/a/53260487/965332
         original_stdout = sys.stdout
@@ -502,12 +573,6 @@ def prompt_input(prompt: str, value=None) -> str: # pragma: no cover
         value = input(prompt.strip() + " ")
         sys.stdout = original_stdout
     return value
-
-
-def _rich_to_str(s: str) -> str:
-    console = Console(file=io.StringIO(), color_system="256")
-    console.print(s)
-    return console.file.getvalue()  # type: ignore
 
 
 def _read_stdin() -> str:
@@ -569,7 +634,7 @@ def _include_paths(msg: Message) -> Message:
 
     # append the message with the file contents
     if append_msg:
-        msg.content += append_msg
+        msg = msg.replace(content=msg.content + append_msg)
 
     return msg
 
@@ -582,7 +647,7 @@ def _parse_prompt(prompt: str) -> str | None:
     # if prompt is a command, exit early (as commands might take paths as arguments)
     if any(
         prompt.startswith(command)
-        for command in [f"{CMDFIX}{cmd}" for cmd in action_descriptions.keys()]
+        for command in [f"/{cmd}" for cmd in action_descriptions.keys()]
     ):
         return None
 
@@ -651,7 +716,7 @@ def _parse_prompt_files(prompt: str) -> Path | None:
     # if prompt is a command, exit early (as commands might take paths as arguments)
     if any(
         prompt.startswith(command)
-        for command in [f"{CMDFIX}{cmd}" for cmd in action_descriptions.keys()]
+        for command in [f"/{cmd}" for cmd in action_descriptions.keys()]
     ):
         return None
 
@@ -663,7 +728,7 @@ def _parse_prompt_files(prompt: str) -> Path | None:
             return p
         else:
             return None
-    except OSError as oserr:
+    except OSError as oserr:  # pragma: no cover
         # some prompts are too long to be a path, so we can't read them
         if oserr.errno != errno.ENAMETOOLONG:
             return None

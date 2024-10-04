@@ -1,12 +1,12 @@
 """
-The assistant can execute shell commands by outputting code blocks with `sh` or `shell` as the language.
+The assistant can execute shell commands by outputting code blocks with `bash` or `sh` as the language.
 """
 
 import os
 import re
 import sys
-import select
 import atexit
+import select
 import shutil
 import bashlex
 import logging
@@ -14,11 +14,12 @@ import functools
 import subprocess
 from collections.abc import Generator
 
-from .base import ToolSpec
 from ..message import Message, print_msg
-from ..util import ask_execute, print_preview, transform_examples_to_chat_directives, get_tokenizer
+from ..util import ask_execute, get_tokenizer, print_preview
+from .base import ToolSpec, ToolUse
 
 logger = logging.getLogger(__name__)
+
 
 @functools.lru_cache
 def get_installed_programs() -> set[str]:
@@ -54,23 +55,21 @@ These programs are available, among others:
 {shell_programs_str}
 """.strip()
 
-examples = """
+examples = f"""
+
 User: list the current directory
 Assistant: To list the files in the current directory, use `ls`:
-```bash
-ls
-```
+{ToolUse("bash", [], "ls").to_output()}
 System: Ran command: `ls`
 ```stdout
 file1.txt
 file2.txt
 ```
+
 #### The assistant can learn context by exploring the filesystem
 User: learn about the project
 Assistant: Lets start by checking the files
-```bash
-git ls-files
-```
+{ToolUse("bash", [], "git ls-files").to_output()}
 System:
 ```output
 README.md
@@ -85,9 +84,7 @@ System:
 (contents of README.md)
 ```
 Assistant: Now we check main.py
-```bash
-cat main.py
-```
+{ToolUse("bash", [], "cat main.py").to_output()}
 System:
 ```output
 (contents of main.py)
@@ -98,17 +95,18 @@ Assistant: The project is...
 #### Create vue project
 User: Create a new vue project with typescript and pinia named fancy-project
 Assistant: Sure! Let's create a new vue project with TypeScript and Pinia named fancy-project:
-```bash
-npm init vue@latest fancy-project --yes -- --typescript --pinia
-```
+{ToolUse("bash", [], "npm init vue@latest fancy-project --yes -- --typescript --pinia").to_output()}
 System:
 ```output
 > npx
 > create-vue
+
 Vue.js - The Progressive JavaScript Framework
+
 Scaffolding project in ./fancy-project...
 ```
 """.strip()
+
 
 class ShellSession:
     process: subprocess.Popen
@@ -228,7 +226,7 @@ class ShellSession:
         self._init()
 
 
-_shell = None
+_shell: ShellSession | None = None
 
 
 def get_shell() -> ShellSession:
@@ -251,7 +249,7 @@ def execute_shell(
     """Executes a shell command and returns the output."""
     shell = get_shell()
     assert not args
-    
+
     cmd = code.strip()
     if cmd.startswith("$ "):
         cmd = cmd[len("$ ") :]
@@ -270,7 +268,11 @@ def execute_shell(
             cmd = cmd[1:-1]
 
     if not ask or confirm:
-        returncode, stdout, stderr = shell.run(cmd)
+        try:
+            returncode, stdout, stderr = shell.run(cmd)
+        except Exception as e:
+            yield Message("system", f"Error: {e}")
+            return
         stdout = _shorten_stdout(stdout.strip(), pre_tokens=2000, post_tokens=8000)
         stderr = _shorten_stdout(stderr.strip(), pre_tokens=2000, post_tokens=2000)
 
@@ -338,10 +340,10 @@ def _shorten_stdout(
             + lines[-post_lines:]
         )
 
-    # check that if pre_tokens is set, so its post_tokens, and vice versa
-    assert (pre_tokens is None) == (post_tokens is None) 
+    # check that if pre_tokens is set, so is post_tokens, and vice versa
+    assert (pre_tokens is None) == (post_tokens is None)
     if pre_tokens is not None and post_tokens is not None:
-        tokenizer = get_tokenizer("gpt-4")
+        tokenizer = get_tokenizer("gpt-4")  # TODO: use sane default
         tokens = tokenizer.encode(stdout)
         if len(tokens) > pre_tokens + post_tokens:
             lines = (
@@ -349,7 +351,7 @@ def _shorten_stdout(
                 + ["... (truncated output) ..."]
                 + [tokenizer.decode(tokens[-post_tokens:])]
             )
-            
+
     return "\n".join(lines)
 
 
@@ -373,16 +375,14 @@ def split_commands(script: str) -> list[str]:
                     command_parts.append(script[start:end])
                 command = " ".join(command_parts)
                 commands.append(command)
-        elif part.kind == "function":
-            commands.append(script[part.pos[0] : part.pos[1]])
-        elif part.kind == "pipeline":
+        elif part.kind in ["function", "pipeline", "list"]:
             commands.append(script[part.pos[0] : part.pos[1]])
         else:
-            logger.warning(f"Unknown shell script part of kind '{part.kind}', skipping")
+            logger.warning(
+                f"Unknown shell script part of kind '{part.kind}', hoping this works"
+            )
+            commands.append(script[part.pos[0] : part.pos[1]])
     return commands
-
-
-__doc__ += transform_examples_to_chat_directives(examples)
 
 
 tool = ToolSpec(
@@ -390,7 +390,7 @@ tool = ToolSpec(
     desc="Executes shell commands.",
     instructions=instructions,
     examples=examples,
-    init=get_shell,
     execute=execute_shell,
-    block_types=["shell", "sh", "bash"],
+    block_types=["bash", "sh", "shell"],
 )
+__doc__ = tool.get_doc(__doc__)

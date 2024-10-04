@@ -3,69 +3,59 @@ API Reference
 
 Here is the API reference for ``devopsx``.
 
-.. toctree::
-   :maxdepth: 2
+.. contents:: Content
+   :depth: 5
+   :local:
+   :backlinks: none
 
-devopsx package
-^^^^^^^^^^^^^
 
-Some of the main classes in ``devopsx``.
+core
+----
 
-devopsx.message
--------------
+Some of the core classes and functions in ``devopsx``.
 
-.. automodule:: devopsx.message
+Message
+~~~~~~~
+
+A message in the conversation.
+
+.. autoclass:: devopsx.message.Message
    :members:
 
-devopsx.logmanager
-----------------
+Codeblock
+~~~~~~~~~
+
+A codeblock in a message, possibly executable by tools.
+
+.. automodule:: devopsx.codeblock
+   :members:
+
+LogManager
+~~~~~~~~~~
+
+Holds the current conversation as a list of messages, saves and loads the conversation to and from files, supports branching, etc.
 
 .. automodule:: devopsx.logmanager
    :members:
 
-devopsx.server
-^^^^^^^^^^^^
 
-Endpoint functions for the server.
+prompts
+-------
 
-.. automodule:: devopsx.server
-   :members:
-   :undoc-members:
+See `Prompts <prompts.html>`_ for more information.
 
-devopsx.tools
-^^^^^^^^^^^
+tools
+-----
 
-Tools available to devopsx.
+Supporting classes and functions for creating and using tools.
 
 .. automodule:: devopsx.tools
    :members:
 
-devopsx.tools.shell
------------------
-
-.. automodule:: devopsx.tools.shell
-   :members:
-
-Python
+server
 ------
 
-.. automodule:: devopsx.tools.python
-   :members:
+See `Server <server.html>`_ for more information.
 
-devopsx.tools.context
--------------------
-
-.. automodule:: devopsx.tools.context
-   :members:
-
-devopsx.tools.save
-----------------
-
-.. automodule:: devopsx.tools.save
-   :members:
-
-devopsx.tools.patch
------------------
-
-.. automodule:: devopsx.tools.patch
+.. automodule:: devopsx.server
    :members:

@@ -2,20 +2,20 @@ import json
 import logging
 import shutil
 import textwrap
-from collections.abc import Generator
 from copy import copy
-from itertools import zip_longest
+from rich import print
 from pathlib import Path
+from datetime import datetime
+from dataclasses import dataclass
+from collections.abc import Generator
 from tempfile import TemporaryDirectory
+from itertools import islice, zip_longest
 from typing import Any, Literal, TypeAlias
 
-from rich import print
-
-from .constants import CMDFIX
 from .dirs import get_logs_dir
-from .message import Message, print_msg, len_tokens
+from .message import Message, len_tokens, print_msg
 from .prompts import get_prompt
-from .tools.reduce import limit_log, reduce_log
+from .reduce import limit_log, reduce_log
 
 PathLike: TypeAlias = str | Path
 
@@ -50,19 +50,15 @@ class LogManager:
         if self.logdir / "conversation.jsonl":
             _branch = "main"
             if _branch not in self._branches:
-                with open(self.logdir / "conversation.jsonl") as f:
-                    self._branches[_branch] = [
-                        Message(**json.loads(line)) for line in f
-                    ]
+                self._branches[_branch] = _read_jsonl(
+                    self.logdir / "conversation.jsonl"
+                )
         for file in self.logdir.glob("branches/*.jsonl"):
             if file.name == self.logdir.name:
                 continue
             _branch = file.stem
             if _branch not in self._branches:
-                with open(file) as f:
-                    self._branches[_branch] = [
-                        Message(**json.loads(line)) for line in f
-                    ]
+                self._branches[_branch] = _read_jsonl(file)
 
         self.show_hidden = show_hidden
         # TODO: Check if logfile has contents, then maybe load, or should it overwrite?
@@ -89,11 +85,11 @@ class LogManager:
     def __bool__(self):
         return bool(self.log)
 
-    def append(self, msg: Message, verbose: bool = True) -> None:
+    def append(self, msg: Message) -> None:
         """Appends a message to the log, writes the log, prints the message."""
         self.log.append(msg)
         self.write()
-        if not msg.quiet and verbose:
+        if not msg.quiet:
             print_msg(msg, oneline=False)
 
     def write(self, branches=True) -> None:
@@ -104,9 +100,7 @@ class LogManager:
         Path(self.logfile).parent.mkdir(parents=True, exist_ok=True)
 
         # write current branch
-        with open(self.logfile, "w") as file:
-            for msg in self.log:
-                file.write(json.dumps(msg.to_dict()) + "\n")
+        _write_jsonl(self.logfile, self.log)
 
         # write other branches
         # FIXME: wont write main branch if on a different branch
@@ -117,9 +111,7 @@ class LogManager:
                 if branch == "main":
                     continue
                 branch_path = branches_dir / f"{branch}.jsonl"
-                with open(branch_path, "w") as file:
-                    for msg in msgs:
-                        file.write(json.dumps(msg.to_dict()) + "\n")
+                _write_jsonl(branch_path, msgs)
 
     def print(self, show_hidden: bool | None = None):
         print_msg(self.log, oneline=False, show_hidden=show_hidden or self.show_hidden)
@@ -140,11 +132,11 @@ class LogManager:
     def undo(self, n: int = 1, quiet=False) -> None:
         """Removes the last message from the log."""
         undid = self[-1] if self.log else None
-        if undid and undid.content.startswith(f"{CMDFIX}undo"):
+        if undid and undid.content.startswith("/undo"):
             self.log.pop()
 
         # don't save backup branch if undoing a command
-        if not self[-1].content.startswith(CMDFIX):
+        if not self[-1].content.startswith("/"):
             self._save_backup_branch(type="undo")
 
         # Doesn't work for multiple undos in a row, but useful in testing
@@ -183,59 +175,40 @@ class LogManager:
     @classmethod
     def load(
         cls,
-        logfile: PathLike,
+        logdir: PathLike,
         initial_msgs: list[Message] | None = None,
         branch: str = "main",
+        create: bool = False,
         **kwargs,
     ) -> "LogManager":
         """Loads a conversation log."""
-        if not initial_msgs:
-            initial_msgs = [get_prompt()]
-        logsdir = get_logs_dir()
-        if str(logsdir) not in str(logfile):
-            # if the path was not fully specified, assume its a dir in logsdir
-            logdir = logsdir / logfile
-            logfile = logdir / (
-                "conversation.jsonl" if branch == "main" else f"branches/{branch}.jsonl"
-            )
-        else:
-            logdir = Path(logfile).parent
-            if logdir.name == "branches":
-                logdir = logdir.parent
+        if str(logdir).endswith(".jsonl"):
+            logdir = Path(logdir).parent
 
-        if branch != "main":
+        logsdir = get_logs_dir()
+        if str(logsdir) not in str(logdir):
+            # if the path was not fully specified, assume its a dir in logsdir
+            logdir = logsdir / logdir
+        else:
+            logdir = Path(logdir)
+
+        if branch == "main":
+            logfile = logdir / "conversation.jsonl"
+        else:
             logfile = logdir / f"branches/{branch}.jsonl"
 
         if not Path(logfile).exists():
-            raise FileNotFoundError(f"Could not find logfile {logfile}")
+            if create:
+                logger.debug(f"Creating new logfile {logfile}")
+                Path(logfile).parent.mkdir(parents=True, exist_ok=True)
+                _write_jsonl(logfile, [])
+            else:
+                raise FileNotFoundError(f"Could not find logfile {logfile}")
 
-        with open(logfile) as file:
-            msgs = [Message(**json.loads(line)) for line in file.readlines()]
+        msgs = _read_jsonl(logfile)
         if not msgs:
-            msgs = initial_msgs
+            msgs = initial_msgs or [get_prompt()]
         return cls(msgs, logdir=logdir, branch=branch, **kwargs)
-
-    def get_last_code_block(
-        self,
-        role: RoleLiteral | None = None,
-        history: int | None = None,
-    ) -> tuple[str, str] | None:
-        """Returns the last code block in the log, if any.
-
-        If `role` set, only check that role.
-        If `history` set, only check n messages back.
-        """
-        msgs = self.log
-        if role:
-            msgs = [msg for msg in msgs if msg.role == role]
-        if history:
-            msgs = msgs[-history:]
-
-        for msg in msgs[::-1]:
-            codeblocks = msg.get_codeblocks()
-            if codeblocks:
-                return codeblocks[-1]
-        return None
 
     def branch(self, name: str) -> None:
         """Switches to a branch."""
@@ -255,7 +228,6 @@ class LogManager:
         diff_i: int | None = None
         for i, (msg1, msg2) in enumerate(zip_longest(self.log, self._branches[branch])):
             diff_i = i
-            
             if msg1 != msg2:
                 break
         else:
@@ -318,26 +290,66 @@ class LogManager:
             }
         return d
 
-
-def _conversations() -> list[Path]:
+def _conversation_files() -> list[Path]:
     # NOTE: only returns the main conversation, not branches (to avoid duplicates)
+    # returns the conversation files sorted by modified time (newest first)
     logsdir = get_logs_dir()
     return list(
-        sorted(logsdir.glob("*/conversation.jsonl"), key=lambda f: f.stat().st_mtime)
+        sorted(logsdir.glob("*/conversation.jsonl"), key=lambda f: -f.stat().st_mtime)
     )
 
+@dataclass(frozen=True)
+class Conversation:
+    name: str
+    path: str
+    created: float
+    modified: float
+    messages: int
+    branches: int
 
-def get_conversations() -> Generator[dict, None, None]:
-    for conv_fn in _conversations():
-        with open(conv_fn) as file:
-            msgs = [Message(**json.loads(line)) for line in file.readlines()]
+def get_conversations() -> Generator[Conversation, None, None]:
+    """Returns all conversations, excluding ones used for testing, evals, etc."""
+    for conv_fn in _conversation_files():
+        msgs = _read_jsonl(conv_fn, limit=1)
+        # TODO: can we avoid reading the entire file? maybe wont even be used, due to user convo filtering
+        len_msgs = conv_fn.read_text().count("}\n{")
+        assert len(msgs) <= 1
         modified = conv_fn.stat().st_mtime
         first_timestamp = msgs[0].timestamp.timestamp() if msgs else modified
-        yield {
-            "name": f"{conv_fn.parent.name}",
-            "path": str(conv_fn),
-            "created": first_timestamp,
-            "modified": modified,
-            "messages": len(msgs),
-            "branches": 1 + len(list(conv_fn.parent.glob("branches/*.jsonl"))),
-        }
+        yield Conversation(
+            name=f"{conv_fn.parent.name}",
+            path=str(conv_fn),
+            created=first_timestamp,
+            modified=modified,
+            messages=len_msgs,
+            branches=1 + len(list(conv_fn.parent.glob("branches/*.jsonl"))),
+        )
+
+def get_user_conversations() -> Generator[Conversation, None, None]:
+    """Returns all user conversations, excluding ones used for testing, evals, etc."""
+    for conv in get_conversations():
+        if any(conv.name.startswith(prefix) for prefix in ["tmp", "test-"]) or any(
+            substr in conv.name for substr in ["devopsx-evals-"]
+        ):
+            continue
+        yield conv
+
+def _gen_read_jsonl(path: PathLike) -> Generator[Message, None, None]:
+    with open(path) as file:
+        for line in file.readlines():
+            json_data = json.loads(line)
+            files = [Path(f) for f in json_data.pop("files", [])]
+            if "timestamp" in json_data:
+                json_data["timestamp"] = datetime.fromisoformat(json_data["timestamp"])
+            yield Message(**json_data, files=files)
+
+def _read_jsonl(path: PathLike, limit=None) -> list[Message]:
+    gen = _gen_read_jsonl(path)
+    if limit:
+        gen = islice(gen, limit)  # type: ignore
+    return list(gen)
+
+def _write_jsonl(path: PathLike, msgs: list[Message]) -> None:
+    with open(path, "w") as file:
+        for msg in msgs:
+            file.write(json.dumps(msg.to_dict()) + "\n")

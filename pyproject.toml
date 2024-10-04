@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "devopsx-python"
-version = "0.8.0"
+version = "1.0.0"
 description = "A fancy CLI to interact with LLMs in a Chat-style interface, with additional capabilities like executing commands on the local & remote machines"
 authors = ["devopsx <mhafeel@computer.com>"]
 readme = "README.md"
@@ -21,17 +21,17 @@ click = "^8.0"
 python-dotenv = "^1.0.0"
 rich = "^13.5.2"
 pick = "^2.2.0"
-tiktoken = "^0.5.1"
-tomlkit = "^0.12.1"
-typing-extensions = "^4.8.0"
-platformdirs = "^3.11.0"
+tiktoken = "^0.7"
+tomlkit = "*"
+typing-extensions = "*"
+platformdirs = "^4.3"
 ipython = "^8.17.2"
 bashlex = "^0.18"
 invoke = "^2.2.0"
 fabric = "^3.2.2"
 pyyaml = "^6.0.1"
 playwright = "^1.43.0"
-tabulate = "^0.9.0"
+tabulate = "*"
 kombu = "^5.3.7"
 celery = "^5.4.0"
 flower = "^2.0.1"
@@ -40,6 +40,12 @@ pytest-retry = "^1.6.3"
 openai = "^1.0"
 anthropic = "^0.34.0"
 groq = "^0.9.0"
+weaviate-client = "^4.8.1"
+youtube-transcript-api = "^0.6.2"
+multiprocessing-logging = "^0.3.4"
+lxml = "*"
+types-lxml = "*"
+types-tabulate = "*"
 
 # Optional dependencies
 jedi = {version = "^0.19.0", optional = true}
@@ -47,14 +53,11 @@ matplotlib = {version = "*", optional = true}
 pandas = {version = "*", optional = true}
 numpy = {version = "*", optional = true}
 pillow = {version = "*", optional = true}
-torch = {version = "*", optional = true}
-transformers = {version = "*", optional = true}
-flask = {version = "^2.3", optional = true}
+flask = {version = "^3.0", optional = true}
 ollama = {git = "https://github.com/ComputerComOrg/ollama-python.git", rev = "c63c25a97b8c3afc517a9b229f1044b22ef14e0a"}
-weaviate-client = "^4.8.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2"
+pytest = "^8.0"
 pytest-cov = "*"
 pytest-xdist = "^3.5.0"
 pytest-profiling = "^1.7.0"
@@ -63,17 +66,16 @@ pytest-timeout = "^2.2.0"
 mypy = "*"
 ruff = "*"
 black = "*"
-sphinx = "^6.0"
-sphinx-click = "^5.0.1"
+sphinx = "^8.0"
+sphinx-click = "^6.0"
 sphinx-book-theme = "^1.0.1"
-myst-parser = "^2.0.0"
+myst-parser = "*"
 pyupgrade = "^3.15.0"
 
 [tool.poetry.extras]
 server = ["flask"]
 datascience = ["matplotlib", "pandas", "numpy", "pillow"]
-training = ["torch", "transformers"]
-all = ["flask", "matplotlib", "pandas", "numpy", "pillow", "torch", "transformers"]
+all = ["flask", "matplotlib", "pandas", "numpy", "pillow"]
 
 [tool.ruff]
 select = ["E4", "E7", "E9", "F", "B", "UP"]

@@ -1,99 +1,27 @@
 """
-Gives the assistant the ability to save or append code to a file.
-
-Example:
-
-.. chat::
-
-    User: write hello world to hello.py
-    Assistant:
-    ```hello.py
-    print("hello world")
-    ```
-    System: Saved to hello.py
+Gives the assistant the ability to save/write code to a file.
 """
 
-from collections.abc import Generator
 from pathlib import Path
+from collections.abc import Generator
 
 from ..message import Message
 from ..util import ask_execute
-from .base import ToolSpec
+from .base import ToolSpec, ToolUse
 
+# FIXME: this is markdown-specific instructions, thus will confuse the XML mode
 instructions = """
-To save code to a file, use a code block with the filepath as the language.
+To write text to a file, use a code block with the language tag set to the path of the file.
 """.strip()
 
-examples = """
-User: Write a Hello world script to hello.py
-Assistatn: Certainly! I'll write a simple "Hello, World!" script and save it to a file named `hello.py`. Here's the code:
-```hello.py
-print("Hello world!")
-```
-System: Saved to `hello.py`.
+examples = f"""
+> User: write a hello world script to hello.py
+{ToolUse("save", ["hello.py"], 'print("Hello world")').to_output()}
+> System: Saved to `hello.py`
 
-### Realize that the message 'Save cancelled' indicates that the user chose not to save the file. Instead of saving the file directly, show the code so users can decide how to save it.
-User: Write a Hello World script to hello.py
-Assistatn: Certainly! I'll write a simple "Hello, World!" script and save it to a file named `hello.py`. Here's the code:
-```hello.py
-print("Hello world!")
-```
-System: Save cancelled.
-Assistant: It looks like the file wasn't saved. Instead, I'll show you the code again, and you can decide how to save it.
-
-Here's the Python script that we can use for `hello.py`
-```python
-print("Hello world!")
-```
-
-User: Create a React component for a basic login page with username and password fields. Save it to `/opt/sites/login.jsx`.
-Asistant: I'll create a React component for a basic login page with username and password fields and save it to `/opt/sites/login.jsx`. Here's the code:
-```/opt/sites/login.jsx
-import React, { useState } from 'react';
-
-const LoginPage = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Login attempt with:', { username, password });
-    // Here you would typically send the login data to your backend
-  };
-
-  return (
-    <div className="login-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">Username:</label>
-          <input
-            type="text"
-            id="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-    </div>
-  );
-};
-
-export default LoginPage;
-```
-System: Saved to login.jsx
+> User: make it all-caps
+{ToolUse("save", ["hello.py"], 'print("HELLO WORLD")').to_output()}
+> System: Saved to `hello.py`
 """.strip()
 
 
@@ -102,6 +30,8 @@ def execute_save(
 ) -> Generator[Message, None, None]:
     """Save code to a file."""
     fn = " ".join(args)
+    if fn.startswith("save "):
+        fn = fn[5:]
     assert fn, "No filename provided"
     # strip leading newlines
     code = code.lstrip("\n")
@@ -194,43 +124,31 @@ def execute_append(
 
 tool_save = ToolSpec(
     name="save",
-    desc="Save code to a file",
+    desc="Write text to file",
     instructions=instructions,
     examples=examples,
     execute=execute_save,
     block_types=["save"],
 )
+__doc__ = tool_save.get_doc(__doc__)
 
 instructions_append = """
-To append code to a file, use a code block with the language: append <filepath>
+To append text to a file, use a code block with the language: append <filepath>
 """.strip()
 
-examples_append = """
-User: append a print "Hello world" to hello.py
-Assistant:
-```append hello.py
-print("Hello world")
-```
-System: Appended to `hello.py`.
-
-User: How to add I add mouse controls on tmux?
-Assistant: To enable mouse support in tmux, you need to add the following configuration to your `~/.tmux.conf` file:
-```append ~/.tmux.conf
-set -g moust on
-```
-System: File ~/.tmux.conf doesn't exist, can't append to it.
-Asistant: Let's create the `~/.tmux.conf` file with the mouse support configuration.
-```~/.tmux.conf
-set -g mouse on
-```
-System: Saved to `~/.tmux.conf`
+examples_append = f"""
+> User: append a print "Hello world" to hello.py
+> Assistant:
+{ToolUse("append", ["hello.py"], 'print("Hello world")').to_output()}
+> System: Appended to `hello.py`
 """.strip()
 
 tool_append = ToolSpec(
     name="append",
-    desc="Append code to a file",
+    desc="Append text to file",
     instructions=instructions_append,
     examples=examples_append,
     execute=execute_append,
     block_types=["append"],
 )
+__doc__ = tool_append.get_doc(__doc__)
