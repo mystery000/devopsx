@@ -28,13 +28,14 @@ eval:
 
 typecheck:
 	poetry run mypy --ignore-missing-imports --check-untyped-defs ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
+	RUFF_ARGS=${SRCDIRS} $(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE))
 
 lint:
-	poetry run ruff check ${SRCDIRS} $(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE))
+	poetry run ruff check ${RUFF_ARGS}
 
 format:
-	poetry run ruff --fix-only ${SRCDIRS}
-	poetry run ruff format ${SRCDIRS}
+	poetry run ruff check --fix-only ${RUFF_ARGS}
+	poetry run ruff format ${RUFF_ARGS}
 
 precommit: format lint typecheck
 
@@ -55,7 +56,7 @@ version:
 dist/CHANGELOG.md: version ./scripts/build_changelog.py
 	VERSION=$$(git describe --tags --abbrev=0) && \
 	PREV_VERSION=$$(./scripts/get-last-version.sh $${VERSION}) && \
-		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org ErikBjare --repo devopsx --output $@
+		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org computer.com --repo devopsx --output $@
 
 release: dist/CHANGELOG.md
 	@VERSION=$$(git describe --tags --abbrev=0) && \
@@ -76,7 +77,7 @@ clean-test:
 cloc: cloc-core cloc-tools cloc-server cloc-tests
 
 cloc-core:
-	cloc devopsx/*.py devopsx/*/__init__.py devopsx/*/base.py --by-file
+	cloc devopsx/*.py devopsx/tools/__init__.py devopsx/tools/base.py --by-file
 
 cloc-tools:
 	cloc devopsx/tools/*.py --by-file
@@ -86,3 +87,12 @@ cloc-server:
 
 cloc-tests:
 	cloc tests/*.py --by-file
+
+cloc-eval:
+	cloc devopsx/eval/**.py --by-file
+
+cloc-total:
+	cloc ${SRCFILES} --by-file
+
+bench-importtime:
+	time poetry run python -X importtime -m devopsx --model openrouter --non-interactive 2>&1 | grep "import time" | cut -d'|' -f 2- | sort -n

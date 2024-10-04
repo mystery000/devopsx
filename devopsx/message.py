@@ -25,6 +25,11 @@ from .codeblock import Codeblock
 
 logger = logging.getLogger(__name__)
 
+# max tokens allowed in a single system message
+# if you hit this limit, you and/or I f-ed up, and should make the message shorter
+# maybe we should make it possible to store long outputs in files, and link/summarize it/preview it in the message
+max_system_len = 20000
+
 @dataclass(frozen=True, eq=False)
 class Message:
     """
@@ -50,6 +55,9 @@ class Message:
 
     def __post_init__(self):
         assert isinstance(self.timestamp, datetime)
+        if self.role == "system":
+            if (length := len_tokens(self)) >= max_system_len:
+                logger.warning(f"System message too long: {length} tokens")
         
     def __repr__(self):
         content = textwrap.shorten(self.content, 20, placeholder="...")

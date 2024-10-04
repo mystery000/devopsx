@@ -7,13 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 @click.command("devopsx-server")
-@click.option("-v", "--verbose", is_flag=True, help="Verbose output.")
+@click.option("--debug", is_flag=True, help="Debug mode")
+@click.option("-v", "--verbose", is_flag=True, help="Verbose output")
 @click.option(
     "--model",
     default=None,
     help="Model to use by default, can be overridden in each request.",
 )
-def main(verbose: bool, model: str | None):  # pragma: no cover
+def main(debug: bool, verbose: bool, model: str | None):  # pragma: no cover
     """
     Starts a server and web UI for devopsx.
 
@@ -34,5 +35,5 @@ def main(verbose: bool, model: str | None):  # pragma: no cover
     click.echo("Initialization complete, starting server")
 
     # noreorder
-    from devopsx.server.api import main as server_main  # fmt: skip
-    server_main()
+    app = create_app()
+    app.run(debug=debug)

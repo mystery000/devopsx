@@ -88,6 +88,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.autosectionlabel",
     "sphinx_click",
+    "sphinxcontrib.programoutput",
 ]
 
 

@@ -181,7 +181,7 @@ def _is_sphinx_build() -> bool:
         is_sphinx = False
     # print(f"Is Sphinx build: {is_sphinx}")
     return is_sphinx
-def _document_prompt_function(*args, **kwargs):
+def document_prompt_function(*args, **kwargs):
     """Decorator for adding example output of prompts to docstrings in rst format"""
     def decorator(func):  # pragma: no cover
         # only do the __doc__ decoration if in a Sphinx build

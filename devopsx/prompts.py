@@ -13,7 +13,7 @@ from .__version__ import __version__
 from .config import get_config
 from .message import Message
 from .tools import init_tools, loaded_tools
-from .util import _document_prompt_function
+from .util import document_prompt_function
 
 PromptType = Literal["full", "short"]
 
@@ -89,7 +89,8 @@ You have the ability to self-correct. If you receive feedback that your output o
 You should learn about the context needed to provide the best help,
 such as exploring a potential project in the current working directory and reading the code using terminal tools.
 
-When suggesting code changes, prefer applying patches over examples. Use the patch tool to propose modifications to existing files.
+When suggesting code changes, prefer applying patches over examples. Preserve comments, unless they are no longer relevant.
+Use the patch tool to edit existing files, or the save tool to overwrite.
 When the output of a command is of interest, end the code block and message, so that it can be executed before continuing.
 
 Do not use placeholders like `$REPO` unless they have been set.
@@ -98,10 +99,11 @@ Do not suggest opening a browser or editor, instead do it using available tools.
 Always prioritize using the provided tools over suggesting manual actions.
 Be proactive in using tools to gather information or perform tasks.
 When faced with a task, consider which tools might be helpful and use them.
-
-You have access to various capabilities that can help you complete tasks efficiently. Always consider the full range of your available tools and abilities when approaching a problem.
+Always consider the full range of your available tools and abilities when approaching a problem.
 
 Maintain a professional and efficient communication style. Be concise but thorough in your explanations.
+
+Think before you answer, in <thinking> tags.
 """.strip()
 
     interactive_prompt = """
@@ -201,7 +203,7 @@ def prompt_tools(examples: bool = True) -> Generator[Message, None, None]:
     yield Message("system", prompt.strip() + "\n\n")
 
 
-_document_prompt_function(interactive=True)(prompt_devopsx)
-_document_prompt_function()(prompt_user)
-_document_prompt_function()(prompt_project)
-_document_prompt_function()(prompt_tools)
+document_prompt_function(interactive=True)(prompt_devopsx)
+document_prompt_function()(prompt_user)
+document_prompt_function()(prompt_project)
+document_prompt_function()(prompt_tools)

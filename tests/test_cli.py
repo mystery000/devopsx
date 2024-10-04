@@ -315,9 +315,9 @@ def test_subagent(args: list[str], runner: CliRunner):
     reason="playwright not installed",
 )
 def test_url(args: list[str], runner: CliRunner):
-    args.append("Who is the CEO of https://superuserlabs.org?")
+    args.append("Who is the manager of infractura team")
     result = runner.invoke(devopsx.cli.main, args)
-    assert "Erik Bjäreholt" in result.output
+    assert "Mohamed Hafeel" in result.output
     assert result.exit_code == 0
 
 

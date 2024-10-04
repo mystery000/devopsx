@@ -25,7 +25,7 @@ def check_prime_output(ctx):
 
 
 def check_output_hello_ask(ctx):
-    return "Hello, Erik!" in ctx.stdout
+    return "Hello, Mohamed!" in ctx.stdout
 
 
 tests: list["EvalSpec"] = [
@@ -52,7 +52,7 @@ tests: list["EvalSpec"] = [
     {
         "name": "hello-ask",
         "files": {"hello.py": 'print("Hello, world!")'},
-        "run": "echo 'Erik' | python hello.py",
+        "run": "echo 'Mohamed' | python hello.py",
         # TODO: work around the "don't try to execute it" part by improving devopsx such that it just gives EOF to stdin in non-interactive mode
         "prompt": "modify hello.py to ask the user for their name and print 'Hello, <name>!'. don't try to execute it",
         "expect": {

@@ -123,6 +123,7 @@ def ask_for_api_key():  # pragma: no cover
 - OpenAI: https://platform.openai.com/account/api-keys
 - Anthropic: https://console.anthropic.com/settings/keys
 - Groq: https://console.groq.com/keys
+- OpenRouter: https://openrouter.ai/settings/keys
         """
     )
     api_key = input("Your API key for OpenAI, Groq or Anthropic: ").strip()
