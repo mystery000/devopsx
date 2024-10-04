@@ -1,15 +1,15 @@
 import os
 import random
-import pytest
 import importlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
 import devopsx.cli
 import devopsx.constants
+from devopsx.tools import ToolUse
 from click.testing import CliRunner
 from devopsx.constants import CMDFIX
-from devopsx.tools import ToolUse
 
 project_root = Path(__file__).parent.parent
 logo = project_root / "media" / "logo.png"
@@ -175,14 +175,14 @@ def test_shell(args: list[str], runner: CliRunner):
 
 
 def test_python(args: list[str], runner: CliRunner):
-    args.append(f"{CMDFIX}python print('yes')")
+    args.append(f"{CMDFIX}py print('yes')")
     result = runner.invoke(devopsx.cli.main, args)
     assert "yes\n" in result.output
     assert result.exit_code == 0
 
 
 def test_python_error(args: list[str], runner: CliRunner):
-    args.append(f"{CMDFIX}python raise Exception('yes')")
+    args.append(f"{CMDFIX}py raise Exception('yes')")
     result = runner.invoke(devopsx.cli.main, args)
     assert "Exception: yes" in result.output
     assert result.exit_code == 0
@@ -199,11 +199,11 @@ _block_py = """def test():
 
     print("after empty line")
 """
-blocks = {"python": _block_py, "sh": _block_sh}
+blocks = {"ipython": _block_py, "sh": _block_sh}
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("lang", ["python", "sh"])
+@pytest.mark.parametrize("lang", blocks.keys())
 def test_block(args: list[str], lang: str, runner: CliRunner):
     # tests that shell codeblocks are formatted correctly such that whitespace and newlines are preserved
     code = blocks[lang]
@@ -220,7 +220,7 @@ def test_block(args: list[str], lang: str, runner: CliRunner):
     # check everything after the second '# start'
     # (get not the user impersonation command, but the assistant message and everything after)
     output = output.split("# start", 2)[-1]
-    printcmd = "print" if lang == "python" else "echo"
+    printcmd = "print" if lang == "ipython" else "echo"
     assert f"\n\n    {printcmd}" in output
     assert result.exit_code == 0
 
@@ -295,7 +295,7 @@ def test_subagent(args: list[str], runner: CliRunner):
 def test_url(args: list[str], runner: CliRunner):
     args.append("Who is the CEO of https://superuserlabs.org?")
     result = runner.invoke(devopsx.cli.main, args)
-    assert "Mohamed Hafeel" in result.output
+    assert "Erik Bjäreholt" in result.output
     assert result.exit_code == 0
 
 

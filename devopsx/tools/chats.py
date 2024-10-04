@@ -2,12 +2,13 @@
 List, search, and summarize past conversation logs.
 """
 
+import itertools
 import logging
 from pathlib import Path
 from textwrap import indent
 
-from .base import ToolSpec
 from ..message import Message
+from .base import ToolSpec
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,19 @@ def _format_message_snippet(msg: Message, max_length: int = 100) -> str:
 
 def _get_matching_messages(log_manager, query: str) -> list[Message]:
     """Get messages matching the query."""
-    return [msg for msg in log_manager.log if query.lower() in msg.content.lower()]
+    return [
+        msg
+        for msg in log_manager.log
+        if query.lower() in msg.content.lower()
+        if msg.role != "system"
+    ]
 
 
 def _summarize_conversation(log_manager, include_summary: bool) -> list[str]:
     """Summarize a conversation."""
     # noreorder
     from ..llm import summarize as llm_summarize  # fmt: skip
-    
+
     summary_lines = []
     if include_summary:
         summary = llm_summarize(log_manager.log)
@@ -67,8 +73,7 @@ def list_chats(max_results: int = 5, include_summary: bool = False) -> None:
     # noreorder
     from ..logmanager import LogManager, get_conversations  # fmt: skip
 
-    conversations = list(get_conversations())[:max_results]
-
+    conversations = list(itertools.islice(get_conversations(), max_results))
     if not conversations:
         print("No conversations found.")
         return
@@ -97,10 +102,8 @@ def search_chats(query: str, max_results: int = 5) -> None:
     # noreorder
     from ..logmanager import LogManager, get_conversations  # fmt: skip
 
-    conversations = list(get_conversations())
     results = []
-
-    for conv in conversations:
+    for conv in get_conversations():
         log_path = Path(conv["path"])
         log_manager = LogManager.load(log_path)
 
@@ -115,9 +118,11 @@ def search_chats(query: str, max_results: int = 5) -> None:
                 }
             )
 
+        if len(results) >= max_results:
+            break
+
     # Sort results by the number of matching messages, in descending order
     results.sort(key=lambda x: len(x["matching_messages"]), reverse=True)
-    results = results[:max_results]
 
     if not results:
         print(f"No results found for query: '{query}'")
@@ -147,6 +152,7 @@ def search_chats(query: str, max_results: int = 5) -> None:
 def read_chat(conversation: str, max_results: int = 5, incl_system=False) -> None:
     """
     Read a specific conversation log.
+
     Args:
         conversation (str): The name of the conversation to read.
         max_results (int): Maximum number of messages to display.
@@ -154,7 +160,9 @@ def read_chat(conversation: str, max_results: int = 5, incl_system=False) -> Non
     """
     # noreorder
     from ..logmanager import LogManager, get_conversations  # fmt: skip
+
     conversations = list(get_conversations())
+
     for conv in conversations:
         if conv["name"] == conversation:
             log_path = Path(conv["path"])
@@ -182,7 +190,7 @@ examples = """
 ### Search for a specific topic in past conversations
 User: Can you find any mentions of "python" in our past conversations?
 Assistant: Certainly! I'll search our past conversations for mentions of "python" using the search_chats function.
-```python
+```ipython
 search_chats("python")
 ```
 """

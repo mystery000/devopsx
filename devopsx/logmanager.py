@@ -1,10 +1,11 @@
 import json
-import shutil
 import logging
+import shutil
 import textwrap
 from copy import copy
 from rich import print
 from pathlib import Path
+from datetime import datetime
 from itertools import zip_longest
 from collections.abc import Generator
 from tempfile import TemporaryDirectory
@@ -12,7 +13,7 @@ from typing import Any, Literal, TypeAlias
 
 from .constants import CMDFIX
 from .dirs import get_logs_dir
-from .message import Message, print_msg, len_tokens
+from .message import Message, len_tokens, print_msg
 from .prompts import get_prompt
 from .reduce import limit_log, reduce_log
 
@@ -49,19 +50,15 @@ class LogManager:
         if self.logdir / "conversation.jsonl":
             _branch = "main"
             if _branch not in self._branches:
-                with open(self.logdir / "conversation.jsonl") as f:
-                    self._branches[_branch] = [
-                        Message(**json.loads(line)) for line in f
-                    ]
+                self._branches[_branch] = _read_jsonl(
+                    self.logdir / "conversation.jsonl"
+                )
         for file in self.logdir.glob("branches/*.jsonl"):
             if file.name == self.logdir.name:
                 continue
             _branch = file.stem
             if _branch not in self._branches:
-                with open(file) as f:
-                    self._branches[_branch] = [
-                        Message(**json.loads(line)) for line in f
-                    ]
+                self._branches[_branch] = _read_jsonl(file)
 
         self.show_hidden = show_hidden
         # TODO: Check if logfile has contents, then maybe load, or should it overwrite?
@@ -88,11 +85,11 @@ class LogManager:
     def __bool__(self):
         return bool(self.log)
 
-    def append(self, msg: Message, verbose: bool = True) -> None:
+    def append(self, msg: Message) -> None:
         """Appends a message to the log, writes the log, prints the message."""
         self.log.append(msg)
         self.write()
-        if not msg.quiet and verbose:
+        if not msg.quiet:
             print_msg(msg, oneline=False)
 
     def write(self, branches=True) -> None:
@@ -103,9 +100,7 @@ class LogManager:
         Path(self.logfile).parent.mkdir(parents=True, exist_ok=True)
 
         # write current branch
-        with open(self.logfile, "w") as file:
-            for msg in self.log:
-                file.write(json.dumps(msg.to_dict()) + "\n")
+        _write_jsonl(self.logfile, self.log)
 
         # write other branches
         # FIXME: wont write main branch if on a different branch
@@ -116,9 +111,7 @@ class LogManager:
                 if branch == "main":
                     continue
                 branch_path = branches_dir / f"{branch}.jsonl"
-                with open(branch_path, "w") as file:
-                    for msg in msgs:
-                        file.write(json.dumps(msg.to_dict()) + "\n")
+                _write_jsonl(branch_path, msgs)
 
     def print(self, show_hidden: bool | None = None):
         print_msg(self.log, oneline=False, show_hidden=show_hidden or self.show_hidden)
@@ -208,12 +201,10 @@ class LogManager:
         if not Path(logfile).exists():
             raise FileNotFoundError(f"Could not find logfile {logfile}")
 
-        with open(logfile) as file:
-            msgs = [Message(**json.loads(line)) for line in file.readlines()]
+        msgs = _read_jsonl(logfile)
         if not msgs:
             msgs = initial_msgs
         return cls(msgs, logdir=logdir, branch=branch, **kwargs)
-
 
     def branch(self, name: str) -> None:
         """Switches to a branch."""
@@ -233,7 +224,6 @@ class LogManager:
         diff_i: int | None = None
         for i, (msg1, msg2) in enumerate(zip_longest(self.log, self._branches[branch])):
             diff_i = i
-            
             if msg1 != msg2:
                 break
         else:
@@ -299,16 +289,17 @@ class LogManager:
 
 def _conversations() -> list[Path]:
     # NOTE: only returns the main conversation, not branches (to avoid duplicates)
+    # returns the most recent first
     logsdir = get_logs_dir()
     return list(
-        sorted(logsdir.glob("*/conversation.jsonl"), key=lambda f: f.stat().st_mtime)
+        sorted(logsdir.glob("*/conversation.jsonl"), key=lambda f: -f.stat().st_mtime)
     )
 
 
 def get_conversations() -> Generator[dict, None, None]:
     for conv_fn in _conversations():
-        with open(conv_fn) as file:
-            msgs = [Message(**json.loads(line)) for line in file.readlines()]
+        msgs = []
+        msgs = _read_jsonl(conv_fn)
         modified = conv_fn.stat().st_mtime
         first_timestamp = msgs[0].timestamp.timestamp() if msgs else modified
         yield {
@@ -319,3 +310,20 @@ def get_conversations() -> Generator[dict, None, None]:
             "messages": len(msgs),
             "branches": 1 + len(list(conv_fn.parent.glob("branches/*.jsonl"))),
         }
+
+
+def _read_jsonl(path: PathLike) -> list[Message]:
+    msgs = []
+    with open(path) as file:
+        for line in file.readlines():
+            json_data = json.loads(line)
+            if "timestamp" in json_data:
+                json_data["timestamp"] = datetime.fromisoformat(json_data["timestamp"])
+            msgs.append(Message(**json_data))
+    return msgs
+
+
+def _write_jsonl(path: PathLike, msgs: list[Message]) -> None:
+    with open(path, "w") as file:
+        for msg in msgs:
+            file.write(json.dumps(msg.to_dict()) + "\n")

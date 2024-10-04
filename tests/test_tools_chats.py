@@ -1,4 +1,3 @@
-import pytest
 from devopsx.tools.chats import list_chats, search_chats
 
 def test_list_chats(capsys):
@@ -6,7 +5,6 @@ def test_list_chats(capsys):
     captured = capsys.readouterr()
     assert "1." in captured.out
 
-@pytest.mark.slow
 def test_search_chats(capsys):
     search_chats("python")
     captured = capsys.readouterr()

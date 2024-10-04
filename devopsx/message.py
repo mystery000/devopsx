@@ -48,6 +48,9 @@ class Message:
     timestamp: datetime = field(default_factory=datetime.now)
     files: list[Path] = field(default_factory=list)
 
+    def __post_init__(self):
+        assert isinstance(self.timestamp, datetime)
+        
     def __repr__(self):
         content = textwrap.shorten(self.content, 20, placeholder="...")
         return f"<Message role={self.role} content={content}>"
@@ -154,6 +157,7 @@ class Message:
         # content = self.content.replace('"', '\\"')
         content = escape_string(self.content)
         content = content.replace("\\n", "\n")
+        content = content.strip()
 
         return f'''[message]
 role = "{self.role}"
@@ -179,7 +183,7 @@ timestamp = "{self.timestamp.isoformat()}"
 
         return cls(
             msg["role"],
-            msg["content"],
+            msg["content"].strip(),
             pinned=msg.get("pinned", False),
             hide=msg.get("hide", False),
             files=[Path(f) for f in msg.get("files", [])],
@@ -291,7 +295,7 @@ def toml_to_msgs(toml: str) -> list[Message]:
     return [
         Message(
             msg["role"],
-            msg["content"],
+            msg["content"].strip(),
             pinned=msg.get("pinned", False),
             hide=msg.get("hide", False),
             timestamp=datetime.fromisoformat(msg["timestamp"]),
