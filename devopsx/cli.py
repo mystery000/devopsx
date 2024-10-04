@@ -26,7 +26,13 @@ from .llm import reply
 from .logmanager import Conversation, LogManager, get_user_conversations
 from .message import Message
 from .prompts import get_prompt
-from .tools import execute_msg, has_tool, ToolUse
+from .tools import (
+    ToolUse,
+    all_tools,
+    execute_msg,
+    has_tool,
+    init_tools,
+)
 from .tools.browser import read_url
 from .tools.shell import ShellSession, set_shell
 from .util import (
@@ -42,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 script_path = Path(os.path.realpath(__file__))
 commands_help = "\n".join(_gen_help(incl_langtags=False))
-
+available_tool_names = ", ".join([tool.name for tool in all_tools if tool.available])
 
 docstring = f"""
 devopsx is a chat-CLI for LLMs, empowering them with tools to run shell commands, execute code, read and manipulate files, and more.
@@ -181,7 +187,7 @@ def main(
 
     # early init tools to generate system prompt
     init_tools(tool_allowlist)
-    
+
     # get initial system prompt
     initial_msgs = [get_prompt(prompt_system)]
 

@@ -15,34 +15,43 @@ build:
 	poetry install
 
 build-docker:
-	docker build . -t gptme:latest -f scripts/Dockerfile
-	docker build . -t gptme-eval:latest -f scripts/Dockerfile.eval
+	docker build . -t devopsx:latest -f scripts/Dockerfile
+	docker build . -t devopsx-eval:latest -f scripts/Dockerfile.eval
 
 build-docker-full:
-	docker build . -t gptme-eval:latest -f scripts/Dockerfile.eval --build-arg RUST=yes --build-arg BROWSER=yes
+	docker build . -t devopsx-eval:latest -f scripts/Dockerfile.eval --build-arg RUST=yes --build-arg BROWSER=yes
 
 test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
-		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
+		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html --junitxml=junit.xml \
 		-n 16 \
 		$(if $(EVAL), , -m "not eval") \
-		$(if $(SLOW), --timeout 60 --retries 2 --retry-delay 5, --timeout 5 -m "not slow and not eval") \
+		$(if $(SLOW), --timeout 60 --retries 2 --retry-delay 5, --timeout 10 -m "not slow and not eval") \
 		$(if $(PROFILE), --profile-svg)
 
 eval:
-	poetry run python3 -m devopsx.eval
+	poetry run devopsx-eval
 
 typecheck:
 	poetry run mypy --ignore-missing-imports --check-untyped-defs ${SRCDIRS} $(if $(EXCLUDES),$(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE)))
-	RUFF_ARGS=${SRCDIRS} $(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE))
+
+RUFF_ARGS=${SRCDIRS} $(foreach EXCLUDE,$(EXCLUDES),--exclude $(EXCLUDE))
 
 lint:
+	@# check there is no `ToolUse("python"` in the code (should be `ToolUse("ipython"`)
+	! grep -r 'ToolUse("python"' ${SRCDIRS}
+	@# ruff
 	poetry run ruff check ${RUFF_ARGS}
+
 
 format:
 	poetry run ruff check --fix-only ${RUFF_ARGS}
 	poetry run ruff format ${RUFF_ARGS}
+
+update-models:
+	wayback_url=$$(curl "https://archive.org/wayback/available?url=openai.com/api/pricing/" | jq -r '.archived_snapshots.closest.url') && \
+		devopsx 'update the model metadata from this page' devopsx/models.py devopsx/llm_openai_models.py "$${wayback_url}" --non-interactive
 
 precommit: format lint typecheck
 
@@ -61,6 +70,18 @@ docs: docs/conf.py docs/*.rst docs/.clean
 	fi
 	poetry run make -C docs html SPHINXOPTS="-W --keep-going"
 
+.PHONY: site
+site: site/dist/index.html site/dist/docs
+	echo "devopsx.org" > site/dist/CNAME
+
+site/dist/index.html: README.md
+	mkdir -p site/dist
+	pandoc -s -f gfm -t html5 -o $@ $< --metadata title=" "
+	cp -r media site/dist
+
+site/dist/docs: docs
+	cp -r docs/_build/html site/dist/docs
+
 version:
 	@./scripts/bump_version.sh
 
@@ -71,7 +92,7 @@ version:
 dist/CHANGELOG.md: version ./scripts/build_changelog.py
 	VERSION=$$(git describe --tags --abbrev=0) && \
 	PREV_VERSION=$$(./scripts/get-last-version.sh $${VERSION}) && \
-		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org computer.com --repo devopsx --output $@
+		./scripts/build_changelog.py --range $${PREV_VERSION}...$${VERSION} --project-title devopsx --org ErikBjare --repo devopsx --output $@
 
 release: dist/CHANGELOG.md
 	@VERSION=$$(git describe --tags --abbrev=0) && \
@@ -80,7 +101,10 @@ release: dist/CHANGELOG.md
 		git push origin master $${VERSION} && \
 		gh release create $${VERSION} -t $${VERSION} -F dist/CHANGELOG.md
 
-clean: clean-docs
+clean: clean-docs clean-site clean-test
+
+clean-site:
+	rm -rf site/dist
 
 clean-docs:
 	poetry run make -C docs clean

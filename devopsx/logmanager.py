@@ -298,7 +298,7 @@ def _conversation_files() -> list[Path]:
         sorted(logsdir.glob("*/conversation.jsonl"), key=lambda f: -f.stat().st_mtime)
     )
 
-@dataclass
+@dataclass(frozen=True)
 class Conversation:
     name: str
     path: str

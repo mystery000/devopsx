@@ -6,7 +6,7 @@ from typing_extensions import NotRequired
 
 logger = logging.getLogger(__name__)
 
-@dataclass
+@dataclass(frozen=True)
 class ModelMeta:
     provider: str
     model: str

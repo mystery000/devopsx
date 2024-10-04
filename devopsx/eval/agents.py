@@ -6,6 +6,7 @@ from devopsx import chat as devopsx_chat
 from devopsx import get_prompt
 from devopsx.cli import get_name
 from devopsx.dirs import get_logs_dir
+from devopsx.tools import init_tools
 
 from .filestore import FileStore
 from .types import Files
@@ -39,6 +40,9 @@ class DevopsxAgent(Agent):
         store = FileStore(working_dir=workspace_dir)
         if files:
             store.upload(files)
+
+        # TODO: make eval toolset configurable
+        init_tools()
 
         print("\n--- Start of generation ---")
         logger.debug(f"Working in {store.working_dir}")

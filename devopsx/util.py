@@ -1,14 +1,15 @@
-import re
 import io
+import re
 import sys
 import random
 import logging
+import termios
 import textwrap
-import tiktoken
 from typing import Any
 from functools import lru_cache
 from datetime import datetime, timedelta
 
+import tiktoken
 from rich import print
 from rich.console import Console
 from rich.syntax import Syntax
@@ -18,6 +19,7 @@ EMOJI_WARN = "⚠️"
 logger = logging.getLogger(__name__)
 
 console = Console(log_path=False)
+
 
 def get_tokenizer(model: str):
     if "gpt-4" in model or "gpt-3.5" in model:
@@ -128,7 +130,7 @@ def epoch_to_age(epoch):
 def print_preview(code: str, lang: str):  # pragma: no cover
     print()
     print("[bold white]Preview[/bold white]")
-    print(Syntax(code.strip(), lang))
+    print(Syntax(code.strip("\n"), lang))
     print()
 
 
@@ -137,23 +139,89 @@ def ask_execute(question="Execute code?", default=True) -> bool:  # pragma: no c
     choicestr = f"({'Y' if default else 'y'}/{'n' if default else 'N'})"
     # answer = None
     # while not answer or answer.lower() not in ["y", "yes", "n", "no", ""]:
-    print_bell() # Ring the bell just before asking for input
+    print_bell()  # Ring the bell just before asking for input
+    termios.tcflush(sys.stdin, termios.TCIFLUSH)  # flush stdin
+
+    choicestr = f"[{'Y' if default else 'y'}/{'n' if default else 'N'}]"
     answer = console.input(
         f"[bold yellow on dark_red] {EMOJI_WARN} {question} {choicestr} [/] ",
     )
     return answer.lower() in (["y", "yes"] + [""] if default else [])
 
 
-def transform_examples_to_chat_directives(s: str, strict=False) -> str:
-    # transforms an example with "> Role:" dividers into ".. chat::" directive
+def clean_example(s: str, strict=False) -> str:
     orig = s
     s = re.sub(
-        r"(^|\n)([>] )?(.+):",
+        r"(^|\n)([>] )?([A-Za-z]+):",
         r"\1\3:",
         s,
     )
     if strict:
         assert s != orig, "Couldn't find a message"
+    return s
+
+
+def example_to_xml(s: str) -> str:
+    """
+    Transforms an example with "> Role:" dividers into XML format <role>message</role>.
+    """
+    s = clean_example(s)
+    orig = s
+    print(f"After clean_example: {s!r}")  # Debug print
+
+    lines = s.split("\n")
+    result = []
+    current_role = None
+    current_message = []
+
+    for line in lines:
+        role_match = re.match(r"([A-Za-z]+):\s*(.*)", line)
+        if role_match:
+            if current_role and current_message:
+                # Close previous role block
+                result.append(
+                    f"<{current_role}>\n"
+                    + "\n".join(current_message)
+                    + f"\n</{current_role}>"
+                )
+                current_message = []
+            current_role = role_match.group(1).lower()
+            current_message.append(role_match.group(2))
+        else:
+            if current_role:
+                if line.strip() == "":
+                    # Blank line indicates end of message
+                    result.append(
+                        f"<{current_role}>\n"
+                        + "\n".join(current_message)
+                        + f"\n</{current_role}>\n"
+                    )
+                    current_role = None
+                    current_message = []
+                else:
+                    current_message.append(line)
+            else:
+                result.append(line)
+
+    # Close any remaining role block
+    if current_role and current_message:
+        result.append(
+            f"<{current_role}>\n"
+            + "\n".join(current_message)
+            + f"\n</{current_role}>\n"
+        )
+
+    s = "\n".join(result).strip()
+    print(f"Final result: {s!r}")  # Debug print
+    assert s != orig, "Couldn't find place to put start of directive"
+    return s
+
+
+def transform_examples_to_chat_directives(s: str, strict=False) -> str:
+    """
+    Transforms an example with "> Role:" dividers into ".. chat::" directive.
+    """
+    s = clean_example(s, strict=strict)
     s = textwrap.indent(s, "   ")
     orig = s
     s = re.sub(
@@ -178,19 +246,28 @@ def _is_sphinx_build() -> bool:
     try:
         # noreorder
         import sphinx  # fmt: skip
+
         is_sphinx = hasattr(sphinx, "application")
     except ImportError:
         is_sphinx = False
     # print(f"Is Sphinx build: {is_sphinx}")
     return is_sphinx
+
+
 def document_prompt_function(*args, **kwargs):
     """Decorator for adding example output of prompts to docstrings in rst format"""
+
     def decorator(func):  # pragma: no cover
         # only do the __doc__ decoration if in a Sphinx build
         if not _is_sphinx_build():
             return func
+
         # noreorder
         from .message import len_tokens  # fmt: skip
+        from .tools import init_tools  # fmt: skip
+
+        init_tools()
+
         prompt = "\n\n".join([msg.content for msg in func(*args, **kwargs)])
         prompt = textwrap.indent(prompt, "   ")
         prompt_tokens = len_tokens(prompt)
@@ -206,7 +283,9 @@ def document_prompt_function(*args, **kwargs):
         func.__doc__ += f"\n\n.. code-block:: markdown\n\n{prompt}"
         func.__doc__ += f"\n\nTokens: {prompt_tokens}"
         return func
+
     return decorator
+
 
 def rich_to_str(s: Any, **kwargs) -> str:
     c = Console(file=io.StringIO(), **kwargs)

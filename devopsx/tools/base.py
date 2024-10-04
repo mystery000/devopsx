@@ -66,7 +66,7 @@ class ToolSpec:
         return self.name == other.name
 
 
-@dataclass
+@dataclass(frozen=True)
 class ToolUse:
     tool: str
     args: list[str]

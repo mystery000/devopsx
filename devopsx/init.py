@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 _init_done = False
 
 
-def init(model: str | None, interactive: bool, verbose: bool = True):
+def init(model: str | None, interactive: bool, tool_allowlist: list[str] | None):
     global _init_done
     if _init_done:
         logger.warning("init() called twice, ignoring")
@@ -78,7 +78,7 @@ def init(model: str | None, interactive: bool, verbose: bool = True):
         # for some reason it bugs out shell tests in CI
         register_tabcomplete()
 
-    init_tools()
+    init_tools(tool_allowlist)
 
 
 def init_logging(verbose):

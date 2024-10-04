@@ -6,12 +6,13 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 import re
-
+from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+year = date.today().year
 project = "devopsx"
-copyright = "2024, Mohamed Hafeel"
+copyright = f"{year}, Mohamed Hafeel"
 author = "Mohamed Hafeel"
 
 

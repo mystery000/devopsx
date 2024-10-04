@@ -25,6 +25,7 @@ See the `README <https://github.com/infractura/devopsx/blob/master/README.md>`_ 
    providers
    server
    cli
+   automation
 
 .. toctree::
    :maxdepth: 2
