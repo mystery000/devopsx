@@ -18,6 +18,7 @@ from .tmux import tool as tmux_tool
 from .chats import tool as chats_tool
 from .youtube import tool as youtube_tool
 from functools import lru_cache
+from .vision import tool as vision_tool
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ all_tools: list[ToolSpec] = [
     subthread_tool,
     tmux_tool,
     browser_tool,
+    vision_tool,
     gh_tool,
     chats_tool,
     youtube_tool,
