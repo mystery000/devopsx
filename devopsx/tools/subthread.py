@@ -152,12 +152,12 @@ def subthread_wait(thread_id: str) -> dict:
 
 
 examples = f"""
-User: compute fib 69 using a subthread
-Assistant: Starting a subthread to compute the 69th Fibonacci number.
-{ToolUse("python", [], 'subthread("compute the 69th Fibonacci number", "fib-69")').to_output()}
-System: Subthread started successfully.
-Assistant: Now we need to wait for the subthread to finish the task.
-{ToolUse("python", [], 'subthread("fib-69")').to_output()}
+User: compute fib 69 using a subagent
+Assistant: Starting a subagent to compute the 69th Fibonacci number.
+{ToolUse("ipython", [], 'subagent("compute the 69th Fibonacci number", "fib-69")').to_output()}
+System: Subagent started successfully.
+Assistant: Now we need to wait for the subagent to finish the task.
+{ToolUse("ipython", [], 'subagent_wait("fib-69")').to_output()}
 """
 
 tool = ToolSpec(

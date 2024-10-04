@@ -18,7 +18,7 @@ test:
 	@# if SLOW is not set, pass `-m "not slow"` to skip slow tests
 	poetry run pytest ${SRCDIRS} -v --log-level INFO --durations=5 \
 		--cov=devopsx --cov-report=xml --cov-report=term-missing --cov-report=html \
-		-n 8 \
+		-n 16 \
 		$(if $(EVAL), , -m "not eval") \
 		$(if $(SLOW), --timeout 60 --retries 2 --retry-delay 5, --timeout 5 -m "not slow and not eval") \
 		$(if $(PROFILE), --profile-svg)

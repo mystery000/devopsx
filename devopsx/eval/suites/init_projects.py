@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from devopsx.eval.main import ExecTest
+    from devopsx.eval.main import EvalSpec
 
 
 def check_clean_exit(ctx):
@@ -24,8 +24,8 @@ def check_output_compiled_successfully(ctx):
     return "Compiled successfully" in ctx.stdout
 
 
-def check_output_mhafeel(ctx):
-    return "mhafeel" in ctx.stdout
+def check_output_mohamed(ctx):
+    return "Mohamed" in ctx.stdout
 
 
 def check_cargo_toml(ctx):
@@ -41,7 +41,7 @@ def check_exists_main(ctx):
     return "main.py" in ctx.files
 
 
-tests: list["ExecTest"] = [
+tests: list["EvalSpec"] = [
     {
         "name": "init-git",
         "files": {},
