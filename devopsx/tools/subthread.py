@@ -40,13 +40,12 @@ class Subthread:
 
     def get_log(self) -> "LogManager":
         # noreorder
-        from devopsx.cli import get_logfile  # fmt: skip
+        from devopsx.cli import get_logdir  # fmt: skip
 
         from ..logmanager import LogManager  # fmt: skip
 
         name = f"subthread-{self.thread_id}"
-        logfile = get_logfile(name)
-        return LogManager.load(logfile)
+        return LogManager.load(get_logdir(name))
 
     def status(self) -> ReturnType:
         if self.thread.is_alive():
@@ -83,10 +82,12 @@ def subthread(prompt: str, thread_id: str):
     """Runs a subthread and returns the resulting JSON output."""
     # noreorder
     from devopsx import chat  # fmt: skip
+    from devopsx.cli import get_logdir  # fmt: skip
 
     from ..prompts import get_prompt  # fmt: skip
 
     name = f"subthread-{thread_id}"
+    logdir = get_logdir(name)
 
     def run_subthread():
         prompt_msgs = [Message("user", prompt)]
@@ -108,6 +109,7 @@ def subthread(prompt: str, thread_id: str):
         chat(
             prompt_msgs,
             initial_msgs,
+            logdir=logdir,
             name=name,
             model=None,
             stream=False,
