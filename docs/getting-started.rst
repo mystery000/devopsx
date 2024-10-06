@@ -10,7 +10,7 @@ To install devopsx, we recommend using pipx:
 
 .. code-block:: bash
 
-    pipx install devopsx-python
+    pipx install devopsx
 
 If pipx is not installed, you can install it using pip:
 

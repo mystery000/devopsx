@@ -163,7 +163,7 @@ def main(
     """Main entrypoint for the CLI."""
     if version:
         # print version
-        print(f"devopsx {importlib.metadata.version('devopsx-python')}")
+        print(f"devopsx {importlib.metadata.version('devopsx')}")
         
         # print dirs
         print(f"Logs dir: {get_logs_dir()}")

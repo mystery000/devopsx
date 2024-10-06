@@ -4,7 +4,7 @@
 SHELL := $(shell which bash)
 
 # src dirs and files
-SRCDIRS = devopsx tests scripts train
+SRCDIRS = devopsx tests scripts
 SRCFILES = $(shell find ${SRCDIRS} -name '*.py')
 
 # exclude files

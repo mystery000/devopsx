@@ -2,11 +2,11 @@
 Gives the LLM agent the ability to patch text files, by using a adapted version git conflict markers.
 """
 
-import difflib
 import re
-from collections.abc import Generator
-from dataclasses import dataclass
+import difflib
 from pathlib import Path
+from dataclasses import dataclass
+from collections.abc import Generator
 
 from ..message import Message
 from ..util import ask_execute, print_preview
@@ -27,9 +27,11 @@ Try to keep the patch as small as possible. Avoid placeholders, as they may make
 To keep the patch small, try to scope the patch to imports/function/class.
 If the patch is large, consider using the save tool to rewrite the whole file.
 
-The patch block should be written in the following format:
+Intelligently extract the file path that needs to be patched from the conversation log.
 
-{patch_to_output("$FILENAME", '''
+The patch block must be written in the following format:
+
+{patch_to_output("<filepath>", '''
 <<<<<<< ORIGINAL
 $ORIGINAL_CONTENT
 =======
@@ -185,6 +187,7 @@ def execute_patch(
 
         # Apply the patch
         patched_content = apply(code, original_content)
+        # TODO: if the patch is inefficient, replace request to use minimal unique patch
         with open(path, "w") as f:
             f.write(patched_content)
 
