@@ -123,12 +123,14 @@ def api_conversation_generate(logfile: str):
     )
 
 devopsx_path_ctx = resources.as_file(resources.files("devopsx"))
-static_path = devopsx_path_ctx.__enter__().parent / "static"
+root_path = devopsx.__enter__()
+static_path = root_path / "server" / "static"
+media_path = root_path.parent / "media"
 atexit.register(devopsx_path_ctx.__exit__, None, None, None)
 
 @api.route("/favicon.png")
 def favicon():
-    return flask.send_from_directory(static_path.parent / "media", "logo.png")
+    return flask.send_from_directory(media_path, "logo.png")
 
 # serve index.html from the root
 @api.route("/")

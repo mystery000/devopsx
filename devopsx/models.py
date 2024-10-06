@@ -257,6 +257,8 @@ def get_recommended_model(provider: str) -> str:  # pragma: no cover
         return "llama3-70b-8192"
     elif provider == "local":
         return "llama3.1:8b"
+    elif provider == "openrouter":
+        return "meta-llama/llama-3.1-405b-instruct"
     else:
         raise ValueError(f"Unknown provider {provider}")
 

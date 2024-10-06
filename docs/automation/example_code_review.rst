@@ -58,7 +58,7 @@ This example demonstrates a simple and composable approach to automated code rev
             - uses: actions/checkout@v2
             - name: Install devopsx and GitHub CLI
               run: |
-                pip install devopsx-python
+                pip install devopsx
                 gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
             - name: Run code review
               env:

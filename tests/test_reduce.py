@@ -10,7 +10,7 @@ root = Path(__file__).parent.parent
 # Some large files
 readme = root / "README.md"
 cli = root / "devopsx" / "cli.py"
-htmlindex = root / "static" / "index.html"
+htmlindex = root / "devopsx" / "server" / "static" / "index.html"
 
 long_msg = Message(
     "system",

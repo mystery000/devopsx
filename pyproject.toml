@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "devopsx-python"
+name = "devopsx"
 version = "1.0.0"
 description = "A fancy CLI to interact with LLMs in a Chat-style interface, with additional capabilities like executing commands on the local & remote machines"
 authors = ["devopsx <mhafeel@computer.com>"]
 readme = "README.md"
 license = "MIT"
 packages = [{ include = "devopsx" }]
-include = ["static/**/*", "media/logo.png"]
+include = ["devopsx/server/static/**/*", "media/logo.png"]
 
 [tool.poetry.scripts]
 devopsx = "devopsx.cli:main"
