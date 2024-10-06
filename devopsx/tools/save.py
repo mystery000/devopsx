@@ -138,8 +138,17 @@ tool_save = ToolSpec(
 )
 __doc__ = tool_save.get_doc(__doc__)
 
-instructions_append = """
+def append_to_output(filename: str, content: str) -> str:
+    return ToolUse("append", [filename], content.strip()).to_output()
+
+instructions_append = f"""
 To append text to a file, use a code block with the language: append <filepath>
+
+The append block must be written in the following format:
+
+{append_to_output("<filepath>", '''
+(contents to be appended)
+''')}
 """.strip()
 
 examples_append = f"""
@@ -147,6 +156,22 @@ examples_append = f"""
 > Assistant:
 {ToolUse("append", ["hello.py"], 'print("Hello world")').to_output()}
 > System: Appended to `hello.py`
+
+> User: list the current directory
+> Assistant: To list the files in the current directory, use `ls`:
+{ToolUse("bash", [], "ls").to_output()}
+> System: Ran command: `ls`
+```stdout
+file1.txt
+file2.txt
+```
+> User: add this list to ~/project.summary
+> Assistant:
+{append_to_output("~/project.summary", '''
+file1.txt
+file2.txt
+''')}
+> System: Appended to `~/project.summary`
 """.strip()
 
 tool_append = ToolSpec(

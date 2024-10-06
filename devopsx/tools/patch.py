@@ -27,7 +27,7 @@ Try to keep the patch as small as possible. Avoid placeholders, as they may make
 To keep the patch small, try to scope the patch to imports/function/class.
 If the patch is large, consider using the save tool to rewrite the whole file.
 
-The patch block should be written in the following format:
+The patch block must be written in the following format:
 
 {patch_to_output("$FILENAME", '''
 <<<<<<< ORIGINAL
