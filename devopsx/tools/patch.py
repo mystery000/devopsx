@@ -27,9 +27,11 @@ Try to keep the patch as small as possible. Avoid placeholders, as they may make
 To keep the patch small, try to scope the patch to imports/function/class.
 If the patch is large, consider using the save tool to rewrite the whole file.
 
+Intelligently extract the file path that needs to be patched from the conversation log.
+
 The patch block must be written in the following format:
 
-{patch_to_output("$FILENAME", '''
+{patch_to_output("<filepath>", '''
 <<<<<<< ORIGINAL
 $ORIGINAL_CONTENT
 =======

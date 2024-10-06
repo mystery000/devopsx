@@ -10,9 +10,17 @@ from .patch import Patch
 from ..util import ask_execute, print_preview
 from .base import ToolSpec, ToolUse
 
+def save_to_output(filename: str, content: str) -> str:
+    return ToolUse("save", [filename], content.strip()).to_output()
+
 # FIXME: this is markdown-specific instructions, thus will confuse the XML mode
-instructions = """
+instructions = f"""
 To write text to a file, use a code block with the language tag set to the path of the file.
+Intelligently extract the file path that needs to be saved from the conversation log.
+The save block must be written in the following format:
+{save_to_output("<filepath>", '''
+(content of file)
+''')}
 """.strip()
 
 examples = f"""
@@ -143,7 +151,7 @@ def append_to_output(filename: str, content: str) -> str:
 
 instructions_append = f"""
 To append text to a file, use a code block with the language: append <filepath>
-
+Intelligently extract the file path that needs to be appended from the conversation log.
 The append block must be written in the following format:
 
 {append_to_output("<filepath>", '''
