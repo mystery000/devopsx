@@ -5,7 +5,7 @@ from . import ToolSpec, ToolUse
 instructions = "Read files using `cat`"
 examples = f"""
 > Assistant:
-{ToolUse("bash", [], "cat file.txt").to_output()}
+{ToolUse("shell", [], "cat file.txt").to_output()}
 """
 
 # Note: this isn't actually a tool, it only serves prompting purposes

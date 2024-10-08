@@ -63,41 +63,32 @@ ASSISTANT: Sure! To add a new subagent, you'll need to provide the following det
 Once you provide these details, I'll generate the command for you. 😊
 USER: Agent ID is Master, User is debian, Host is master.infractura.com.
 ASSISTANT: Great! Let's add the new subagent with the provided details. Here is the command to do so:
-```ps
-/subagent add MASTER debian@master.infractura.com
-```
+{ToolUse("ps", [], "/subagent add MASTER debian@master.infractura.com").to_output()}
 
 USER: list all registered subagents
 ASSISTANT: To list all registered subagents, you can use the following command:
-```ps
-/subagent list
-```
+{ToolUse("ps", [], "/subagent list").to_output()}
 
 USER: list the current directory in DEV agent
 ASSISTANT: To list the files in the current directory, use `ls`:
-```ps
-/subagent shell DEV ls
-```
+{ToolUse("ps", [], "/subagent shell DEV ls").to_output()}
 System: Ran command: `ls`
-```stdout
+{ToolUse("stdout", [], '''
 file1.txt
 file2.txt
-```
+'''.strip()).to_output()}
+
 #### The assistant can recognize that user is executing shell commands on a DEV agent.
 User: What is the hostname of agent?
 Assistant: To get the hostname, use `hostname`:
-```ps
-/subagent shell DEV hostname
-```
+{ToolUse("ps", [], "/subagent shell DEV hostname").to_output()}
 System: Ran command: `hostname`
-```stdout
-debian
-```
+{ToolUse("stdout", [], "(hostname of the specific agent)").to_output()}
 
 #### The assistant is capable of executing identical commands on multiple agents at the same time.  
 USER: get the status of 'w' from all the subagents.
 ASSISTANT: To get the status of the 'w' command from all the subagents. we can execute the 'w' command on each subagent. Here are the comamnds to do so:
-```ps
+{ToolUse("ps", [], '''
 /subagent shell agent1 w
 /subagent shell agent2 w
 /subagent shell agent3 w
@@ -106,7 +97,7 @@ ASSISTANT: To get the status of the 'w' command from all the subagents. we can e
 /subagent shell agent6 w
 /subagent shell agent7 w
 /subagent shell agent8 w
-```
+'''.strip()).to_output()}
 """.strip()
 
 _config: ConfigParser | None = None
@@ -264,9 +255,9 @@ def execute_shell(agent_id: str, shell_command: str) -> Generator[Message, None,
     stderr = _shorten_stdout(result.stderr.strip(), pre_tokens=2000, post_tokens=2000)
 
     if stdout:
-        content += _format_block_smart("stdout", stdout) + "\n\n"
+        content += _format_block_smart("", stdout, "stdout") + "\n\n"
     if stderr:
-        content += _format_block_smart("stderr", stderr) + "\n\n"
+        content += _format_block_smart("", stderr, "stderr") + "\n\n"
     if not stdout and not stderr:
         content += "No output\n"
 

@@ -4,6 +4,7 @@ import sys
 import time
 import errno
 import signal
+import termios
 import logging
 import readline
 import urllib.parse
@@ -548,6 +549,8 @@ def get_logdir_resume() -> Path:
 
 def prompt_user(value=None) -> str: # pragma: no cover
     print_bell()
+    # Flush stdin to clear any buffered input before prompting
+    termios.tcflush(sys.stdin, termios.TCIFLUSH)
     set_interruptible()
     try:
         response = prompt_input(PROMPT_USER, value)

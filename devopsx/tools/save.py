@@ -167,12 +167,12 @@ examples_append = f"""
 
 > User: list the current directory
 > Assistant: To list the files in the current directory, use `ls`:
-{ToolUse("bash", [], "ls").to_output()}
+{ToolUse("shell", [], "ls").to_output()}
 > System: Ran command: `ls`
-```stdout
+{ToolUse("stdout", [], '''
 file1.txt
 file2.txt
-```
+'''.strip()).to_output()}
 > User: add this list to ~/project.summary
 > Assistant:
 {append_to_output("~/project.summary", '''
