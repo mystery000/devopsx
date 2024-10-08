@@ -49,7 +49,7 @@ def execute_save(
         code += "\n"
 
     if ask:
-        if Patch(fn).exist():
+        if Path(fn).exists():
             current = Path(fn).read_text()
             p = Patch(current, code)
             # TODO: if inenfficient save, replace request with patch (and vice versa), or even append
